@@ -85,20 +85,22 @@ export const TextProfilingPage: React.FC = () => {
       setDatasets(data);
 
       if (data.length > 0) {
+        const queryParams = new URLSearchParams(window.location.search);
+        const urlId = queryParams.get('dataset');
+        const storedText = localStorage.getItem('datalift_selected_dataset_text');
         const storedId = localStorage.getItem('datalift_selected_dataset_id');
-        const matchStored = data.find((d) => d.id === storedId);
 
         const targetDs =
-          matchStored ||
-          data.find((d) => d.name === 'test_texte.txt') ||
-          data.find((d) => d.name === 'support_tickets.jsonl') ||
-          data.find((d) => d.name.includes('txt') || d.name.includes('jsonl') || d.name.includes('text') || d.name.includes('review')) ||
+          (urlId && data.find((d) => d.id === urlId)) ||
+          (storedText && data.find((d) => d.id === storedText)) ||
+          (storedId && data.find((d) => d.id === storedId)) ||
           data[0];
 
         if (targetDs) {
           setSelectedDatasetId(targetDs.id);
           localStorage.setItem('datalift_selected_dataset_id', targetDs.id);
-          loadVersions(targetDs.id);
+          localStorage.setItem('datalift_selected_dataset_text', targetDs.id);
+          loadVersions(targetDs.id, queryParams.get('version') || undefined);
         } else {
           setLoading(false);
         }
@@ -111,12 +113,13 @@ export const TextProfilingPage: React.FC = () => {
     }
   };
 
-  const loadVersions = async (datasetId: string) => {
+  const loadVersions = async (datasetId: string, preferredHash?: string) => {
     try {
       const vers = await api.getVersions(datasetId);
 
       if (vers.length > 0) {
-        const latestHash = vers[0].version_hash;
+        const targetV = (preferredHash && vers.find((v) => v.version_hash === preferredHash)) || vers[0];
+        const latestHash = targetV.version_hash;
         setSelectedVersionHash(latestHash);
         loadProfile(datasetId, latestHash);
       } else {
@@ -165,6 +168,8 @@ export const TextProfilingPage: React.FC = () => {
       setDatasets(freshDs);
       setSelectedDatasetId(newProfile.dataset_id);
       localStorage.setItem('datalift_selected_dataset_id', newProfile.dataset_id);
+      localStorage.setItem('datalift_selected_dataset_text', newProfile.dataset_id);
+      window.dispatchEvent(new CustomEvent('datalift:dataset-changed', { detail: newProfile.dataset_id }));
     } catch (err) {
       console.error('Upload failed:', err);
       showNotif("Failed to upload text file", false);
@@ -395,7 +400,7 @@ export const TextProfilingPage: React.FC = () => {
           </button>
 
           <button
-            onClick={() => navigate(`/cleaning?dataset=${selectedDatasetId}&version=${selectedVersionHash}`)}
+            onClick={() => navigate(`/cleaning?dataset=${selectedDatasetId}&version=${selectedVersionHash}`, { state: { datasetId: selectedDatasetId, versionHash: selectedVersionHash } })}
             style={{
               background: C.amber,
               border: 'none',

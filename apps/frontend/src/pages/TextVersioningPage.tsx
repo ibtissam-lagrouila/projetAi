@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useCallback, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { api } from '../services/api';
-import { filterDatasetsByModality } from '../utils/formatters';
+import { filterDatasetsByModality, getActiveDatasetForModality, saveActiveDataset } from '../utils/formatters';
 import { Dataset, TextVersioningDataResponse } from '../types';
 import { RefreshCw, AlertCircle, Check, Copy, Download } from 'lucide-react';
 
@@ -25,6 +25,7 @@ const C = {
 
 export const TextVersioningPage: React.FC = () => {
   const navigate = useNavigate();
+  const location = useLocation();
 
   const [datasets, setDatasets] = useState<Dataset[]>([]);
   const [selectedDatasetId, setSelectedDatasetId] = useState<string>('');
@@ -58,34 +59,29 @@ export const TextVersioningPage: React.FC = () => {
   const fetchDatasets = useCallback(async () => {
     try {
       const all = await api.getDatasets();
-      const textSets = all.filter(d => {
-        const name = d.name.toLowerCase();
-        return (
-          name.includes('ticket') ||
-          name.includes('text') ||
-          name.includes('texte') ||
-          name.includes('review') ||
-          name.endsWith('.txt') ||
-          name.endsWith('.jsonl') ||
-          name.endsWith('.csv')
-        );
-      });
-      const candidates = textSets.length > 0 ? textSets : all;
-      setDatasets(filterDatasetsByModality(all, 'text'));
+      const textList = filterDatasetsByModality(all, 'text');
+      setDatasets(textList);
 
-      if (candidates.length > 0 && !selectedDatasetId) {
-        const preferred =
-          candidates.find(d => d.name.includes('ticket') || d.name.includes('support')) ||
-          candidates[0];
-        setSelectedDatasetId(preferred.id);
+      const target = getActiveDatasetForModality(all, 'text', location.search, location.state);
+      if (target) {
+        setSelectedDatasetId(target.id);
+        saveActiveDataset(target.id, 'text');
       }
     } catch (err: any) {
       setError('Error loading datasets: ' + (err.message || 'unknown'));
     }
-  }, [selectedDatasetId]);
+  }, [location.search, location.state]);
 
   useEffect(() => {
     fetchDatasets();
+
+    const onGlobalChange = (e: any) => {
+      if (e.detail && typeof e.detail === 'string') {
+        setSelectedDatasetId(e.detail);
+      }
+    };
+    window.addEventListener('datalift:dataset-changed', onGlobalChange);
+    return () => window.removeEventListener('datalift:dataset-changed', onGlobalChange);
   }, [fetchDatasets]);
 
   // ── Load Versioning Data when dataset changes ──────────────────────────────
@@ -276,7 +272,10 @@ export const TextVersioningPage: React.FC = () => {
           </span>
           <select
             value={selectedDatasetId}
-            onChange={e => setSelectedDatasetId(e.target.value)}
+            onChange={e => {
+              setSelectedDatasetId(e.target.value);
+              saveActiveDataset(e.target.value, 'text');
+            }}
             style={{
               backgroundColor: C.card,
               color: C.text,

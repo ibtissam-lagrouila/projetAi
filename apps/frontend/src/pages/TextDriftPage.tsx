@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Check, AlertTriangle, CheckCircle2 } from 'lucide-react';
 import { api } from '../services/api';
-import { filterDatasetsByModality } from '../utils/formatters';
+import { filterDatasetsByModality, getActiveDatasetForModality, saveActiveDataset } from '../utils/formatters';
 import {
   Dataset,
   TextDriftDataResponse,
@@ -31,6 +31,7 @@ const C = {
 
 export const TextDriftPage: React.FC = () => {
   const navigate = useNavigate();
+  const location = useLocation();
 
   // Datasets
   const [datasets, setDatasets] = useState<Dataset[]>([]);
@@ -76,38 +77,20 @@ export const TextDriftPage: React.FC = () => {
     async function loadDatasets() {
       try {
         const list = await api.getDatasets();
-        const textDatasets = list.filter((d) => {
-          const name = d.name.toLowerCase();
-          return (
-            name.includes('ticket') ||
-            name.includes('support') ||
-            name.includes('nlp') ||
-            name.includes('review') ||
-            name.includes('text') ||
-            name.includes('texte') ||
-            name.endsWith('.jsonl') ||
-            name.endsWith('.txt') ||
-            name.endsWith('.csv')
-          );
-        });
-        const usableList = textDatasets.length > 0 ? textDatasets : list;
-        setDatasets(filterDatasetsByModality(list, 'text'));
+        const textDatasets = filterDatasetsByModality(list, 'text');
+        setDatasets(textDatasets);
 
-        const stored = localStorage.getItem('datalift_selected_dataset_id');
-        const match = usableList.find((d) => d.id === stored);
-        const preferred =
-          match ||
-          usableList.find((d) => d.name.toLowerCase().includes('support_tickets')) ||
-          usableList[0];
-        if (preferred) {
-          setSelectedDatasetId(preferred.id);
+        const target = getActiveDatasetForModality(list, 'text', location.search, location.state);
+        if (target) {
+          setSelectedDatasetId(target.id);
+          saveActiveDataset(target.id, 'text');
         }
       } catch (err: any) {
         setError('Error loading text datasets: ' + (err.message || 'unknown'));
       }
     }
     loadDatasets();
-  }, []);
+  }, [location.search, location.state]);
 
   // Synchronize with external dataset changed events (Sidebar etc.)
   useEffect(() => {
@@ -418,8 +401,7 @@ export const TextDriftPage: React.FC = () => {
           onChange={(e) => {
             const newId = e.target.value;
             setSelectedDatasetId(newId);
-            localStorage.setItem('datalift_selected_dataset_id', newId);
-            window.dispatchEvent(new CustomEvent('datalift:dataset-changed', { detail: newId }));
+            saveActiveDataset(newId, 'text');
           }}
           style={{
             backgroundColor: C.card,

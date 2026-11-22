@@ -1,3 +1,4 @@
+import { useLocation } from 'react-router-dom';
 import React, { useEffect, useState, useCallback } from 'react';
 import { api } from '../services/api';
 import { filterDatasetsByModality } from '../utils/formatters';
@@ -22,6 +23,7 @@ const C = {
 };
 
 export const TextCleaningPage: React.FC = () => {
+  const location = useLocation();
   const [datasets, setDatasets] = useState<Dataset[]>([]);
   const [selectedDatasetId, setSelectedDatasetId] = useState<string>('');
   const [recipe, setRecipe] = useState<TextCleaningRecipeResponse | null>(null);
@@ -70,12 +72,23 @@ export const TextCleaningPage: React.FC = () => {
       );
       setDatasets(filterDatasetsByModality(list, 'text'));
 
+      const queryParams = new URLSearchParams(window.location.search);
+      const queryId = queryParams.get('dataset');
+      const stateId = (location.state as any)?.datasetId;
+      const savedText = localStorage.getItem('datalift_selected_dataset_text');
       const savedId = localStorage.getItem('datalift_selected_dataset_id');
-      const match = (textList.length > 0 ? textList : list).find(d => d.id === savedId);
-      const target = match || textList.find(d => d.name === 'support_tickets.jsonl') || textList[0] || list[0];
+
+      const target =
+        (queryId && textList.find(d => d.id === queryId)) ||
+        (stateId && textList.find(d => d.id === stateId)) ||
+        (savedText && textList.find(d => d.id === savedText)) ||
+        (savedId && textList.find(d => d.id === savedId)) ||
+        textList[0];
 
       if (target) {
         setSelectedDatasetId(target.id);
+        localStorage.setItem('datalift_selected_dataset_id', target.id);
+        localStorage.setItem('datalift_selected_dataset_text', target.id);
       }
     } catch (err: any) {
       console.error(err);

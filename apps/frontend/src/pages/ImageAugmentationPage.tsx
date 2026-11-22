@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useCallback, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { api } from '../services/api';
-import { filterDatasetsByModality } from '../utils/formatters';
+import { filterDatasetsByModality, getActiveDatasetForModality, saveActiveDataset } from '../utils/formatters';
 import { Dataset, ImageAugmentationRecipeResponse, ImageAugmentationComparisonResponse } from '../types';
 import { RefreshCw, AlertCircle, Lock, Check, AlertTriangle } from 'lucide-react';
 
@@ -25,6 +25,7 @@ const C = {
 
 export const ImageAugmentationPage: React.FC = () => {
   const navigate = useNavigate();
+  const location = useLocation();
 
   const [datasets, setDatasets] = useState<Dataset[]>([]);
   const [selectedDatasetId, setSelectedDatasetId] = useState<string>('');
@@ -77,35 +78,29 @@ export const ImageAugmentationPage: React.FC = () => {
   const fetchDatasets = useCallback(async () => {
     try {
       const all = await api.getDatasets();
-      // Filter for image datasets or datasets containing defect / img / image
-      const imageSets = all.filter(d => {
-        const name = d.name.toLowerCase();
-        return (
-          name.includes('defect') ||
-          name.includes('product') ||
-          name.includes('image') ||
-          name.includes('coco') ||
-          name.includes('chat') ||
-          name.includes('chien') ||
-          name.endsWith('/')
-        );
-      });
-      const candidates = imageSets.length > 0 ? imageSets : all;
-      setDatasets(filterDatasetsByModality(all, 'image'));
+      const list = filterDatasetsByModality(all, 'image');
+      setDatasets(list);
 
-      if (candidates.length > 0 && !selectedDatasetId) {
-        const preferred =
-          candidates.find(d => d.name.includes('product_defects') || d.name.includes('defect')) ||
-          candidates[0];
-        setSelectedDatasetId(preferred.id);
+      const target = getActiveDatasetForModality(all, 'image', location.search, location.state);
+      if (target) {
+        setSelectedDatasetId(target.id);
+        saveActiveDataset(target.id, 'image');
       }
     } catch (err: any) {
       setError('Error loading datasets: ' + (err.message || 'unknown'));
     }
-  }, [selectedDatasetId]);
+  }, [location.search, location.state]);
 
   useEffect(() => {
     fetchDatasets();
+
+    const onGlobalChange = (e: any) => {
+      if (e.detail && typeof e.detail === 'string') {
+        setSelectedDatasetId(e.detail);
+      }
+    };
+    window.addEventListener('datalift:dataset-changed', onGlobalChange);
+    return () => window.removeEventListener('datalift:dataset-changed', onGlobalChange);
   }, [fetchDatasets]);
 
   // ── Load Recipe when dataset changes ───────────────────────────────────────
@@ -469,7 +464,10 @@ export const ImageAugmentationPage: React.FC = () => {
           </span>
           <select
             value={selectedDatasetId}
-            onChange={e => setSelectedDatasetId(e.target.value)}
+            onChange={e => {
+              setSelectedDatasetId(e.target.value);
+              saveActiveDataset(e.target.value, 'image');
+            }}
             style={{
               backgroundColor: C.card,
               color: C.text,

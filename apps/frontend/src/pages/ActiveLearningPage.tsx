@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import {
   Check,
   AlertTriangle,
@@ -10,7 +10,7 @@ import {
   Save,
 } from 'lucide-react';
 import { api } from '../services/api';
-import { filterDatasetsByModality } from '../utils/formatters';
+import { filterDatasetsByModality, getActiveDatasetForModality, saveActiveDataset } from '../utils/formatters';
 import {
   Dataset,
   ActiveLearningStateResponse,
@@ -19,6 +19,7 @@ import {
 
 export const ActiveLearningPage: React.FC = () => {
   const navigate = useNavigate();
+  const location = useLocation();
 
   // 1. Dataset state
   const [datasets, setDatasets] = useState<Dataset[]>([]);
@@ -63,7 +64,7 @@ export const ActiveLearningPage: React.FC = () => {
     setTimeout(() => setNotification(null), 4000);
   };
 
-  // TopBar listener for "Historique des cycles"
+  // TopBar listener for "Round history"
   useEffect(() => {
     const handleHistoryEvent = () => setShowHistoryModal(true);
     window.addEventListener('datalift:open-round-history', handleHistoryEvent);
@@ -77,12 +78,23 @@ export const ActiveLearningPage: React.FC = () => {
         const data = filterDatasetsByModality(all, 'tabular');
         setDatasets(data);
         if (data.length > 0) {
-          const defaultDs = data.find((d) => d.name === 'data' || d.name === 'customer_churn.csv') || data[0];
-          setSelectedDatasetId(defaultDs.id);
+          const chosen = getActiveDatasetForModality(data, 'tabular', location.search, location.state);
+          if (chosen) {
+            setSelectedDatasetId(chosen.id);
+            saveActiveDataset(chosen.id, 'tabular');
+          }
         }
       })
       .catch((err) => console.error('Error loading datasets:', err))
       .finally(() => setLoading(false));
+
+    const onGlobalChange = (e: any) => {
+      if (e.detail && typeof e.detail === 'string') {
+        setSelectedDatasetId(e.detail);
+      }
+    };
+    window.addEventListener('datalift:dataset-changed', onGlobalChange);
+    return () => window.removeEventListener('datalift:dataset-changed', onGlobalChange);
   }, []);
 
   // 2. Load active learning state
@@ -381,11 +393,14 @@ export const ActiveLearningPage: React.FC = () => {
             {datasets.length > 1 && (
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '0.2rem' }}>
                 <span className="font-mono" style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
-                  Jeu actif :
+                  Active dataset:
                 </span>
                 <select
                   value={selectedDatasetId}
-                  onChange={(e) => setSelectedDatasetId(e.target.value)}
+                  onChange={(e) => {
+                    setSelectedDatasetId(e.target.value);
+                    saveActiveDataset(e.target.value, 'tabular');
+                  }}
                   className="font-mono"
                   style={{
                     backgroundColor: 'var(--bg-surface)',

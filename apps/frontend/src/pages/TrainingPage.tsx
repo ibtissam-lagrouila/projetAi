@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import {
   Check,
   AlertTriangle,
@@ -12,7 +12,7 @@ import {
   Award,
 } from 'lucide-react';
 import { api } from '../services/api';
-import { filterDatasetsByModality } from '../utils/formatters';
+import { filterDatasetsByModality, getActiveDatasetForModality, saveActiveDataset } from '../utils/formatters';
 import {
   Dataset,
   TrainingConfigResponse,
@@ -24,6 +24,7 @@ import {
 
 export const TrainingPage: React.FC = () => {
   const navigate = useNavigate();
+  const location = useLocation();
 
   // 1. Datasets & Header State
   const [datasets, setDatasets] = useState<Dataset[]>([]);
@@ -93,12 +94,23 @@ export const TrainingPage: React.FC = () => {
         const data = filterDatasetsByModality(all, 'tabular');
         setDatasets(data);
         if (data.length > 0) {
-          const defaultDs = data.find((d) => d.name === 'data' || d.name === 'customer_churn.csv') || data[0];
-          setSelectedDatasetId(defaultDs.id);
+          const chosen = getActiveDatasetForModality(data, 'tabular', location.search, location.state);
+          if (chosen) {
+            setSelectedDatasetId(chosen.id);
+            saveActiveDataset(chosen.id, 'tabular');
+          }
         }
       })
       .catch((err) => console.error('Error loading datasets:', err))
       .finally(() => setLoadingInitial(false));
+
+    const onGlobalChange = (e: any) => {
+      if (e.detail && typeof e.detail === 'string') {
+        setSelectedDatasetId(e.detail);
+      }
+    };
+    window.addEventListener('datalift:dataset-changed', onGlobalChange);
+    return () => window.removeEventListener('datalift:dataset-changed', onGlobalChange);
   }, []);
 
   // 2. Load dataset-level training data
@@ -337,11 +349,14 @@ export const TrainingPage: React.FC = () => {
             {datasets.length > 1 && (
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '0.2rem' }}>
                 <span className="font-mono" style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
-                  Jeu actif :
+                  Active dataset:
                 </span>
                 <select
                   value={selectedDatasetId}
-                  onChange={(e) => setSelectedDatasetId(e.target.value)}
+                  onChange={(e) => {
+                    setSelectedDatasetId(e.target.value);
+                    saveActiveDataset(e.target.value, 'tabular');
+                  }}
                   className="font-mono"
                   style={{
                     backgroundColor: 'var(--bg-surface)',
@@ -2268,7 +2283,7 @@ export const TrainingPage: React.FC = () => {
                   cursor: 'pointer',
                 }}
               >
-                Fausses alertes · FP {runDetail?.confusion_matrix?.actual_no_pred_yes || 2821}
+                False alarms · FP {runDetail?.confusion_matrix?.actual_no_pred_yes || 2821}
               </button>
             </div>
           </div>
@@ -2276,7 +2291,7 @@ export const TrainingPage: React.FC = () => {
           <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
             <thead>
               <tr className="font-mono" style={{ borderBottom: '1px solid var(--border)', fontSize: '0.68rem', color: 'var(--text-muted)' }}>
-                <th style={{ padding: '0.5rem 0.75rem' }}>CLIENT</th>
+                <th style={{ padding: '0.5rem 0.75rem' }}>CUSTOMER</th>
                 <th style={{ padding: '0.5rem 0.75rem' }}>ACTUAL LABEL</th>
                 <th style={{ padding: '0.5rem 0.75rem' }}>MODEL PREDICTION</th>
                 <th style={{ padding: '0.5rem 0.75rem' }}>DISAGREEMENT EXPLANATION</th>
@@ -2328,9 +2343,9 @@ export const TrainingPage: React.FC = () => {
                       type="button"
                       onClick={() => {
                         if (err.action.includes('05')) {
-                          navigate('/labeling');
+                          navigate(selectedDatasetId ? `/labeling?dataset=${selectedDatasetId}` : '/labeling');
                         } else {
-                          showToast(`Client ${err.customer_id} added to active learning pool for Step 07.`);
+                          showToast(`Customer ${err.customer_id} added to active learning pool for Step 07.`);
                         }
                       }}
                       className="font-mono"

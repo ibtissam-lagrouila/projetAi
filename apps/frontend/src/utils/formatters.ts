@@ -139,3 +139,76 @@ export function filterDatasetsByModality<T extends { name: string; description?:
   return datasets.filter((d) => getDatasetModality(d) === modality);
 }
 
+/**
+ * Resolves the active dataset for any workflow step based on priority:
+ * 1. URL query param ?dataset=...
+ * 2. React Router location.state
+ * 3. localStorage per-modality (datalift_selected_dataset_<modality>)
+ * 4. localStorage global (datalift_selected_dataset_id)
+ * 5. First available dataset in the modality list
+ */
+export function getActiveDatasetForModality<T extends { id: string }>(
+  datasets: T[],
+  modality: ModalityType,
+  locationSearch?: string,
+  locationState?: any
+): T | null {
+  if (!datasets || datasets.length === 0) return null;
+
+  // 1. URL Search Param ?dataset=...
+  const searchStr = locationSearch !== undefined ? locationSearch : (typeof window !== 'undefined' ? window.location.search : '');
+  if (searchStr) {
+    const params = new URLSearchParams(searchStr);
+    const urlId = params.get('dataset');
+    if (urlId) {
+      const match = datasets.find((d) => d.id === urlId);
+      if (match) return match;
+    }
+  }
+
+  // 2. React Router location.state
+  if (locationState && typeof locationState === 'object') {
+    const stateId = locationState.datasetId || locationState.id;
+    if (stateId) {
+      const match = datasets.find((d) => d.id === stateId);
+      if (match) return match;
+    }
+  }
+
+  // 3. localStorage per-modality
+  if (typeof localStorage !== 'undefined') {
+    const savedModalityId = localStorage.getItem('datalift_selected_dataset_' + modality);
+    if (savedModalityId) {
+      const match = datasets.find((d) => d.id === savedModalityId);
+      if (match) return match;
+    }
+
+    // 4. localStorage global
+    const savedGlobalId = localStorage.getItem('datalift_selected_dataset_id');
+    if (savedGlobalId) {
+      const match = datasets.find((d) => d.id === savedGlobalId);
+      if (match) return match;
+    }
+  }
+
+  // 5. Fallback to first dataset
+  return datasets[0];
+}
+
+/**
+ * Saves the active dataset to localStorage and dispatches a global synchronization event.
+ */
+export function saveActiveDataset(datasetId: string, modality?: ModalityType): void {
+  if (!datasetId) return;
+  if (typeof localStorage !== 'undefined') {
+    localStorage.setItem('datalift_selected_dataset_id', datasetId);
+    if (modality) {
+      localStorage.setItem('datalift_selected_dataset_' + modality, datasetId);
+    }
+  }
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent('datalift:dataset-changed', { detail: datasetId }));
+  }
+}
+
+

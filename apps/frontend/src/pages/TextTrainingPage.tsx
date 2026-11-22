@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Check, AlertTriangle, X } from 'lucide-react';
 import { api } from '../services/api';
-import { filterDatasetsByModality } from '../utils/formatters';
+import { filterDatasetsByModality, getActiveDatasetForModality, saveActiveDataset } from '../utils/formatters';
 import { Dataset, TextTrainingDataResponse } from '../types';
 
 const C = {
@@ -24,6 +24,7 @@ const C = {
 
 export const TextTrainingPage: React.FC = () => {
   const navigate = useNavigate();
+  const location = useLocation();
 
   // Datasets
   const [datasets, setDatasets] = useState<Dataset[]>([]);
@@ -54,31 +55,29 @@ export const TextTrainingPage: React.FC = () => {
     async function loadDatasets() {
       try {
         const list = await api.getDatasets();
-        const textDatasets = list.filter(d => {
-          const name = d.name.toLowerCase();
-          return (
-            name.includes('ticket') ||
-            name.includes('text') ||
-            name.includes('texte') ||
-            name.includes('review') ||
-            name.endsWith('.txt') ||
-            name.endsWith('.jsonl') ||
-            name.endsWith('.csv')
-          );
-        });
-        const usableList = textDatasets.length > 0 ? textDatasets : list;
-        setDatasets(filterDatasetsByModality(list, 'text'));
+        const textDatasets = filterDatasetsByModality(list, 'text');
+        setDatasets(textDatasets);
 
-        const preferred = usableList.find(d => d.name.toLowerCase().includes('support_tickets')) || usableList[0];
-        if (preferred) {
-          setSelectedDatasetId(preferred.id);
+        const target = getActiveDatasetForModality(list, 'text', location.search, location.state);
+        if (target) {
+          setSelectedDatasetId(target.id);
+          saveActiveDataset(target.id, 'text');
         }
       } catch (err: any) {
         setError('Error loading datasets: ' + (err.message || 'unknown'));
       }
     }
     loadDatasets();
-  }, []);
+
+    const onGlobalChange = (e: any) => {
+      if (e.detail && typeof e.detail === 'string') {
+        setSelectedDatasetId(e.detail);
+        setSelectedRunId('');
+      }
+    };
+    window.addEventListener('datalift:dataset-changed', onGlobalChange);
+    return () => window.removeEventListener('datalift:dataset-changed', onGlobalChange);
+  }, [location.search, location.state]);
 
   // Fetch training data
   const fetchData = useCallback(async (datasetId: string, filter: string, runId?: string) => {
@@ -224,6 +223,7 @@ export const TextTrainingPage: React.FC = () => {
             value={selectedDatasetId}
             onChange={e => {
               setSelectedDatasetId(e.target.value);
+              saveActiveDataset(e.target.value, 'text');
               setSelectedRunId('');
             }}
             style={{

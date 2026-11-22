@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useCallback, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { api } from '../services/api';
-import { filterDatasetsByModality } from '../utils/formatters';
+import { filterDatasetsByModality, getActiveDatasetForModality, saveActiveDataset } from '../utils/formatters';
 import { Dataset, TextAugmentationRecipeResponse, TextAugmentationComparisonResponse } from '../types';
 import { RefreshCw, AlertCircle, Lock, Check } from 'lucide-react';
 
@@ -25,6 +25,7 @@ const C = {
 
 export const TextAugmentationPage: React.FC = () => {
   const navigate = useNavigate();
+  const location = useLocation();
 
   const [datasets, setDatasets] = useState<Dataset[]>([]);
   const [selectedDatasetId, setSelectedDatasetId] = useState<string>('');
@@ -77,23 +78,19 @@ export const TextAugmentationPage: React.FC = () => {
   const loadDatasets = useCallback(async () => {
     try {
       const list = await api.getDatasets();
-      const textList = list.filter(
-        d => d.name.endsWith('.txt') || d.name.endsWith('.jsonl') || d.name.includes('nlp') || d.name.includes('text')
-      );
-      setDatasets(filterDatasetsByModality(list, 'text'));
+      const textList = filterDatasetsByModality(list, 'text');
+      setDatasets(textList);
 
-      const savedId = localStorage.getItem('datalift_selected_dataset_id');
-      const match = (textList.length > 0 ? textList : list).find(d => d.id === savedId);
-      const target = match || textList.find(d => d.name === 'support_tickets.jsonl') || textList[0] || list[0];
-
+      const target = getActiveDatasetForModality(list, 'text', location.search, location.state);
       if (target) {
         setSelectedDatasetId(target.id);
+        saveActiveDataset(target.id, 'text');
       }
     } catch (err: any) {
       console.error(err);
       setError('Error loading text datasets');
     }
-  }, []);
+  }, [location.search, location.state]);
 
   // ── Load Recipe for active dataset ─────────────────────────────────────────
   const loadRecipe = useCallback(async (dsId: string) => {
@@ -418,8 +415,7 @@ export const TextAugmentationPage: React.FC = () => {
             value={selectedDatasetId}
             onChange={e => {
               setSelectedDatasetId(e.target.value);
-              localStorage.setItem('datalift_selected_dataset_id', e.target.value);
-              window.dispatchEvent(new CustomEvent('datalift:dataset-changed', { detail: e.target.value }));
+              saveActiveDataset(e.target.value, 'text');
             }}
             style={{
               background: C.card,

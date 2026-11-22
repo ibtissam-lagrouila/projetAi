@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useCallback, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { api } from '../services/api';
-import { filterDatasetsByModality } from '../utils/formatters';
+import { filterDatasetsByModality, getActiveDatasetForModality, saveActiveDataset } from '../utils/formatters';
 import { Dataset, ImageVersioningDataResponse, ImageVersioningDiffItem } from '../types';
 import { RefreshCw, AlertCircle, Check, Copy, Download, X } from 'lucide-react';
 
@@ -25,6 +25,7 @@ const C = {
 
 export const ImageVersioningPage: React.FC = () => {
   const navigate = useNavigate();
+  const location = useLocation();
 
   const [datasets, setDatasets] = useState<Dataset[]>([]);
   const [selectedDatasetId, setSelectedDatasetId] = useState<string>('');
@@ -62,34 +63,29 @@ export const ImageVersioningPage: React.FC = () => {
   const fetchDatasets = useCallback(async () => {
     try {
       const all = await api.getDatasets();
-      const imgSets = all.filter(d => {
-        const name = d.name.toLowerCase();
-        return (
-          name.includes('defect') ||
-          name.includes('image') ||
-          name.includes('photo') ||
-          name.includes('chat') ||
-          name.includes('chien') ||
-          name.includes('img') ||
-          name.endsWith('/')
-        );
-      });
-      const candidates = imgSets.length > 0 ? imgSets : all;
-      setDatasets(filterDatasetsByModality(all, 'image'));
+      const list = filterDatasetsByModality(all, 'image');
+      setDatasets(list);
 
-      if (candidates.length > 0 && !selectedDatasetId) {
-        const preferred =
-          candidates.find(d => d.name.includes('defect') || d.name.includes('product')) ||
-          candidates[0];
-        setSelectedDatasetId(preferred.id);
+      const target = getActiveDatasetForModality(all, 'image', location.search, location.state);
+      if (target) {
+        setSelectedDatasetId(target.id);
+        saveActiveDataset(target.id, 'image');
       }
     } catch (err: any) {
       setError('Error loading datasets: ' + (err.message || 'unknown'));
     }
-  }, [selectedDatasetId]);
+  }, [location.search, location.state]);
 
   useEffect(() => {
     fetchDatasets();
+
+    const onGlobalChange = (e: any) => {
+      if (e.detail && typeof e.detail === 'string') {
+        setSelectedDatasetId(e.detail);
+      }
+    };
+    window.addEventListener('datalift:dataset-changed', onGlobalChange);
+    return () => window.removeEventListener('datalift:dataset-changed', onGlobalChange);
   }, [fetchDatasets]);
 
   // ── Load Versioning Data when dataset changes ──────────────────────────────
@@ -292,7 +288,10 @@ export const ImageVersioningPage: React.FC = () => {
           </span>
           <select
             value={selectedDatasetId}
-            onChange={e => setSelectedDatasetId(e.target.value)}
+            onChange={e => {
+              setSelectedDatasetId(e.target.value);
+              saveActiveDataset(e.target.value, 'image');
+            }}
             style={{
               backgroundColor: C.card,
               color: C.text,

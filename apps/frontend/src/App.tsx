@@ -40,12 +40,20 @@ const TopBar: React.FC<{ modality: 'tabular' | 'text' | 'image'; onModalityChang
   const navigate = useNavigate();
   const location = useLocation();
 
+  const activeDatasetId = localStorage.getItem(`datalift_selected_dataset_${modality}`) || localStorage.getItem('datalift_selected_dataset_id') || '';
+  const toStep = (path: string) => activeDatasetId ? `${path}?dataset=${activeDatasetId}` : path;
+
   const handleNextStep = () => {
-    if (location.pathname === '/profiling') navigate('/cleaning');
-    else if (location.pathname === '/cleaning') navigate('/augmentation');
-    else if (location.pathname === '/augmentation') navigate('/versioning');
-    else if (location.pathname === '/versioning') navigate('/labeling');
-    else navigate('/versioning');
+    const param = activeDatasetId ? `?dataset=${activeDatasetId}` : '';
+    if (location.pathname === '/profiling') navigate(`/cleaning${param}`);
+    else if (location.pathname === '/cleaning') navigate(`/augmentation${param}`);
+    else if (location.pathname === '/augmentation') navigate(`/versioning${param}`);
+    else if (location.pathname === '/versioning') navigate(`/labeling${param}`);
+    else if (location.pathname === '/labeling') navigate(`/training${param}`);
+    else if (location.pathname === '/training') navigate(`/active-learning${param}`);
+    else if (location.pathname === '/active-learning') navigate(`/drift${param}`);
+    else if (location.pathname === '/drift') navigate(`/export-api${param}`);
+    else navigate(`/export-api${param}`);
   };
 
   return (
@@ -127,7 +135,7 @@ const TopBar: React.FC<{ modality: 'tabular' | 'text' | 'image'; onModalityChang
               type="button"
               className="btn btn-primary font-mono"
               style={{ fontSize: '0.78rem', padding: '0.45rem 1rem' }}
-              onClick={() => navigate('/augmentation')}
+              onClick={() => { const id = localStorage.getItem('datalift_selected_dataset_id'); navigate('/augmentation' + (id ? `?dataset=${id}` : '')); }}
             >
               <span>Continue to augmentation →</span>
             </button>
@@ -146,7 +154,7 @@ const TopBar: React.FC<{ modality: 'tabular' | 'text' | 'image'; onModalityChang
               type="button"
               className="btn btn-primary font-mono"
               style={{ fontSize: '0.78rem', padding: '0.45rem 1rem' }}
-              onClick={() => navigate('/augmentation')}
+              onClick={() => { const id = localStorage.getItem('datalift_selected_dataset_id'); navigate('/augmentation' + (id ? `?dataset=${id}` : '')); }}
             >
               <span>Continue to augmentation →</span>
             </button>
@@ -165,7 +173,7 @@ const TopBar: React.FC<{ modality: 'tabular' | 'text' | 'image'; onModalityChang
               type="button"
               className="btn btn-primary font-mono"
               style={{ fontSize: '0.78rem', padding: '0.45rem 1rem' }}
-              onClick={() => navigate('/augmentation')}
+              onClick={() => { const id = localStorage.getItem('datalift_selected_dataset_id'); navigate('/augmentation' + (id ? `?dataset=${id}` : '')); }}
             >
               <span>Continue to augmentation</span>
               <ArrowRight size={14} />
@@ -185,7 +193,7 @@ const TopBar: React.FC<{ modality: 'tabular' | 'text' | 'image'; onModalityChang
               type="button"
               className="btn btn-primary font-mono"
               style={{ fontSize: '0.78rem', padding: '0.45rem 1rem' }}
-              onClick={() => navigate('/versioning')}
+              onClick={() => navigate(toStep('/versioning'))}
             >
               <span>Continue to versioning →</span>
             </button>
@@ -204,7 +212,7 @@ const TopBar: React.FC<{ modality: 'tabular' | 'text' | 'image'; onModalityChang
               type="button"
               className="btn btn-primary font-mono"
               style={{ fontSize: '0.78rem', padding: '0.45rem 1rem' }}
-              onClick={() => navigate('/versioning')}
+              onClick={() => navigate(toStep('/versioning'))}
             >
               <span>Continue to versioning →</span>
             </button>
@@ -223,7 +231,7 @@ const TopBar: React.FC<{ modality: 'tabular' | 'text' | 'image'; onModalityChang
               type="button"
               className="btn btn-primary font-mono"
               style={{ fontSize: '0.78rem', padding: '0.45rem 1rem' }}
-              onClick={() => navigate('/versioning')}
+              onClick={() => navigate(toStep('/versioning'))}
             >
               <span>Continue to versioning</span>
               <ArrowRight size={14} />
@@ -243,7 +251,7 @@ const TopBar: React.FC<{ modality: 'tabular' | 'text' | 'image'; onModalityChang
               type="button"
               className="btn btn-primary font-mono"
               style={{ fontSize: '0.78rem', padding: '0.45rem 1rem' }}
-              onClick={() => navigate('/labeling')}
+              onClick={() => navigate(toStep('/labeling'))}
             >
               <span>Continue to labeling →</span>
             </button>
@@ -262,7 +270,7 @@ const TopBar: React.FC<{ modality: 'tabular' | 'text' | 'image'; onModalityChang
               type="button"
               className="btn btn-primary font-mono"
               style={{ fontSize: '0.78rem', padding: '0.45rem 1rem' }}
-              onClick={() => navigate('/labeling')}
+              onClick={() => navigate(toStep('/labeling'))}
             >
               <span>Continue to labeling →</span>
             </button>
@@ -281,7 +289,7 @@ const TopBar: React.FC<{ modality: 'tabular' | 'text' | 'image'; onModalityChang
               type="button"
               className="btn btn-primary font-mono"
               style={{ fontSize: '0.78rem', padding: '0.45rem 1rem' }}
-              onClick={() => navigate('/labeling')}
+              onClick={() => navigate(toStep('/labeling'))}
             >
               <span>Continue to labeling</span>
               <ArrowRight size={14} />
@@ -309,7 +317,7 @@ const TopBar: React.FC<{ modality: 'tabular' | 'text' | 'image'; onModalityChang
                   fontWeight: 600,
                   border: 'none',
                 }}
-                onClick={() => navigate('/training')}
+                onClick={() => navigate(toStep('/training'))}
               >
                 <span>Continue to training →</span>
               </button>
@@ -335,7 +343,7 @@ const TopBar: React.FC<{ modality: 'tabular' | 'text' | 'image'; onModalityChang
                   fontWeight: 600,
                   border: 'none',
                 }}
-                onClick={() => navigate('/training')}
+                onClick={() => navigate(toStep('/training'))}
               >
                 <span>Continue to training →</span>
               </button>
@@ -354,7 +362,7 @@ const TopBar: React.FC<{ modality: 'tabular' | 'text' | 'image'; onModalityChang
                 type="button"
                 className="btn btn-primary font-mono"
                 style={{ fontSize: '0.78rem', padding: '0.45rem 1rem' }}
-                onClick={() => navigate('/training')}
+                onClick={() => navigate(toStep('/training'))}
               >
                 <span>Continue to training</span>
                 <ArrowRight size={14} />
@@ -383,7 +391,7 @@ const TopBar: React.FC<{ modality: 'tabular' | 'text' | 'image'; onModalityChang
                   fontWeight: 600,
                   border: 'none',
                 }}
-                onClick={() => navigate('/active-learning')}
+                onClick={() => navigate(toStep('/active-learning'))}
               >
                 <span>Continue to active learning →</span>
               </button>
@@ -402,7 +410,7 @@ const TopBar: React.FC<{ modality: 'tabular' | 'text' | 'image'; onModalityChang
                 type="button"
                 className="btn btn-primary font-mono"
                 style={{ fontSize: '0.78rem', padding: '0.45rem 1rem' }}
-                onClick={() => navigate('/active-learning')}
+                onClick={() => navigate(toStep('/active-learning'))}
               >
                 <span>Continue to active learning</span>
                 <ArrowRight size={14} />
@@ -431,7 +439,7 @@ const TopBar: React.FC<{ modality: 'tabular' | 'text' | 'image'; onModalityChang
                   fontWeight: 600,
                   border: 'none',
                 }}
-                onClick={() => navigate('/drift')}
+                onClick={() => navigate(toStep('/drift'))}
               >
                 <span>Continue to drift →</span>
               </button>
@@ -450,7 +458,7 @@ const TopBar: React.FC<{ modality: 'tabular' | 'text' | 'image'; onModalityChang
                 type="button"
                 className="btn btn-primary font-mono"
                 style={{ fontSize: '0.78rem', padding: '0.45rem 1rem' }}
-                onClick={() => navigate('/drift')}
+                onClick={() => navigate(toStep('/drift'))}
               >
                 <span>Continue to drift</span>
                 <ArrowRight size={14} />
@@ -479,7 +487,7 @@ const TopBar: React.FC<{ modality: 'tabular' | 'text' | 'image'; onModalityChang
                   fontWeight: 600,
                   border: 'none',
                 }}
-                onClick={() => navigate('/export-api')}
+                onClick={() => navigate(toStep('/export-api'))}
               >
                 <span>Continue to export →</span>
               </button>
@@ -498,7 +506,7 @@ const TopBar: React.FC<{ modality: 'tabular' | 'text' | 'image'; onModalityChang
                 type="button"
                 className="btn btn-primary font-mono"
                 style={{ fontSize: '0.78rem', padding: '0.45rem 1rem' }}
-                onClick={() => navigate('/export-api')}
+                onClick={() => navigate(toStep('/export-api'))}
               >
                 <span>Continue to export</span>
                 <ArrowRight size={14} />

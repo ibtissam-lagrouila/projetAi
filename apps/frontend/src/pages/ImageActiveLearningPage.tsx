@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Check, AlertTriangle, CheckCircle2 } from 'lucide-react';
 import { api } from '../services/api';
-import { filterDatasetsByModality } from '../utils/formatters';
+import { filterDatasetsByModality, getActiveDatasetForModality, saveActiveDataset } from '../utils/formatters';
 import {
   Dataset,
   ImageActiveLearningDataResponse,
@@ -31,6 +31,7 @@ const C = {
 
 export const ImageActiveLearningPage: React.FC = () => {
   const navigate = useNavigate();
+  const location = useLocation();
 
   // Datasets
   const [datasets, setDatasets] = useState<Dataset[]>([]);
@@ -88,38 +89,20 @@ export const ImageActiveLearningPage: React.FC = () => {
     async function loadDatasets() {
       try {
         const list = await api.getDatasets();
-        const imageDatasets = list.filter((d) => {
-          const name = d.name.toLowerCase();
-          return (
-            name.includes('defect') ||
-            name.includes('product') ||
-            name.includes('image') ||
-            name.includes('photo') ||
-            name.includes('vision') ||
-            name.includes('yolo') ||
-            name.includes('coco') ||
-            name.endsWith('.zip') ||
-            name.endsWith('/')
-          );
-        });
-        const usableList = imageDatasets.length > 0 ? imageDatasets : list;
-        setDatasets(filterDatasetsByModality(list, 'image'));
+        const imageDatasets = filterDatasetsByModality(list, 'image');
+        setDatasets(imageDatasets);
 
-        const stored = localStorage.getItem('datalift_selected_dataset_id');
-        const match = usableList.find((d) => d.id === stored);
-        const preferred =
-          match ||
-          usableList.find((d) => d.name.toLowerCase().includes('defect') || d.name.toLowerCase().includes('product')) ||
-          usableList[0];
-        if (preferred) {
-          setSelectedDatasetId(preferred.id);
+        const target = getActiveDatasetForModality(list, 'image', location.search, location.state);
+        if (target) {
+          setSelectedDatasetId(target.id);
+          saveActiveDataset(target.id, 'image');
         }
       } catch (err: any) {
         setError('Error loading datasets: ' + (err.message || 'unknown'));
       }
     }
     loadDatasets();
-  }, []);
+  }, [location.search, location.state]);
 
   // Listen to dataset changed event from sidebar or other tabs
   useEffect(() => {
@@ -469,8 +452,7 @@ export const ImageActiveLearningPage: React.FC = () => {
           onChange={(e) => {
             const newId = e.target.value;
             setSelectedDatasetId(newId);
-            localStorage.setItem('datalift_selected_dataset_id', newId);
-            window.dispatchEvent(new CustomEvent('datalift:dataset-changed', { detail: newId }));
+            saveActiveDataset(newId, 'image');
           }}
           style={{
             backgroundColor: C.card,

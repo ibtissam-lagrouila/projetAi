@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useSearchParams, useNavigate } from 'react-router-dom';
+import { useSearchParams, useNavigate, useLocation } from 'react-router-dom';
 import {
   CheckCircle2,
   Lock,
@@ -27,6 +27,7 @@ import {
 export const AugmentationPage: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
+  const location = useLocation();
 
   // Selection states
   const [datasets, setDatasets] = useState<Dataset[]>([]);
@@ -108,10 +109,21 @@ export const AugmentationPage: React.FC = () => {
         setDatasets(data);
 
         const urlDatasetId = searchParams.get('dataset');
-        const defaultDs = data.find((d) => d.id === urlDatasetId) || data[0];
+        const stateDatasetId = (location.state as any)?.datasetId;
+        const storedTabular = localStorage.getItem('datalift_selected_dataset_tabular');
+        const storedId = localStorage.getItem('datalift_selected_dataset_id');
+
+        const defaultDs =
+          (urlDatasetId && data.find((d) => d.id === urlDatasetId)) ||
+          (stateDatasetId && data.find((d) => d.id === stateDatasetId)) ||
+          (storedTabular && data.find((d) => d.id === storedTabular)) ||
+          (storedId && data.find((d) => d.id === storedId)) ||
+          data[0];
 
         if (defaultDs) {
           setSelectedDatasetId(defaultDs.id);
+          localStorage.setItem('datalift_selected_dataset_id', defaultDs.id);
+          localStorage.setItem('datalift_selected_dataset_tabular', defaultDs.id);
           const vList = await api.getVersions(defaultDs.id);
           setVersions(vList);
 

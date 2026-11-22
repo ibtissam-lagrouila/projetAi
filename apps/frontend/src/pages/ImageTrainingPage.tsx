@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Check, AlertTriangle, X, Play, Copy, CheckCircle2 } from 'lucide-react';
 import { api } from '../services/api';
-import { filterDatasetsByModality } from '../utils/formatters';
+import { filterDatasetsByModality, getActiveDatasetForModality, saveActiveDataset } from '../utils/formatters';
 import { Dataset, ImageTrainingDataResponse } from '../types';
 
 const C = {
@@ -26,6 +26,7 @@ const C = {
 
 export const ImageTrainingPage: React.FC = () => {
   const navigate = useNavigate();
+  const location = useLocation();
 
   // Datasets
   const [datasets, setDatasets] = useState<Dataset[]>([]);
@@ -83,35 +84,28 @@ export const ImageTrainingPage: React.FC = () => {
     async function loadDatasets() {
       try {
         const list = await api.getDatasets();
-        const imageDatasets = list.filter((d) => {
-          const name = d.name.toLowerCase();
-          return (
-            name.includes('defect') ||
-            name.includes('product') ||
-            name.includes('image') ||
-            name.includes('photo') ||
-            name.includes('vision') ||
-            name.includes('yolo') ||
-            name.includes('coco') ||
-            name.endsWith('.zip') ||
-            name.endsWith('/')
-          );
-        });
-        const usableList = imageDatasets.length > 0 ? imageDatasets : list;
-        setDatasets(filterDatasetsByModality(list, 'image'));
+        const imageDatasets = filterDatasetsByModality(list, 'image');
+        setDatasets(imageDatasets);
 
-        const preferred =
-          usableList.find((d) => d.name.toLowerCase().includes('defect') || d.name.toLowerCase().includes('product')) ||
-          usableList[0];
-        if (preferred) {
-          setSelectedDatasetId(preferred.id);
+        const target = getActiveDatasetForModality(list, 'image', location.search, location.state);
+        if (target) {
+          setSelectedDatasetId(target.id);
+          saveActiveDataset(target.id, 'image');
         }
       } catch (err: any) {
         setError('Error loading datasets: ' + (err.message || 'unknown'));
       }
     }
     loadDatasets();
-  }, []);
+
+    const onGlobalChange = (e: any) => {
+      if (e.detail && typeof e.detail === 'string') {
+        setSelectedDatasetId(e.detail);
+      }
+    };
+    window.addEventListener('datalift:dataset-changed', onGlobalChange);
+    return () => window.removeEventListener('datalift:dataset-changed', onGlobalChange);
+  }, [location.search, location.state]);
 
   // Fetch training data when dataset, filter or selected run changes
   const fetchData = useCallback(
@@ -171,6 +165,7 @@ export const ImageTrainingPage: React.FC = () => {
 
   const handleDatasetChange = (newId: string) => {
     setSelectedDatasetId(newId);
+    saveActiveDataset(newId, 'image');
   };
 
   const handleCopyCommand = (cmd: string) => {

@@ -1,3 +1,4 @@
+import { useLocation } from 'react-router-dom';
 import React, { useEffect, useState, useCallback } from 'react';
 import { api } from '../services/api';
 import { filterDatasetsByModality } from '../utils/formatters';
@@ -22,6 +23,7 @@ const C = {
 };
 
 export const ImageCleaningPage: React.FC = () => {
+  const location = useLocation();
   const [datasets, setDatasets] = useState<Dataset[]>([]);
   const [selectedDatasetId, setSelectedDatasetId] = useState<string>('');
   const [recipe, setRecipe] = useState<ImageCleaningRecipeResponse | null>(null);
@@ -71,12 +73,23 @@ export const ImageCleaningPage: React.FC = () => {
       );
       setDatasets(filterDatasetsByModality(list, 'image'));
 
+      const queryParams = new URLSearchParams(window.location.search);
+      const queryId = queryParams.get('dataset');
+      const stateId = (location.state as any)?.datasetId;
+      const savedImg = localStorage.getItem('datalift_selected_dataset_image');
       const savedId = localStorage.getItem('datalift_selected_dataset_id');
-      const match = (imgList.length > 0 ? imgList : list).find(d => d.id === savedId);
-      const target = match || imgList.find(d => d.name === 'product_defects/') || imgList[0] || list[0];
+
+      const target =
+        (queryId && imgList.find(d => d.id === queryId)) ||
+        (stateId && imgList.find(d => d.id === stateId)) ||
+        (savedImg && imgList.find(d => d.id === savedImg)) ||
+        (savedId && imgList.find(d => d.id === savedId)) ||
+        imgList[0];
 
       if (target) {
         setSelectedDatasetId(target.id);
+        localStorage.setItem('datalift_selected_dataset_id', target.id);
+        localStorage.setItem('datalift_selected_dataset_image', target.id);
       }
     } catch (err: any) {
       console.error(err);

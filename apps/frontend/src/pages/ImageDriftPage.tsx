@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Check, AlertTriangle, CheckCircle2 } from 'lucide-react';
 import { api } from '../services/api';
-import { filterDatasetsByModality } from '../utils/formatters';
+import { filterDatasetsByModality, getActiveDatasetForModality, saveActiveDataset } from '../utils/formatters';
 import {
   Dataset,
   ImageDriftDataResponse,
@@ -31,6 +31,7 @@ const C = {
 
 export const ImageDriftPage: React.FC = () => {
   const navigate = useNavigate();
+  const location = useLocation();
 
   // Datasets
   const [datasets, setDatasets] = useState<Dataset[]>([]);
@@ -79,36 +80,20 @@ export const ImageDriftPage: React.FC = () => {
     async function loadDatasets() {
       try {
         const list = await api.getDatasets();
-        const imageDatasets = list.filter((d) => {
-          const name = d.name.toLowerCase();
-          return (
-            name.includes('defect') ||
-            name.includes('product') ||
-            name.includes('image') ||
-            name.includes('vision') ||
-            name.includes('solar') ||
-            name.endsWith('.zip') ||
-            name.endsWith('.tar')
-          );
-        });
-        const usableList = imageDatasets.length > 0 ? imageDatasets : list;
-        setDatasets(filterDatasetsByModality(list, 'image'));
+        const imageDatasets = filterDatasetsByModality(list, 'image');
+        setDatasets(imageDatasets);
 
-        const stored = localStorage.getItem('datalift_selected_dataset_id');
-        const match = usableList.find((d) => d.id === stored);
-        const preferred =
-          match ||
-          usableList.find((d) => d.name.toLowerCase().includes('product_defects')) ||
-          usableList[0];
-        if (preferred) {
-          setSelectedDatasetId(preferred.id);
+        const target = getActiveDatasetForModality(list, 'image', location.search, location.state);
+        if (target) {
+          setSelectedDatasetId(target.id);
+          saveActiveDataset(target.id, 'image');
         }
       } catch (err: any) {
-        setError('Error loading image datasets: ' + (err.message || 'unknown'));
+        setError('Error loading image datasets: ' + (err.message || 'inconnu'));
       }
     }
     loadDatasets();
-  }, []);
+  }, [location.search, location.state]);
 
   // Synchronize with external dataset changed events (Sidebar etc.)
   useEffect(() => {
@@ -153,7 +138,7 @@ export const ImageDriftPage: React.FC = () => {
         setSelectedSignalId(res.signals[1]?.id || res.signals[0].id);
       }
     } catch (err: any) {
-      setError('Error loading image drift data: ' + (err.message || 'unknown'));
+      setError('Error loading image drift data: ' + (err.message || 'inconnu'));
     } finally {
       setLoading(false);
     }
@@ -181,7 +166,7 @@ export const ImageDriftPage: React.FC = () => {
       setNotification('✓ Image drift settings saved successfully.');
       setTimeout(() => setNotification(null), 3500);
     } catch (err: any) {
-      setError('Error saving: ' + (err.message || 'unknown'));
+      setError('Error saving: ' + (err.message || 'inconnu'));
     }
   };
 
@@ -193,7 +178,7 @@ export const ImageDriftPage: React.FC = () => {
       setTimeout(() => setNotification(null), 4000);
       fetchData(selectedDatasetId);
     } catch (err: any) {
-      setError("Error executing test: " + (err.message || 'unknown'));
+      setError("Error executing test: " + (err.message || 'inconnu'));
     }
   };
 
@@ -220,7 +205,7 @@ export const ImageDriftPage: React.FC = () => {
       setTimeout(() => setNotification(null), 3500);
       fetchData(selectedDatasetId);
     } catch (err: any) {
-      setError("Error during adoption: " + (err.message || 'unknown'));
+      setError("Error lors de l'adoption: " + (err.message || 'inconnu'));
     }
   };
 
@@ -235,7 +220,7 @@ export const ImageDriftPage: React.FC = () => {
       setNotification('✓ Incident report sent to line maintenance team.');
       setTimeout(() => setNotification(null), 3500);
     } catch (err: any) {
-      setError("Error reporting: " + (err.message || 'unknown'));
+      setError("Error reporting: " + (err.message || 'inconnu'));
     }
   };
 
@@ -422,8 +407,7 @@ export const ImageDriftPage: React.FC = () => {
           onChange={(e) => {
             const newId = e.target.value;
             setSelectedDatasetId(newId);
-            localStorage.setItem('datalift_selected_dataset_id', newId);
-            window.dispatchEvent(new CustomEvent('datalift:dataset-changed', { detail: newId }));
+            saveActiveDataset(newId, 'image');
           }}
           style={{
             backgroundColor: C.card,
@@ -936,25 +920,24 @@ export const ImageDriftPage: React.FC = () => {
                             padding: '0.15rem 0.45rem',
                             borderRadius: '3px',
                             fontWeight: 'bold',
-                            border: `1px solid ${
-                              s.status_type === 'red'
-                                ? '#ef4444'
-                                : s.status_type === 'amber'
+                            border: `1px solid ${s.status_type === 'red'
+                              ? '#ef4444'
+                              : s.status_type === 'amber'
                                 ? C.amber
                                 : '#4b5563'
-                            }`,
+                              }`,
                             color:
                               s.status_type === 'red'
                                 ? '#ef4444'
                                 : s.status_type === 'amber'
-                                ? C.amber
-                                : '#9ca3af',
+                                  ? C.amber
+                                  : '#9ca3af',
                             backgroundColor:
                               s.status_type === 'red'
                                 ? 'rgba(239, 68, 68, 0.1)'
                                 : s.status_type === 'amber'
-                                ? 'rgba(245, 158, 11, 0.1)'
-                                : 'transparent',
+                                  ? 'rgba(245, 158, 11, 0.1)'
+                                  : 'transparent',
                           }}
                         >
                           {s.status}
@@ -1022,8 +1005,8 @@ export const ImageDriftPage: React.FC = () => {
                       inspectionDetails.badgeColor === '#ef4444'
                         ? 'rgba(239, 68, 68, 0.1)'
                         : inspectionDetails.badgeColor === C.amber
-                        ? 'rgba(245, 158, 11, 0.1)'
-                        : 'transparent',
+                          ? 'rgba(245, 158, 11, 0.1)'
+                          : 'transparent',
                   }}
                 >
                   {inspectionDetails.badge}
@@ -1337,19 +1320,18 @@ export const ImageDriftPage: React.FC = () => {
                         padding: '0.15rem 0.45rem',
                         borderRadius: '3px',
                         fontWeight: 'bold',
-                        border: `1px solid ${
-                          qc.status_type === 'red'
-                            ? '#ef4444'
-                            : qc.status_type === 'amber'
+                        border: `1px solid ${qc.status_type === 'red'
+                          ? '#ef4444'
+                          : qc.status_type === 'amber'
                             ? C.amber
                             : '#4b5563'
-                        }`,
+                          }`,
                         color:
                           qc.status_type === 'red'
                             ? '#ef4444'
                             : qc.status_type === 'amber'
-                            ? C.amber
-                            : '#9ca3af',
+                              ? C.amber
+                              : '#9ca3af',
                       }}
                     >
                       {qc.status}
@@ -1526,19 +1508,18 @@ export const ImageDriftPage: React.FC = () => {
                         padding: '0.15rem 0.45rem',
                         borderRadius: '3px',
                         fontWeight: 'bold',
-                        border: `1px solid ${
-                          seg.flag_type === 'red'
-                            ? '#ef4444'
-                            : seg.flag_type === 'amber'
+                        border: `1px solid ${seg.flag_type === 'red'
+                          ? '#ef4444'
+                          : seg.flag_type === 'amber'
                             ? C.amber
                             : '#4b5563'
-                        }`,
+                          }`,
                         color:
                           seg.flag_type === 'red'
                             ? '#ef4444'
                             : seg.flag_type === 'amber'
-                            ? C.amber
-                            : '#9ca3af',
+                              ? C.amber
+                              : '#9ca3af',
                       }}
                     >
                       {seg.flag}

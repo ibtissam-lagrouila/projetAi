@@ -1,13 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useSearchParams, useNavigate, useLocation } from 'react-router-dom';
 import {
   CheckCircle2,
   Lock,
   RefreshCw,
   Sliders,
-  Download,
   X,
-  Copy,
   AlertCircle,
   ArrowRight,
 } from 'lucide-react';
@@ -23,6 +21,8 @@ import {
   TargetBalanceConfig,
   TechniquesConfig,
 } from '../types';
+import { AugmentationRecipeModal } from '../components/AugmentationRecipeModal';
+import { downloadTabularAugmentationRecipePdf } from '../utils/recipeExport';
 
 export const AugmentationPage: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -70,14 +70,133 @@ export const AugmentationPage: React.FC = () => {
 
   // Modals
   const [showExportModal, setShowExportModal] = useState<boolean>(false);
-  const [copiedRecipe, setCopiedRecipe] = useState<boolean>(false);
+
+  // Helper variables for export recipe
+  const currentDataset = datasets.find((d) => d.id === selectedDatasetId);
+  const currentVersion = versions.find((v) => v.version_hash === selectedVersionHash);
+  const sourceVersionLabel =
+    (currentVersion as any)?.version_label ||
+    ((currentVersion as any)?.version_number ? `v${(currentVersion as any).version_number}` : currentVersion?.version_hash ? `v${currentVersion.version_hash.slice(0, 7)}` : 'v2 (cleaned)');
+  const datasetName = currentDataset?.name || profile?.dataset_name || 'dataset.csv';
+
+  const splitRatioFormatted =
+    ratioPreset === '80_10_10' ? '80 / 10 / 10' : ratioPreset === '60_20_20' ? '60 / 20 / 20' : '70 / 15 / 15';
+  const balanceModeLabel =
+    balanceMode === 'keep'
+      ? 'Keep initial (0%)'
+      : balanceMode === '20'
+        ? '20% target balance'
+        : balanceMode === '50'
+          ? 'Balanced (50%)'
+          : '30% target balance';
+
+  const augmentationTechniquesList = [
+    {
+      id: '01',
+      name: 'SMOTE-NC (Synthetic Minority Over-sampling)',
+      active: smoteActive,
+      params: `k=${smoteK} neighbors`,
+      description: 'Generates realistic synthetic rows using Euclidean distance for continuous and modal matching for categoricals.',
+      impact: previewData ? `+${previewData.rows_generated} synthetic rows` : 'Active on train split',
+    },
+    {
+      id: '02',
+      name: 'Majority Undersampling',
+      active: undersampleActive,
+      params: 'Random uniform',
+      description: 'Reduces majority class volume in train split to meet target class balance without dropping critical patterns.',
+      impact: previewData ? `-${previewData.rows_undersampled} rows` : 'Active on train split',
+    },
+    {
+      id: '03',
+      name: 'Gaussian Jitter / Noise Injection',
+      active: noiseActive,
+      params: `Variance: ${noiseStrength}%`,
+      description: 'Adds mild Gaussian perturbation to numeric features to prevent overfitting on exact sample values.',
+      impact: noiseActive ? 'Perturbation applied' : 'Off',
+    },
+    {
+      id: '04',
+      name: 'Class Weights Compensation',
+      active: classWeightsActive,
+      params: 'Inverse class frequency',
+      description: 'Calculates cost-matrix penalty weights for training without altering physical row counts.',
+      impact: classWeightsActive ? 'Weighting calculated' : 'Off',
+    },
+  ];
+
+  const recipeExportJson = useMemo(() => {
+    return JSON.stringify(
+      previewData?.recipe || {
+        recipe_type: 'tabular_augmentation',
+        dataset_name: datasetName,
+        source_version: sourceVersionLabel,
+        target_version: 'v3',
+        split: {
+          ratio: splitRatioFormatted,
+          group_by: groupByCol || null,
+          stratify_column: targetCol || null,
+        },
+        balance: {
+          mode: balanceModeLabel,
+          target_column: targetCol,
+        },
+        techniques: {
+          smote: { active: smoteActive, k_neighbors: smoteK },
+          undersample: { active: undersampleActive },
+          gaussian_noise: { active: noiseActive, variance_pct: noiseStrength },
+          class_weights: { active: classWeightsActive },
+        },
+        exported_at: new Date().toISOString(),
+      },
+      null,
+      2
+    );
+  }, [
+    previewData,
+    datasetName,
+    sourceVersionLabel,
+    splitRatioFormatted,
+    groupByCol,
+    targetCol,
+    balanceModeLabel,
+    smoteActive,
+    smoteK,
+    undersampleActive,
+    noiseActive,
+    noiseStrength,
+    classWeightsActive,
+  ]);
+
+  const handleExportRecipe = () => {
+    setShowExportModal(true);
+    downloadTabularAugmentationRecipePdf({
+      datasetName,
+      sourceVersion: sourceVersionLabel,
+      targetVersion: 'v3',
+      splitRatio: splitRatioFormatted,
+      targetColumn: targetCol || 'Not specified',
+      groupBy: groupByCol || 'None',
+      balanceMode: balanceModeLabel,
+      trainRows:
+        previewData?.rows_in_train_after ??
+        previewData?.rows_in_train_before ??
+        (profile?.summary?.total_rows ? Math.round(profile.summary.total_rows * 0.7) : '—'),
+      valRows: previewData?.val_set_size ?? (profile?.summary?.total_rows ? Math.round(profile.summary.total_rows * 0.15) : '—'),
+      testRows: previewData?.test_set_size ?? (profile?.summary?.total_rows ? Math.round(profile.summary.total_rows * 0.15) : '—'),
+      generatedRows: previewData?.rows_generated ?? 0,
+      classBalanceBefore: previewData?.balance_score_before ?? 18,
+      classBalanceAfter: previewData?.balance_score_after ?? 30,
+      techniques: augmentationTechniquesList,
+    });
+  };
 
   // Listen to TopBar export recipe event
   useEffect(() => {
-    const handleExportEvent = () => setShowExportModal(true);
+    const handleExportEvent = () => handleExportRecipe();
     window.addEventListener('datalift:export-augmentation-recipe', handleExportEvent);
     return () => window.removeEventListener('datalift:export-augmentation-recipe', handleExportEvent);
-  }, []);
+  }, [selectedDatasetId, selectedVersionHash, previewData, profile, smoteActive, smoteK, undersampleActive, noiseActive, noiseStrength, classWeightsActive, targetCol, groupByCol, ratioPreset, balanceMode]);
 
   // Configure target & group_by strictly for a given profile
   // If no target selected in Profiling, leave menu empty
@@ -393,13 +512,13 @@ export const AugmentationPage: React.FC = () => {
         techniques: techCfg,
       });
 
-      setSuccessToast(`New version ${nextVersionLabel} created successfully (${res.rows_in_train} rows de train).`);
+      setSuccessToast(`New version ${nextVersionLabel} created successfully (${res.rows_in_train} training rows).`);
       setTimeout(() => {
         navigate(`/versioning?dataset=${selectedDatasetId}`);
       }, 1500);
     } catch (err: any) {
-      console.error('Error application augmentation:', err);
-      const detail = err.response?.data?.detail || err.message || "Error lors de l'application de l'augmentation.";
+      console.error('Error applying augmentation:', err);
+      const detail = err.response?.data?.detail || err.message || "Error applying augmentation.";
       setErrorMessage(detail);
     } finally {
       setApplying(false);
@@ -457,14 +576,6 @@ export const AugmentationPage: React.FC = () => {
     } finally {
       setComparing(false);
     }
-  };
-
-  // Copy Recipe JSON
-  const handleCopyRecipe = () => {
-    if (!previewData) return;
-    navigator.clipboard.writeText(JSON.stringify(previewData.recipe, null, 2));
-    setCopiedRecipe(true);
-    setTimeout(() => setCopiedRecipe(false), 2000);
   };
 
   // Title formatting: Base and extension
@@ -578,8 +689,7 @@ export const AugmentationPage: React.FC = () => {
             type="button"
             className="btn btn-secondary font-mono"
             style={{ fontSize: '0.78rem', padding: '0.45rem 1rem' }}
-            onClick={() => setShowExportModal(true)}
-            disabled={!previewData}
+            onClick={handleExportRecipe}
           >
             <span>Export recipe</span>
           </button>
@@ -749,8 +859,8 @@ export const AugmentationPage: React.FC = () => {
             {trainRowsBefore !== null
               ? `was ${trainRowsBefore.toLocaleString('en-US')}`
               : totalRowsInDataset !== null
-              ? `${totalRowsInDataset} total rows`
-              : '—'}
+                ? `${totalRowsInDataset} total rows`
+                : '—'}
           </div>
         </div>
 
@@ -1397,8 +1507,8 @@ export const AugmentationPage: React.FC = () => {
                 {undersampleActive && previewData?.rows_undersampled !== undefined && previewData.rows_undersampled > 0
                   ? `-${previewData.rows_undersampled.toLocaleString('en-US')} rows`
                   : undersampleActive
-                  ? '0 rows'
-                  : 'Disabled'}
+                    ? '0 rows'
+                    : 'Disabled'}
               </div>
 
               <button
@@ -1954,8 +2064,8 @@ export const AugmentationPage: React.FC = () => {
           {comparisonResult
             ? comparisonResult.warning_disclaimer
             : testSetSize !== null
-            ? `* On a small test set (${testSetSize} exemples), minor deviations may be due to sampling variance.`
-            : `* Evaluation compares performance on the real test set.`}
+              ? `* On a small test set (${testSetSize} exemples), minor deviations may be due to sampling variance.`
+              : `* Evaluation compares performance on the real test set.`}
         </div>
       </div>
 
@@ -2014,74 +2124,34 @@ export const AugmentationPage: React.FC = () => {
       </div>
 
       {/* ============================================================== */}
-      {/* Modal: Export recipe JSON */}
+      {/* Modal: Export recipe PDF & JSON */}
       {/* ============================================================== */}
-      {showExportModal && (
-        <div className="modal-backdrop">
-          <div className="modal-content" style={{ maxWidth: '640px' }}>
-            <div className="modal-header">
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
-                <Download size={18} color="var(--amber)" />
-                <h3 className="modal-title font-serif" style={{ fontSize: '1.35rem' }}>
-                  Export augmentation recipe
-                </h3>
-              </div>
-              <button
-                type="button"
-                className="close-button"
-                onClick={() => {
-                  setShowExportModal(false);
-                  setCopiedRecipe(false);
-                }}
-              >
-                <X size={18} />
-              </button>
-            </div>
-
-            <p style={{ fontSize: '0.82rem', color: '#a1a1aa', marginBottom: '1rem' }}>
-              This recipe in JSON format describes all split ratios, random seeds, SMOTE-NC parameters, and validated guardrails.
-            </p>
-
-            <div
-              style={{
-                background: '#0d0d10',
-                border: '1px solid #232328',
-                borderRadius: 6,
-                padding: '1rem',
-                maxHeight: '340px',
-                overflowY: 'auto',
-                fontFamily: 'var(--font-mono)',
-                fontSize: '0.78rem',
-                color: '#d4d4d8',
-                whiteSpace: 'pre-wrap',
-                marginBottom: '1.25rem',
-              }}
-            >
-              {JSON.stringify(previewData?.recipe || {}, null, 2)}
-            </div>
-
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem' }}>
-              <button
-                type="button"
-                className="btn btn-secondary font-mono"
-                style={{ fontSize: '0.78rem' }}
-                onClick={handleCopyRecipe}
-              >
-                <Copy size={13} />
-                <span>{copiedRecipe ? 'Copied!' : 'Copy to clipboard'}</span>
-              </button>
-              <button
-                type="button"
-                className="btn btn-primary font-mono"
-                style={{ fontSize: '0.78rem' }}
-                onClick={() => setShowExportModal(false)}
-              >
-                Close
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <AugmentationRecipeModal
+        isOpen={showExportModal}
+        onClose={() => setShowExportModal(false)}
+        modality="tabular"
+        datasetName={datasetName}
+        sourceVersion={sourceVersionLabel}
+        targetVersion="v3"
+        splitRatio={splitRatioFormatted}
+        targetColumn={targetCol || 'Not specified'}
+        targetMode={balanceModeLabel}
+        groupBy={groupByCol || 'None'}
+        recipeJson={recipeExportJson}
+        onDownloadPdf={handleExportRecipe}
+        kpis={{
+          trainCount:
+            previewData?.rows_in_train_after ??
+            previewData?.rows_in_train_before ??
+            (profile?.summary?.total_rows ? Math.round(profile.summary.total_rows * 0.7) : undefined),
+          generatedCount: previewData?.rows_generated ?? 0,
+          testCount:
+            previewData?.test_set_size ?? (profile?.summary?.total_rows ? Math.round(profile.summary.total_rows * 0.15) : undefined),
+          balanceBefore: previewData?.balance_score_before,
+          balanceAfter: previewData?.balance_score_after,
+        }}
+        techniques={augmentationTechniquesList}
+      />
     </div>
   );
 };

@@ -1372,132 +1372,71 @@ export const ImageLabelingPage: React.FC = () => {
       </div>
 
       {/* ------------------------------------------------------------- */}
-      {/* 3 · Label checks & Team Section */}
+      {/* 3 · Label checks */}
       {/* ------------------------------------------------------------- */}
-      <div style={{ marginBottom: '2.75rem', display: 'grid', gridTemplateColumns: '1.3fr 1.7fr', gap: '2rem' }}>
-        {/* Label Checks */}
-        <div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '1.25rem' }}>
-            <h2
-              style={{
-                fontFamily: '"Playfair Display", Georgia, serif',
-                fontStyle: 'italic',
-                fontWeight: 400,
-                fontSize: '1.65rem',
-                color: '#ffffff',
-                margin: 0,
-              }}
-            >
-              3·Label checks
-            </h2>
-            <span style={{ fontSize: '0.65rem', letterSpacing: '0.12em', color: C.textMuted, fontFamily: 'monospace' }}>
-              RUN ON EVERY SAVE
-            </span>
-          </div>
-
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-            {data?.label_checks.map((chk) => (
-              <div
-                key={chk.title}
-                style={{
-                  backgroundColor: C.card,
-                  border: `1px solid ${C.border}`,
-                  borderRadius: '6px',
-                  padding: '0.85rem 1.15rem',
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                }}
-              >
-                <div>
-                  <div style={{ fontSize: '0.8rem', fontWeight: 500, color: '#ffffff' }}>{chk.title}</div>
-                  <div style={{ fontSize: '0.68rem', color: C.textMuted }}>{chk.sub}</div>
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                  <span style={{ fontSize: '0.85rem', fontFamily: 'monospace', fontWeight: 600, color: C.amber }}>
-                    {chk.count}
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setNotification(`Filter enabled on "${chk.title}"`);
-                      setTimeout(() => setNotification(null), 2500);
-                    }}
-                    style={{
-                      backgroundColor: 'transparent',
-                      border: `1px solid ${C.borderLight}`,
-                      color: '#ffffff',
-                      padding: '0.3rem 0.65rem',
-                      borderRadius: '4px',
-                      fontSize: '0.72rem',
-                      fontFamily: 'monospace',
-                      cursor: 'pointer',
-                    }}
-                  >
-                    Fix →
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Team Section */}
-        <div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '1.25rem' }}>
-            <h2
-              style={{
-                fontFamily: '"Playfair Display", Georgia, serif',
-                fontStyle: 'italic',
-                fontWeight: 400,
-                fontSize: '1.65rem',
-                color: '#ffffff',
-                margin: 0,
-              }}
-            >
-              Team
-            </h2>
-            <span style={{ fontSize: '0.65rem', letterSpacing: '0.12em', color: C.textMuted, fontFamily: 'monospace' }}>
-              TODAY
-            </span>
-          </div>
-
-          <div
+      <div style={{ marginBottom: '2.75rem' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '1.25rem', borderBottom: `1px solid ${C.border}`, paddingBottom: '0.6rem' }}>
+          <h2
             style={{
-              backgroundColor: C.card,
-              border: `1px solid ${C.border}`,
-              borderRadius: '6px',
-              padding: '1.15rem',
-              marginBottom: '0.75rem',
+              fontFamily: '"Playfair Display", Georgia, serif',
+              fontStyle: 'italic',
+              fontWeight: 400,
+              fontSize: '1.65rem',
+              color: '#ffffff',
+              margin: 0,
             }}
           >
-            <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.75rem', fontFamily: 'monospace' }}>
-              <thead>
-                <tr style={{ borderBottom: `1px solid ${C.border}`, color: C.textMuted, fontSize: '0.65rem' }}>
-                  <th style={{ paddingBottom: '0.65rem' }}>ANNOTATOR</th>
-                  <th style={{ paddingBottom: '0.65rem' }}>ITEMS / H</th>
-                  <th style={{ paddingBottom: '0.65rem' }}>ACCEPTS AI</th>
-                  <th style={{ paddingBottom: '0.65rem', textAlign: 'right' }}>AGREEMENT</th>
-                </tr>
-              </thead>
-              <tbody>
-                {data?.team.map((t) => (
-                  <tr key={t.annotator} style={{ borderBottom: `1px solid ${C.border}` }}>
-                    <td style={{ padding: '0.75rem 0', color: '#ffffff' }}>{t.annotator}</td>
-                    <td style={{ padding: '0.75rem 0', color: '#d1d5db' }}>{t.items_per_h}</td>
-                    <td style={{ padding: '0.75rem 0', color: t.is_flagged ? C.amber : '#d1d5db' }}>
-                      {t.accepts_ai}
-                    </td>
-                    <td style={{ padding: '0.75rem 0', textAlign: 'right', color: '#ffffff' }}>{t.agreement}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+            3·Label checks
+          </h2>
+          <span style={{ fontSize: '0.65rem', letterSpacing: '0.12em', color: C.textMuted, fontFamily: 'monospace' }}>
+            RUN ON EVERY SAVE
+          </span>
+        </div>
 
-          <div style={{ fontSize: '0.65rem', color: C.textMuted, lineHeight: 1.45 }}>
-            Agreement (Cohen's kappa) is measured on the 10% annotated twice. Accepting almost every suggestion is flagged: it can mean the model is copied, not checked.
-          </div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '0.75rem' }}>
+          {data?.label_checks.map((chk) => (
+            <div
+              key={chk.title}
+              style={{
+                backgroundColor: C.card,
+                border: `1px solid ${C.border}`,
+                borderRadius: '6px',
+                padding: '0.85rem 1.15rem',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+              }}
+            >
+              <div>
+                <div style={{ fontSize: '0.8rem', fontWeight: 500, color: '#ffffff' }}>{chk.title}</div>
+                <div style={{ fontSize: '0.68rem', color: C.textMuted }}>{chk.sub}</div>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                <span style={{ fontSize: '0.85rem', fontFamily: 'monospace', fontWeight: 600, color: C.amber }}>
+                  {chk.count}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setNotification(`Filter enabled on "${chk.title}"`);
+                    setTimeout(() => setNotification(null), 2500);
+                  }}
+                  style={{
+                    backgroundColor: 'transparent',
+                    border: `1px solid ${C.borderLight}`,
+                    color: '#ffffff',
+                    padding: '0.3rem 0.65rem',
+                    borderRadius: '4px',
+                    fontSize: '0.72rem',
+                    fontFamily: 'monospace',
+                    cursor: 'pointer',
+                  }}
+                >
+                  Fix →
+                </button>
+              </div>
+            </div>
+          ))}
         </div>
       </div>
 

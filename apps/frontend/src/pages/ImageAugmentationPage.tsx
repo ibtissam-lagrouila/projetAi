@@ -4,6 +4,8 @@ import { api } from '../services/api';
 import { filterDatasetsByModality, getActiveDatasetForModality, saveActiveDataset } from '../utils/formatters';
 import { Dataset, ImageAugmentationRecipeResponse, ImageAugmentationComparisonResponse } from '../types';
 import { RefreshCw, AlertCircle, Lock, Check, AlertTriangle } from 'lucide-react';
+import { AugmentationRecipeModal } from '../components/AugmentationRecipeModal';
+import { downloadImageAugmentationRecipePdf } from '../utils/recipeExport';
 
 // ─── Theme Colors ─────────────────────────────────────────────────────────────
 const C = {
@@ -32,6 +34,7 @@ export const ImageAugmentationPage: React.FC = () => {
   const [recipe, setRecipe] = useState<ImageAugmentationRecipeResponse | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  const [showExportModal, setShowExportModal] = useState<boolean>(false);
 
   // Split state
   const [splitRatio, setSplitRatio] = useState<string>('70 / 15 / 15');
@@ -138,46 +141,52 @@ export const ImageAugmentationPage: React.FC = () => {
     }
   }, [selectedDatasetId, fetchRecipe]);
 
-  // ── Export Recipe Handler ───────────────────────────────────────────────────
-  useEffect(() => {
-    const handleExport = () => {
-      if (!recipe) return;
-      const jsonStr = JSON.stringify(
-        {
-          recipe_type: 'image_augmentation',
-          dataset: recipe.dataset_name,
-          split: { splitRatio, groupBy, stratify },
-          target_mode: targetMode,
-          techniques: techToggles,
-          parameters: techParams,
-          exported_at: new Date().toISOString(),
-        },
-        null,
-        2
-      );
-      const blob = new Blob([jsonStr], { type: 'application/json' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `image_augmentation_recipe_${recipe.dataset_name.replace(/[^a-zA-Z0-9_-]/g, '_')}.json`;
-      a.click();
-      URL.revokeObjectURL(url);
-      showNotif('Recipe d\'augmentation d\'image exported successfully !');
-    };
-
-    window.addEventListener('datalift:export-image-augmentation-recipe', handleExport);
-    return () => window.removeEventListener('datalift:export-image-augmentation-recipe', handleExport);
-  }, [recipe, splitRatio, groupBy, stratify, targetMode, techToggles, techParams]);
-
   // ── Dynamic calculations ────────────────────────────────────────────────────
   const { trainPct, valPct, testPct } = useMemo(() => {
-    const parts = splitRatio.split('/').map(s => parseInt(s.trim(), 10) || 15);
+    const parts = splitRatio.split('/').map((s) => parseInt(s.trim(), 10) || 15);
     return {
       trainPct: parts[0] || 70,
       valPct: parts[1] || 15,
       testPct: parts[2] || 15,
     };
   }, [splitRatio]);
+
+  // ── Export Recipe Handler ───────────────────────────────────────────────────
+  const handleExport = useCallback(() => {
+    if (!recipe) return;
+    setShowExportModal(true);
+    const curDataset = datasets.find((d) => d.id === selectedDatasetId);
+    downloadImageAugmentationRecipePdf({
+      datasetName: curDataset?.name || recipe.display_title || 'image_dataset',
+      sourceVersion: 'v1 (raw)',
+      targetVersion: recipe.kpis?.output || 'v2',
+      splitRatio,
+      targetMode,
+      imagesInTrain: recipe.kpis?.images_in_train || `${trainPct}% of dataset`,
+      syntheticGenerated: recipe.kpis?.generated || 'Active',
+      imagesInTestLocked: recipe.kpis?.test_set || `${testPct}% locked`,
+      distributionBefore: recipe.class_balance
+        ? `Initial: ${recipe.class_balance.before}% (${recipe.class_balance.label})`
+        : 'Unbalanced',
+      distributionAfter: recipe.class_balance
+        ? `Balanced: ${recipe.class_balance.after}%`
+        : 'Balanced',
+      techniques: (recipe.techniques || []).map((t) => ({
+        id: t.id,
+        name: t.title,
+        active: techToggles[t.id] ?? t.enabled,
+        params: techParams[t.id] || t.param_value,
+        description: t.subtitle,
+      })),
+    });
+    showNotif('Image augmentation recipe exported as PDF.');
+  }, [recipe, datasets, selectedDatasetId, splitRatio, targetMode, trainPct, testPct, techToggles, techParams, showNotif]);
+
+  useEffect(() => {
+    const onExport = () => handleExport();
+    window.addEventListener('datalift:export-image-augmentation-recipe', onExport);
+    return () => window.removeEventListener('datalift:export-image-augmentation-recipe', onExport);
+  }, [handleExport]);
 
   // Base raw counts extracted directly from dataset recipe
   const baseRawTrain = useMemo(() => {
@@ -491,7 +500,7 @@ export const ImageAugmentationPage: React.FC = () => {
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
           <button
             type="button"
-            onClick={() => window.dispatchEvent(new CustomEvent('datalift:export-image-augmentation-recipe'))}
+            onClick={handleExport}
             style={{
               backgroundColor: 'transparent',
               color: C.text,
@@ -1540,6 +1549,32 @@ export const ImageAugmentationPage: React.FC = () => {
           </button>
         </div>
       </div>
+
+      {/* Modal: Export Augmentation Recipe */}
+      <AugmentationRecipeModal
+        isOpen={showExportModal}
+        onClose={() => setShowExportModal(false)}
+        modality="image"
+        datasetName={datasets.find((d) => d.id === selectedDatasetId)?.name || recipe?.display_title || 'image_dataset'}
+        sourceVersion="v1 (raw)"
+        targetVersion={recipe?.kpis?.output || 'v2'}
+        splitRatio={splitRatio}
+        targetMode={targetMode}
+        recipeJson={recipe ? JSON.stringify(recipe, null, 2) : '{}'}
+        onDownloadPdf={handleExport}
+        kpis={{
+          trainCount: recipe?.kpis?.images_in_train,
+          generatedCount: recipe?.kpis?.generated,
+          testCount: recipe?.kpis?.test_set,
+        }}
+        techniques={(recipe?.techniques || []).map((t) => ({
+          id: t.id,
+          name: t.title,
+          active: techToggles[t.id] ?? t.enabled,
+          params: techParams[t.id] || t.param_value,
+          description: t.subtitle,
+        }))}
+      />
     </div>
   );
 };

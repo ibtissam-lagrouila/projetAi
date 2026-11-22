@@ -4,6 +4,8 @@ import { api } from '../services/api';
 import { filterDatasetsByModality, getActiveDatasetForModality, saveActiveDataset } from '../utils/formatters';
 import { Dataset, TextAugmentationRecipeResponse, TextAugmentationComparisonResponse } from '../types';
 import { RefreshCw, AlertCircle, Lock, Check } from 'lucide-react';
+import { AugmentationRecipeModal } from '../components/AugmentationRecipeModal';
+import { downloadTextAugmentationRecipePdf } from '../utils/recipeExport';
 
 // ─── Theme Colors ───────────────────────────────────────────────────────────
 const C = {
@@ -32,6 +34,7 @@ export const TextAugmentationPage: React.FC = () => {
   const [recipe, setRecipe] = useState<TextAugmentationRecipeResponse | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  const [showExportModal, setShowExportModal] = useState<boolean>(false);
 
   // Split state
   const [splitRatio, setSplitRatio] = useState<string>('70 / 15 / 15');
@@ -323,14 +326,32 @@ export const TextAugmentationPage: React.FC = () => {
 
   const handleExportRecipe = () => {
     if (!recipe) return;
-    const blob = new Blob([JSON.stringify(recipe, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `text_augmentation_recipe_${recipe.display_title.replace(/[\/\\?%*:|"<>]/g, '_') || 'text'}.json`;
-    a.click();
-    URL.revokeObjectURL(url);
-    showNotif("Text augmentation recipe exported as JSON.");
+    setShowExportModal(true);
+    const curDataset = datasets.find((d) => d.id === selectedDatasetId);
+    downloadTextAugmentationRecipePdf({
+      datasetName: curDataset?.name || recipe.dataset_name || 'text_dataset',
+      sourceVersion: 'v1 (raw)',
+      targetVersion: recipe.kpis?.output || 'v2',
+      splitRatio,
+      targetMode: `${targetMode} target mode`,
+      textsInTrain: recipe.kpis?.tickets_in_train || `${trainPct}% of dataset`,
+      syntheticGenerated: recipe.kpis?.generated || 'Active',
+      textsInTestLocked: recipe.kpis?.test_set || `${testPct}% locked`,
+      distributionBefore: recipe.label_balance
+        ? `Initial: ${recipe.label_balance.before}% (${recipe.label_balance.label})`
+        : 'Unbalanced',
+      distributionAfter: recipe.label_balance
+        ? `Balanced: ${recipe.label_balance.after}%`
+        : 'Balanced',
+      techniques: (recipe.techniques || []).map((t) => ({
+        id: t.id,
+        name: t.title,
+        active: techToggles[t.id] ?? t.enabled,
+        params: techParams[t.id] || t.param_value,
+        description: t.subtitle,
+      })),
+    });
+    showNotif('Text augmentation recipe exported as PDF.');
   };
 
   if (loading && !recipe) {
@@ -1450,6 +1471,32 @@ export const TextAugmentationPage: React.FC = () => {
           </button>
         </div>
       </div>
+
+      {/* Modal: Export Augmentation Recipe */}
+      <AugmentationRecipeModal
+        isOpen={showExportModal}
+        onClose={() => setShowExportModal(false)}
+        modality="text"
+        datasetName={datasets.find((d) => d.id === selectedDatasetId)?.name || recipe?.dataset_name || 'text_dataset'}
+        sourceVersion="v1 (raw)"
+        targetVersion={recipe?.kpis?.output || 'v2'}
+        splitRatio={splitRatio}
+        targetMode={`${targetMode} target mode`}
+        recipeJson={recipe ? JSON.stringify(recipe, null, 2) : '{}'}
+        onDownloadPdf={handleExportRecipe}
+        kpis={{
+          trainCount: recipe?.kpis?.tickets_in_train,
+          generatedCount: recipe?.kpis?.generated,
+          testCount: recipe?.kpis?.test_set,
+        }}
+        techniques={(recipe?.techniques || []).map((t) => ({
+          id: t.id,
+          name: t.title,
+          active: techToggles[t.id] ?? t.enabled,
+          params: techParams[t.id] || t.param_value,
+          description: t.subtitle,
+        }))}
+      />
     </div>
   );
 };

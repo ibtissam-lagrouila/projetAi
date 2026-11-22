@@ -2114,6 +2114,12 @@ export interface TextLabelingWorkspace {
     split: string;
     paraphrases: string;
   };
+  queue_banner?: {
+    type: string;
+    title: string;
+    message: string;
+    severity?: string;
+  } | null;
 }
 
 export interface TextLabelingCheck {
@@ -2637,6 +2643,12 @@ export interface ImageLabelingWorkspace {
     label: string;
     desc: string;
   };
+  queue_banner?: {
+    type: string;
+    title: string;
+    message: string;
+    severity?: string;
+  } | null;
 }
 
 export interface ImageLabelingCheck {

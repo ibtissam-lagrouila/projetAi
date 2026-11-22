@@ -409,26 +409,106 @@ class TextLabelingService:
         done_cnt = max(3, int(round(total_rows * 0.12)))
 
         output_v = f"v{v_count + 1}"
-        cur_text = sample_texts[item_index % len(sample_texts)]
+
+        # Build queue-specific candidates for dynamic text datasets
+        queue_content = {
+            "unlabeled": {
+                "text": sample_texts[item_index % len(sample_texts)],
+                "ticket_id": f"#DOC_{item_index + 101}",
+                "why": "unlabeled document · ready for initial annotation",
+                "total": unlabeled_cnt,
+                "banner": None,
+                "suggestions": [
+                    {"label": classes[0], "confidence": 0.84},
+                    {"label": classes[1] if len(classes) > 1 else classes[0], "confidence": 0.12},
+                ],
+                "meaning_sub": "Blue = salient words according to model attribution. PII masked.",
+                "highlight_phrase": None,
+            },
+            "suspected_errors": {
+                "text": "The transaction failed during final payment, but money was debited from my account with zero order confirmation.",
+                "ticket_id": f"#DOC_ERR_{item_index + 201}",
+                "why": "model disagrees ≥ 0.9 with current human label",
+                "total": suspected_cnt,
+                "banner": {
+                    "type": "error",
+                    "title": "SUSPECTED LABEL ERROR",
+                    "message": f"Human annotator previously labeled this as '{classes[0]}', but model predicts '{classes[-1]}' with 95% confidence.",
+                },
+                "suggestions": [
+                    {"label": classes[-1], "confidence": 0.95},
+                    {"label": classes[0], "confidence": 0.04},
+                ],
+                "meaning_sub": f"⚠️ Label contradiction: Human labeled '{classes[0]}' vs Model predicts '{classes[-1]}' (0.95 confidence).",
+                "highlight_phrase": "money was debited",
+            },
+            "low_confidence": {
+                "text": "The checkout page looks clean and modern, however finding delivery tracking took more than twenty minutes.",
+                "ticket_id": f"#DOC_UNCERT_{item_index + 301}",
+                "why": "low model confidence (uncertainty margin < 0.05 feeds Active Learning)",
+                "total": low_conf_cnt,
+                "banner": {
+                    "type": "warning",
+                    "title": "ACTIVE LEARNING CANDIDATE",
+                    "message": f"Model hesitates closely between '{classes[1] if len(classes) > 1 else classes[0]}' (0.49) and '{classes[-1]}' (0.46). Labeling this item provides maximum training gradient gain.",
+                },
+                "suggestions": [
+                    {"label": classes[1] if len(classes) > 1 else classes[0], "confidence": 0.49},
+                    {"label": classes[-1], "confidence": 0.46},
+                ],
+                "meaning_sub": "⚡ Active Learning trigger: Model margin < 5% between top 2 classes.",
+                "highlight_phrase": "delivery tracking took more than twenty minutes",
+            },
+            "to_review": {
+                "text": "Requested subscription cancellation last week, but received an automated promotional renewal notice today.",
+                "ticket_id": f"#DOC_REV_{item_index + 401}",
+                "why": "inter-annotator disagreement · requires senior supervisor review",
+                "total": review_cnt,
+                "banner": {
+                    "type": "info",
+                    "title": "SECONDARY REVIEW (DOUBLE ANNOTATION)",
+                    "message": f"Annotator 1 categorized this as '{classes[-1]}', while Annotator 2 selected '{classes[1] if len(classes) > 1 else classes[0]}'. Reviewer consensus required.",
+                },
+                "suggestions": [
+                    {"label": classes[-1], "confidence": 0.65},
+                    {"label": classes[1] if len(classes) > 1 else classes[0], "confidence": 0.35},
+                ],
+                "meaning_sub": f"👥 Inter-annotator disagreement: Reviewer 1 ({classes[-1]}) vs Reviewer 2 ({classes[1] if len(classes) > 1 else classes[0]}).",
+                "highlight_phrase": "subscription cancellation",
+            },
+        }
+
+        q_info = queue_content.get(queue_id, queue_content["unlabeled"])
+        cur_text = q_info["text"]
         words = cur_text.split()
         mid = len(words) // 2
 
         tokens = []
-        if len(words) > 3:
+        if q_info["highlight_phrase"]:
+            hl = q_info["highlight_phrase"]
+            if hl in cur_text:
+                parts = cur_text.split(hl, 1)
+                tokens.append({"text": parts[0], "highlight": False})
+                tokens.append({"text": hl, "highlight": True})
+                tokens.append({"text": parts[1], "highlight": False})
+            else:
+                tokens.append({"text": cur_text, "highlight": True})
+        elif len(words) > 3:
             tokens.append({"text": " ".join(words[:mid]) + " ", "highlight": False})
             tokens.append({"text": " ".join(words[mid : mid + 2]), "highlight": True})
             tokens.append({"text": " " + " ".join(words[mid + 2 :]), "highlight": False})
         else:
             tokens.append({"text": cur_text, "highlight": True})
 
+        top_sug_label = q_info["suggestions"][0]["label"]
         labels_list = []
         for i, c in enumerate(classes, 1):
             item = {"id": i, "name": c}
-            if i == 1:
-                item["confidence"] = 0.84
+            if c == top_sug_label:
+                item["confidence"] = q_info["suggestions"][0]["confidence"]
                 item["selected"] = True
-            elif i == 2 and len(classes) > 1:
-                item["confidence"] = 0.12
+            elif len(q_info["suggestions"]) > 1 and c == q_info["suggestions"][1]["label"]:
+                item["confidence"] = q_info["suggestions"][1]["confidence"]
             labels_list.append(item)
 
         coverage_before = max(70, min(95, int(round(100 - (unlabeled_cnt / total_rows) * 100))))
@@ -467,7 +547,7 @@ class TextLabelingService:
                     "id": "suspected_errors",
                     "title": "SUSPECTED ERRORS",
                     "count": f"{suspected_cnt:,}",
-                    "desc": f"Labeled {classes[0]}, model predicts {classes[1] if len(classes) > 1 else classes[0]}",
+                    "desc": f"Labeled {classes[0]}, model predicts {classes[-1]}",
                     "footer_done": "0 done",
                     "progress_pct": 0,
                     "btn_label": "Start",
@@ -501,30 +581,28 @@ class TextLabelingService:
                 "double_annotation": "10% of items",
             },
             "workspace": {
-                "ticket_counter": f"{queue_id.upper()} · #DOC_{item_index + 101} · {item_index + 1} / {unlabeled_cnt:,}",
-                "ticket_id": f"#DOC_{item_index + 101}",
+                "ticket_counter": f"{queue_id.upper()} · {q_info['ticket_id']} · {item_index + 1} / {q_info['total']:,}",
+                "ticket_id": q_info["ticket_id"],
                 "language": "FR",
                 "meta": f"document · item {item_index + 1}",
                 "text_raw": cur_text,
                 "tokens": tokens,
                 "meaning_en": cur_text,
-                "meaning_sub": "Blue = salient words according to model attribution. PII masked.",
+                "meaning_sub": q_info["meaning_sub"],
                 "labels": labels_list,
-                "model_suggestions": [
-                    {"label": classes[0], "confidence": 0.84},
-                    {"label": classes[1] if len(classes) > 1 else classes[0], "confidence": 0.12},
-                ],
+                "model_suggestions": q_info["suggestions"],
                 "similar_tickets": [
                     {"text": sample_texts[(item_index + 1) % len(sample_texts)], "label": classes[0].upper()},
                     {"text": sample_texts[(item_index + 2) % len(sample_texts)], "label": (classes[1] if len(classes) > 1 else classes[0]).upper()},
                 ],
-                "definition_title": f"DEFINITION · {classes[0].upper()}",
-                "definition_text": f"Guidelines and criteria for assigning category {classes[0]}.",
+                "definition_title": f"DEFINITION · {top_sug_label.upper()}",
+                "definition_text": f"Guidelines and criteria for assigning category {top_sug_label}.",
                 "this_ticket_meta": {
-                    "why_in_queue": f"{queue_id.replace('_', ' ')}",
+                    "why_in_queue": q_info["why"],
                     "split": "train",
                     "paraphrases": "1 · inherit this label",
                 },
+                "queue_banner": q_info.get("banner"),
             },
             "label_checks": [
                 {"id": "c1", "title": "Same text, different labels", "desc": "after trimming spaces and case", "count": max(1, int(round(total_rows * 0.02)))},

@@ -48,6 +48,8 @@ export const TextLabelingPage: React.FC = () => {
   // Modals & notifications
   const [showDefinitionsModal, setShowDefinitionsModal] = useState<boolean>(false);
   const [showFixModal, setShowFixModal] = useState<boolean>(false);
+  const [showFlagModal, setShowFlagModal] = useState<boolean>(false);
+  const [flagReason, setFlagReason] = useState<string>('ambiguous');
   const [activeFixCheck, setActiveFixCheck] = useState<TextLabelingCheck | null>(null);
   const [notification, setNotification] = useState<string | null>(null);
 
@@ -827,6 +829,76 @@ export const TextLabelingPage: React.FC = () => {
           </span>
         </div>
 
+        {/* Queue Context Alert Banner */}
+        {activeQueue === 'suspected_errors' && (
+          <div
+            style={{
+              backgroundColor: 'rgba(239, 68, 68, 0.08)',
+              border: '1px solid rgba(239, 68, 68, 0.3)',
+              borderRadius: '6px',
+              padding: '0.85rem 1.25rem',
+              marginBottom: '1.25rem',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.85rem',
+              fontSize: '0.8rem',
+              color: '#f87171',
+              fontFamily: 'monospace',
+            }}
+          >
+            <AlertTriangle size={18} style={{ flexShrink: 0 }} />
+            <div>
+              <strong>SUSPECTED LABEL ERROR:</strong> {data.workspace?.queue_banner?.message || 'High model disagreement with current human label (confidence ≥ 90%). Please verify and choose correct label.'}
+            </div>
+          </div>
+        )}
+
+        {activeQueue === 'low_confidence' && (
+          <div
+            style={{
+              backgroundColor: 'rgba(245, 158, 11, 0.08)',
+              border: '1px solid rgba(245, 158, 11, 0.3)',
+              borderRadius: '6px',
+              padding: '0.85rem 1.25rem',
+              marginBottom: '1.25rem',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.85rem',
+              fontSize: '0.8rem',
+              color: 'var(--amber)',
+              fontFamily: 'monospace',
+            }}
+          >
+            <AlertTriangle size={18} style={{ flexShrink: 0 }} />
+            <div>
+              <strong>ACTIVE LEARNING CANDIDATE:</strong> {data.workspace?.queue_banner?.message || 'Model hesitates closely between top classes (uncertainty margin < 5%). Reviewing this sample maximizes retraining gain.'}
+            </div>
+          </div>
+        )}
+
+        {activeQueue === 'to_review' && (
+          <div
+            style={{
+              backgroundColor: 'rgba(59, 130, 246, 0.08)',
+              border: '1px solid rgba(59, 130, 246, 0.3)',
+              borderRadius: '6px',
+              padding: '0.85rem 1.25rem',
+              marginBottom: '1.25rem',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.85rem',
+              fontSize: '0.8rem',
+              color: '#60a5fa',
+              fontFamily: 'monospace',
+            }}
+          >
+            <AlertTriangle size={18} style={{ flexShrink: 0 }} />
+            <div>
+              <strong>SECONDARY REVIEW:</strong> {data.workspace?.queue_banner?.message || 'Inter-annotator disagreement detected. Senior annotator consensus validation required.'}
+            </div>
+          </div>
+        )}
+
         {/* Workspace 2-Column Layout */}
         <div
           style={{
@@ -1333,10 +1405,7 @@ export const TextLabelingPage: React.FC = () => {
               <div style={{ display: 'flex', gap: '0.5rem' }}>
                 <button
                   type="button"
-                  onClick={() => {
-                    setNotification('Ticket flagged for team review');
-                    setTimeout(() => setNotification(null), 3000);
-                  }}
+                  onClick={() => setShowFlagModal(true)}
                   style={{
                     flex: 1,
                     backgroundColor: 'transparent',
@@ -1354,7 +1423,7 @@ export const TextLabelingPage: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => {
-                    setNotification('Reviewer requested for ticket');
+                    setNotification(`Senior reviewer requested for Ticket #${data?.workspace?.ticket_id || ''}. Dual-review enabled.`);
                     setTimeout(() => setNotification(null), 3000);
                   }}
                   style={{
@@ -1780,10 +1849,78 @@ export const TextLabelingPage: React.FC = () => {
               </button>
             </div>
 
-            <p style={{ fontSize: '0.8rem', color: '#94a3b8', marginBottom: '1.25rem' }}>
-              {activeFixCheck.count} instances detected. Would you like Datalift to auto-reconcile using majority voting
-              and confidence threshold?
+            <p style={{ fontSize: '0.8rem', color: '#94a3b8', marginBottom: '1rem', lineHeight: 1.5 }}>
+              {activeFixCheck.count} instances detected. Datalift will automatically reconcile conflicting labels using cross-annotator agreement and ML model confidence scores.
             </p>
+
+            {/* Concrete Action & Ticket Preview */}
+            <div
+              style={{
+                backgroundColor: '#0d0e11',
+                border: `1px solid ${C.border}`,
+                borderRadius: '6px',
+                padding: '1rem',
+                marginBottom: '1.5rem',
+              }}
+            >
+              <div
+                style={{
+                  fontSize: '0.68rem',
+                  fontFamily: 'monospace',
+                  color: C.textMuted,
+                  letterSpacing: '0.08em',
+                  marginBottom: '0.75rem',
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                }}
+              >
+                <span>AFFECTED TEXT ITEM & ACTION PREVIEW</span>
+                <span style={{ color: C.amber }}>{activeFixCheck.count} ITEMS DETECTED</span>
+              </div>
+
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.78rem' }}>
+                <tbody>
+                  <tr style={{ borderBottom: `1px solid ${C.borderLight}` }}>
+                    <td style={{ padding: '0.4rem 0', color: C.textMuted }}>Target Element</td>
+                    <td style={{ padding: '0.4rem 0', textAlign: 'right', fontFamily: 'monospace', color: '#ffffff', fontWeight: 600 }}>
+                      {activeFixCheck.title.toLowerCase().includes('short')
+                        ? 'Ticket #129 ("Ok merci")'
+                        : activeFixCheck.title.toLowerCase().includes('different') || activeFixCheck.title.toLowerCase().includes('same')
+                        ? `Ticket ${data?.workspace?.ticket_id || '#482'} (repeated snippet)`
+                        : activeFixCheck.title.toLowerCase().includes('chunks')
+                        ? 'Ticket doc segment #901-A vs #901-B'
+                        : 'Low-discriminative "other" cluster (18 items)'}
+                    </td>
+                  </tr>
+                  <tr style={{ borderBottom: `1px solid ${C.borderLight}` }}>
+                    <td style={{ padding: '0.4rem 0', color: C.textMuted }}>Current Label</td>
+                    <td style={{ padding: '0.4rem 0', textAlign: 'right', fontFamily: 'monospace', color: '#ef4444' }}>
+                      <span style={{ textDecoration: 'line-through', marginRight: '0.4rem' }}>
+                        {activeFixCheck.title.toLowerCase().includes('short')
+                          ? 'high_priority (overconfident)'
+                          : activeFixCheck.title.toLowerCase().includes('different')
+                          ? 'delay_reclamation (conflicting)'
+                          : activeFixCheck.title.toLowerCase().includes('chunks')
+                          ? 'billing vs technical conflict'
+                          : 'generic "other" (34% density)'}
+                      </span>
+                    </td>
+                  </tr>
+                  <tr style={{ borderBottom: `1px solid ${C.borderLight}` }}>
+                    <td style={{ padding: '0.4rem 0', color: C.textMuted }}>Auto-fix Target</td>
+                    <td style={{ padding: '0.4rem 0', textAlign: 'right', fontFamily: 'monospace', color: '#22c55e', fontWeight: 600 }}>
+                      {activeFixCheck.title.toLowerCase().includes('short')
+                        ? 'acknowledgment (neutral priority)'
+                        : activeFixCheck.title.toLowerCase().includes('different')
+                        ? 'transfer_inquiry (senior agreement)'
+                        : activeFixCheck.title.toLowerCase().includes('chunks')
+                        ? 'technical_support (unified)'
+                        : 'recluster into specific sub-intents'}
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
 
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem' }}>
               <button
@@ -1805,9 +1942,30 @@ export const TextLabelingPage: React.FC = () => {
               <button
                 type="button"
                 onClick={() => {
+                  const countResolved = activeFixCheck.count;
+                  const newResolvedLabel = activeFixCheck.title.toLowerCase().includes('short')
+                    ? 'acknowledgment'
+                    : activeFixCheck.title.toLowerCase().includes('different')
+                    ? 'transfer_inquiry'
+                    : activeFixCheck.title.toLowerCase().includes('chunks')
+                    ? 'technical_support'
+                    : 'account_inquiry';
+
+                  // Update workspace current label if available
+                  setSelectedLabel(newResolvedLabel);
+
+                  setData((prev) => {
+                    if (!prev) return prev;
+                    return {
+                      ...prev,
+                      label_checks: prev.label_checks.map((c) =>
+                        c.title === activeFixCheck.title ? { ...c, count: 0 } : c
+                      ),
+                    };
+                  });
                   setShowFixModal(false);
-                  setNotification(`Resolved ${activeFixCheck.count} instances for "${activeFixCheck.title}"`);
-                  setTimeout(() => setNotification(null), 3500);
+                  setNotification(`Auto-fix applied: Reconciled ${countResolved} instances. Updated label to "${newResolvedLabel}".`);
+                  setTimeout(() => setNotification(null), 4000);
                 }}
                 style={{
                   backgroundColor: C.amber,
@@ -1822,6 +1980,131 @@ export const TextLabelingPage: React.FC = () => {
                 }}
               >
                 Auto-reconcile
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Modal: Flag Ticket ──────────────────────────────────────────────── */}
+      {showFlagModal && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            zIndex: 10000,
+            backgroundColor: 'rgba(0, 0, 0, 0.85)',
+            backdropFilter: 'blur(4px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '2rem',
+          }}
+          onClick={() => setShowFlagModal(false)}
+        >
+          <div
+            style={{
+              backgroundColor: C.card,
+              border: `1px solid ${C.border}`,
+              borderRadius: '8px',
+              padding: '1.75rem',
+              maxWidth: '500px',
+              width: '100%',
+              boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.5)',
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+              <h3 style={{ fontFamily: '"Playfair Display", Georgia, serif', fontSize: '1.25rem', color: '#ffffff', margin: 0 }}>
+                Flag Ticket #{data?.workspace?.ticket_id || ''}
+              </h3>
+              <button
+                type="button"
+                onClick={() => setShowFlagModal(false)}
+                style={{ background: 'none', border: 'none', color: C.textMuted, cursor: 'pointer' }}
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <p style={{ fontSize: '0.8rem', color: C.textMuted, marginBottom: '1.25rem' }}>
+              Select the reason to flag this ticket for senior reviewer arbitration:
+            </p>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.65rem', marginBottom: '1.5rem' }}>
+              {[
+                { id: 'ambiguous', label: 'Ambiguous intent / Multiple topics' },
+                { id: 'darija', label: 'Dialect / Code-switching (Darija / Arabizi)' },
+                { id: 'ocr_noise', label: 'Unreadable / Scan or OCR noise' },
+                { id: 'guideline_discrepancy', label: 'Edge case not covered in guidelines' },
+              ].map((r) => (
+                <label
+                  key={r.id}
+                  onClick={() => setFlagReason(r.id)}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.65rem',
+                    backgroundColor: flagReason === r.id ? 'rgba(245, 158, 11, 0.08)' : '#181a1f',
+                    border: `1px solid ${flagReason === r.id ? C.amber : C.borderLight}`,
+                    borderRadius: '4px',
+                    padding: '0.6rem 0.85rem',
+                    cursor: 'pointer',
+                    fontSize: '0.8rem',
+                    color: flagReason === r.id ? '#ffffff' : '#94a3b8',
+                    fontFamily: 'monospace',
+                  }}
+                >
+                  <input
+                    type="radio"
+                    name="textFlagReason"
+                    checked={flagReason === r.id}
+                    onChange={() => setFlagReason(r.id)}
+                    style={{ accentColor: C.amber }}
+                  />
+                  {r.label}
+                </label>
+              ))}
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem' }}>
+              <button
+                type="button"
+                onClick={() => setShowFlagModal(false)}
+                style={{
+                  backgroundColor: 'transparent',
+                  border: `1px solid ${C.borderLight}`,
+                  color: C.text,
+                  borderRadius: '4px',
+                  padding: '0.45rem 1rem',
+                  fontSize: '0.78rem',
+                  fontFamily: 'monospace',
+                  cursor: 'pointer',
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowFlagModal(false);
+                  setNotification(`Ticket flagged (${flagReason}). Advanced to next item.`);
+                  setCurrentIndex((prev) => (prev + 1) % (data?.workspace?.similar_tickets?.length || 6));
+                  setTimeout(() => setNotification(null), 3000);
+                }}
+                style={{
+                  backgroundColor: C.amber,
+                  color: '#000000',
+                  border: 'none',
+                  borderRadius: '4px',
+                  padding: '0.45rem 1.1rem',
+                  fontSize: '0.78rem',
+                  fontWeight: 600,
+                  fontFamily: 'monospace',
+                  cursor: 'pointer',
+                }}
+              >
+                Flag & Next
               </button>
             </div>
           </div>

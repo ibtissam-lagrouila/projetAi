@@ -7,6 +7,7 @@ import {
   Dataset,
   ImageLabelingDataResponse,
   ImageLabelingBoundingBox,
+  ImageLabelingCheck,
 } from '../types';
 
 const C = {
@@ -64,6 +65,8 @@ export const ImageLabelingPage: React.FC = () => {
   const [notification, setNotification] = useState<string | null>(null);
   const [showGuidelinesModal, setShowGuidelinesModal] = useState<boolean>(false);
   const [showFlagModal, setShowFlagModal] = useState<boolean>(false);
+  const [showFixModal, setShowFixModal] = useState<boolean>(false);
+  const [activeFixCheck, setActiveFixCheck] = useState<ImageLabelingCheck | null>(null);
   const [flagReason, setFlagReason] = useState<string>('blurry');
 
   // Load image datasets on mount
@@ -810,7 +813,10 @@ export const ImageLabelingPage: React.FC = () => {
             return (
               <div
                 key={q.id}
-                onClick={() => setActiveQueue(q.id)}
+                onClick={() => {
+                  setActiveQueue(q.id);
+                  setSelectedImageIndex(0);
+                }}
                 style={{
                   backgroundColor: C.card,
                   border: isActive ? `1px solid ${C.amber}` : `1px solid ${C.border}`,
@@ -862,6 +868,7 @@ export const ImageLabelingPage: React.FC = () => {
                     onClick={(e) => {
                       e.stopPropagation();
                       setActiveQueue(q.id);
+                      setSelectedImageIndex(0);
                     }}
                     style={{
                       backgroundColor: isActive ? C.amber : 'transparent',
@@ -875,7 +882,7 @@ export const ImageLabelingPage: React.FC = () => {
                       cursor: 'pointer',
                     }}
                   >
-                    {q.action_label}
+                    {isActive ? 'Continue' : q.action_label}
                   </button>
                 </div>
               </div>
@@ -988,6 +995,76 @@ export const ImageLabelingPage: React.FC = () => {
             {ws.queue_name} · {ws.image_name} · {ws.image_position}
           </span>
         </div>
+
+        {/* Queue Context Alert Banner */}
+        {activeQueue === 'suspected_errors' && (
+          <div
+            style={{
+              backgroundColor: 'rgba(239, 68, 68, 0.08)',
+              border: '1px solid rgba(239, 68, 68, 0.3)',
+              borderRadius: '6px',
+              padding: '0.85rem 1.25rem',
+              marginBottom: '1.25rem',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.85rem',
+              fontSize: '0.8rem',
+              color: '#f87171',
+              fontFamily: 'monospace',
+            }}
+          >
+            <AlertTriangle size={18} style={{ flexShrink: 0 }} />
+            <div>
+              <strong>SUSPECTED LABEL ERROR:</strong> {data?.workspace?.queue_banner?.message || 'Human annotation strongly disagrees with YOLO model detection (confidence ≥ 90%). Please review bounding boxes.'}
+            </div>
+          </div>
+        )}
+
+        {activeQueue === 'low_confidence' && (
+          <div
+            style={{
+              backgroundColor: 'rgba(245, 158, 11, 0.08)',
+              border: '1px solid rgba(245, 158, 11, 0.3)',
+              borderRadius: '6px',
+              padding: '0.85rem 1.25rem',
+              marginBottom: '1.25rem',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.85rem',
+              fontSize: '0.8rem',
+              color: C.amber,
+              fontFamily: 'monospace',
+            }}
+          >
+            <AlertTriangle size={18} style={{ flexShrink: 0 }} />
+            <div>
+              <strong>ACTIVE LEARNING CANDIDATE:</strong> {data?.workspace?.queue_banner?.message || 'Model hesitates between classes (uncertainty margin < 5%). Reviewing this sample maximizes retraining gain.'}
+            </div>
+          </div>
+        )}
+
+        {activeQueue === 'to_review' && (
+          <div
+            style={{
+              backgroundColor: 'rgba(59, 130, 246, 0.08)',
+              border: '1px solid rgba(59, 130, 246, 0.3)',
+              borderRadius: '6px',
+              padding: '0.85rem 1.25rem',
+              marginBottom: '1.25rem',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.85rem',
+              fontSize: '0.8rem',
+              color: '#60a5fa',
+              fontFamily: 'monospace',
+            }}
+          >
+            <AlertTriangle size={18} style={{ flexShrink: 0 }} />
+            <div>
+              <strong>SECONDARY REVIEW:</strong> {data?.workspace?.queue_banner?.message || 'Inter-annotator disagreement detected between reviewers. Senior reviewer consensus required.'}
+            </div>
+          </div>
+        )}
 
         {/* Toolbar */}
         <div
@@ -1797,8 +1874,8 @@ export const ImageLabelingPage: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => {
-                    setNotification(`Filter enabled on "${chk.title}"`);
-                    setTimeout(() => setNotification(null), 2500);
+                    setActiveFixCheck(chk);
+                    setShowFixModal(true);
                   }}
                   style={{
                     backgroundColor: 'transparent',
@@ -2060,6 +2137,233 @@ export const ImageLabelingPage: React.FC = () => {
               <div><strong>2. Crack vs Stain:</strong> A crack breaks the material surface. A surface smudge that could be cleaned is categorized as stain.</div>
               <div><strong>3. Multiple defects:</strong> When a part contains both a dent and a scratch, label each defect separately with its own bounding box.</div>
               <div><strong>4. Rare classes:</strong> Pay close attention to rare classes like crack and misaligned to prevent class imbalance.</div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ------------------------------------------------------------- */}
+      {/* Fix Check Modal */}
+      {/* ------------------------------------------------------------- */}
+      {showFixModal && activeFixCheck && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            backgroundColor: 'rgba(0, 0, 0, 0.85)',
+            backdropFilter: 'blur(4px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 10000,
+            padding: '2rem',
+          }}
+          onClick={() => setShowFixModal(false)}
+        >
+          <div
+            style={{
+              backgroundColor: C.card,
+              border: `1px solid ${C.border}`,
+              borderRadius: '8px',
+              padding: '1.75rem',
+              maxWidth: '540px',
+              width: '100%',
+              boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.5)',
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
+              <h3 style={{ fontFamily: '"Playfair Display", Georgia, serif', fontSize: '1.25rem', color: '#ffffff', margin: 0 }}>
+                Resolve check: {activeFixCheck.title}
+              </h3>
+              <button
+                type="button"
+                onClick={() => setShowFixModal(false)}
+                style={{ background: 'none', border: 'none', color: C.textMuted, cursor: 'pointer', padding: '0.25rem' }}
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <div style={{ fontSize: '0.78rem', color: C.textMuted, marginBottom: '1rem', fontFamily: 'monospace' }}>
+              {activeFixCheck.sub}
+            </div>
+
+            {/* Action explanation box */}
+            <div
+              style={{
+                backgroundColor: 'rgba(245, 158, 11, 0.08)',
+                border: '1px solid rgba(245, 158, 11, 0.25)',
+                borderRadius: '6px',
+                padding: '1rem',
+                fontSize: '0.8rem',
+                color: '#d1d5db',
+                lineHeight: 1.5,
+                marginBottom: '1.25rem',
+              }}
+            >
+              {activeFixCheck.title.toLowerCase().includes('small') ? (
+                <>
+                  <strong>Micro-box detection:</strong> {activeFixCheck.count} bounding box(es) under 8px were detected. These often represent accidental clicks or sensor noise. Auto-fix will prune tiny boxes across the dataset to keep model training clean.
+                </>
+              ) : activeFixCheck.title.toLowerCase().includes('twice') || activeFixCheck.title.toLowerCase().includes('overlap') ? (
+                <>
+                  <strong>Duplicate box detection:</strong> {activeFixCheck.count} instances of duplicate overlapping boxes with &gt;90% IoU of the same class were detected. Auto-fix will merge and keep the tightest bounding box.
+                </>
+              ) : activeFixCheck.title.toLowerCase().includes('outside') ? (
+                <>
+                  <strong>Out-of-bounds bounding boxes:</strong> {activeFixCheck.count} box(es) extend beyond the canvas dimensions. Auto-fix will clip and constrain all coordinates to valid image pixel coordinates.
+                </>
+              ) : (
+                <>
+                  <strong>Near-duplicate inconsistency:</strong> {activeFixCheck.count} image pairs with high visual similarity exhibit conflicting labels. Auto-fix will reconcile and propagate the majority verified class.
+                </>
+              )}
+            </div>
+
+            {/* Concrete Action & Affected Boxes Preview Table */}
+            <div
+              style={{
+                backgroundColor: '#0d0e11',
+                border: `1px solid ${C.border}`,
+                borderRadius: '6px',
+                padding: '1rem',
+                marginBottom: '1.5rem',
+              }}
+            >
+              <div
+                style={{
+                  fontSize: '0.68rem',
+                  fontFamily: 'monospace',
+                  color: C.textMuted,
+                  letterSpacing: '0.08em',
+                  marginBottom: '0.75rem',
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                }}
+              >
+                <span>AFFECTED TARGET & FIX PREVIEW</span>
+                <span style={{ color: C.amber }}>{activeFixCheck.count} INSTANCES</span>
+              </div>
+
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.78rem' }}>
+                <tbody>
+                  <tr style={{ borderBottom: `1px solid ${C.borderLight}` }}>
+                    <td style={{ padding: '0.4rem 0', color: C.textMuted }}>Affected Element</td>
+                    <td style={{ padding: '0.4rem 0', textAlign: 'right', fontFamily: 'monospace', color: '#ffffff', fontWeight: 600 }}>
+                      {activeFixCheck.title.toLowerCase().includes('small')
+                        ? 'Box #3 (under 8px) on IMG_08102'
+                        : activeFixCheck.title.toLowerCase().includes('outside')
+                        ? 'Box #1 (x: 580px, w: 140px outside canvas)'
+                        : activeFixCheck.title.toLowerCase().includes('twice') || activeFixCheck.title.toLowerCase().includes('overlap')
+                        ? 'Box #1 & Box #2 (defect_a duplicate IoU > 90%)'
+                        : 'Image IMG_08102 & IMG_08103 (duplicate set)'}
+                    </td>
+                  </tr>
+                  <tr style={{ borderBottom: `1px solid ${C.borderLight}` }}>
+                    <td style={{ padding: '0.4rem 0', color: C.textMuted }}>Current Status</td>
+                    <td style={{ padding: '0.4rem 0', textAlign: 'right', fontFamily: 'monospace', color: '#ef4444' }}>
+                      <span style={{ textDecoration: 'line-through', marginRight: '0.4rem' }}>
+                        {activeFixCheck.title.toLowerCase().includes('small')
+                          ? 'width: 6px, height: 5px'
+                          : activeFixCheck.title.toLowerCase().includes('outside')
+                          ? 'extends beyond 680px canvas'
+                          : activeFixCheck.title.toLowerCase().includes('twice')
+                          ? 'dual redundant box'
+                          : 'defect_a vs defect_b mismatch'}
+                      </span>
+                    </td>
+                  </tr>
+                  <tr style={{ borderBottom: `1px solid ${C.borderLight}` }}>
+                    <td style={{ padding: '0.4rem 0', color: C.textMuted }}>Auto-fix Target</td>
+                    <td style={{ padding: '0.4rem 0', textAlign: 'right', fontFamily: 'monospace', color: '#22c55e', fontWeight: 600 }}>
+                      {activeFixCheck.title.toLowerCase().includes('small')
+                        ? 'Prune spurious micro-boxes from canvas'
+                        : activeFixCheck.title.toLowerCase().includes('outside')
+                        ? 'Clip coordinates to canvas boundaries'
+                        : activeFixCheck.title.toLowerCase().includes('twice')
+                        ? 'Merge duplicate boxes into single box'
+                        : 'Propagate verified class (defect_a)'}
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem' }}>
+              <button
+                type="button"
+                onClick={() => setShowFixModal(false)}
+                style={{
+                  backgroundColor: 'transparent',
+                  border: `1px solid ${C.borderLight}`,
+                  color: C.text,
+                  borderRadius: '4px',
+                  padding: '0.45rem 1rem',
+                  fontSize: '0.78rem',
+                  fontFamily: 'monospace',
+                  cursor: 'pointer',
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  const countResolved = activeFixCheck.count;
+                  let fixDetails = '';
+
+                  if (activeFixCheck.title.toLowerCase().includes('small')) {
+                    setBoxes((prev) => prev.filter((b) => b.width >= 15 && b.height >= 15));
+                    fixDetails = `Pruned ${countResolved} micro-boxes (<8px) from canvas and dataset.`;
+                  } else if (activeFixCheck.title.toLowerCase().includes('outside')) {
+                    setBoxes((prev) =>
+                      prev.map((b) => ({
+                        ...b,
+                        x: Math.max(0, Math.min(680 - 40, b.x)),
+                        y: Math.max(0, Math.min(400 - 40, b.y)),
+                        width: Math.min(b.width, 680 - Math.max(0, b.x)),
+                        height: Math.min(b.height, 400 - Math.max(0, b.y)),
+                      }))
+                    );
+                    fixDetails = `Constrained and clipped ${countResolved} box(es) to canvas dimensions.`;
+                  } else if (activeFixCheck.title.toLowerCase().includes('twice') || activeFixCheck.title.toLowerCase().includes('overlap')) {
+                    setBoxes((prev) => (prev.length > 1 ? [prev[0]] : prev));
+                    fixDetails = `Merged duplicate bounding boxes into single verified defect_a.`;
+                  } else {
+                    setBoxes((prev) =>
+                      prev.map((b) => ({ ...b, label: 'defect_a', tag: 'defect_a', type: 'human' as const }))
+                    );
+                    fixDetails = `Reconciled near-duplicates: set verified label to defect_a.`;
+                  }
+
+                  setData((prev) => {
+                    if (!prev) return prev;
+                    return {
+                      ...prev,
+                      label_checks: prev.label_checks.map((c) =>
+                        c.title === activeFixCheck.title ? { ...c, count: 0 } : c
+                      ),
+                    };
+                  });
+                  setNotification(`Auto-fix applied: ${fixDetails}`);
+                  setShowFixModal(false);
+                  setTimeout(() => setNotification(null), 4000);
+                }}
+                style={{
+                  backgroundColor: C.amber,
+                  color: '#000000',
+                  border: 'none',
+                  borderRadius: '4px',
+                  padding: '0.45rem 1.1rem',
+                  fontSize: '0.78rem',
+                  fontWeight: 600,
+                  fontFamily: 'monospace',
+                  cursor: 'pointer',
+                }}
+              >
+                Apply Auto-fix
+              </button>
             </div>
           </div>
         </div>

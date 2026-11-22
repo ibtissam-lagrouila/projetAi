@@ -242,9 +242,9 @@ class VersioningService:
             is_baseline_flag = (v.id == baseline_vid) or ("baseline" in tags_list)
             is_current_flag = (v.id == current_vid)
 
-            type_label = "brute"
+            type_label = "raw"
             if is_branch or v.branch_name or v.is_draft:
-                type_label = "branche"
+                type_label = "branch"
             elif op_type == "AUGMENTED":
                 type_label = "augmented"
             elif op_type == "CLEAN":
@@ -729,7 +729,7 @@ class VersioningService:
         target_evolution_details = None
 
         if base_version.version_hash == target_version.version_hash:
-            target_evolution = "Identique"
+            target_evolution = "Identical"
             target_evolution_details = f"Same version ({base_label})"
         else:
             t_b = target_version.transformation_produced
@@ -847,13 +847,13 @@ class VersioningService:
         unexpected_count = 0
 
         # Title of table with selected versions
-        base_op = "brute"
+        base_op = "raw"
         if base_version.transformation_produced:
             if "CLEANING" in base_version.transformation_produced.name:
                 base_op = "cleaned"
             elif "AUGMENTATION" in base_version.transformation_produced.name:
                 base_op = "augmented"
-        target_op = "brute"
+        target_op = "raw"
         if target_version.transformation_produced:
             if "CLEANING" in target_version.transformation_produced.name:
                 target_op = "cleaned"

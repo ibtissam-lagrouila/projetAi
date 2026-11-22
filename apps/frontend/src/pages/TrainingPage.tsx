@@ -397,7 +397,7 @@ export const TrainingPage: React.FC = () => {
                 fontWeight: 600,
               }}
             >
-              CANDIDAT
+              CANDIDATE
             </div>
             <div
               className="font-serif"
@@ -420,7 +420,7 @@ export const TrainingPage: React.FC = () => {
                 marginTop: '0.2rem',
               }}
             >
-              RUN CANDIDAT
+              CANDIDATE RUN
             </div>
           </div>
         </div>
@@ -507,7 +507,7 @@ export const TrainingPage: React.FC = () => {
               {headerSummary?.compute_cpu_hours ?? 2.5} CPU h
             </div>
             <div className="font-mono" style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
-              cette semaine · budget {headerSummary?.budget_hours || 20} h
+              this week · budget {headerSummary?.budget_hours || 20} h
             </div>
           </div>
 
@@ -524,7 +524,7 @@ export const TrainingPage: React.FC = () => {
               className="font-mono"
               style={{ fontSize: '0.68rem', color: 'var(--text-muted)', letterSpacing: '0.06em' }}
             >
-              EN PRODUCTION
+              IN PRODUCTION
             </div>
             <div
               className="font-mono"
@@ -557,7 +557,7 @@ export const TrainingPage: React.FC = () => {
             className="font-serif"
             style={{ fontSize: '1.75rem', fontWeight: 400, color: 'var(--text-main)' }}
           >
-            1 · Nouveau run
+            1 · New run
           </h2>
           <span
             className="font-mono"
@@ -606,13 +606,13 @@ export const TrainingPage: React.FC = () => {
                     fontSize: '0.78rem',
                   }}
                 >
-                  <option>{config?.dataset_version || 'churn@v4 · courante'}</option>
+                  <option>{config?.dataset_version || 'churn@v4 · current'}</option>
                 </select>
               </div>
 
               <div>
                 <label className="font-mono" style={{ fontSize: '0.65rem', color: 'var(--text-muted)', display: 'block', marginBottom: '0.25rem' }}>
-                  VUE D'TRAINING
+                  TRAINING VIEW
                 </label>
                 <select
                   className="font-mono"
@@ -659,7 +659,7 @@ export const TrainingPage: React.FC = () => {
                   'LightGBM',
                   'CatBoost',
                   'Random forest',
-                  'Petit MLP',
+                  'Small MLP',
                 ]).map((m) => {
                   const isChecked = selectedModels.includes(m);
                   return (
@@ -806,7 +806,7 @@ export const TrainingPage: React.FC = () => {
                 </div>
                 <div>
                   <label className="font-mono" style={{ fontSize: '0.65rem', color: 'var(--text-muted)', display: 'block', marginBottom: '0.25rem' }}>
-                    CLASSE POSITIVE
+                    POSITIVE CLASS
                   </label>
                   <select
                     value={posClass}
@@ -833,7 +833,7 @@ export const TrainingPage: React.FC = () => {
 
               <div style={{ marginBottom: '0.75rem' }}>
                 <label className="font-mono" style={{ fontSize: '0.65rem', color: 'var(--text-muted)', display: 'block', marginBottom: '0.25rem' }}>
-                  OPTIMISER
+                  OPTIMIZE
                 </label>
                 <select
                   value={optimizeMetric}
@@ -858,7 +858,7 @@ export const TrainingPage: React.FC = () => {
 
               <div>
                 <label className="font-mono" style={{ fontSize: '0.65rem', color: 'var(--text-muted)', display: 'block', marginBottom: '0.25rem' }}>
-                  CONTRAINTE
+                  CONSTRAINT
                 </label>
                 <select
                   value={precisionConstraint}
@@ -909,13 +909,13 @@ export const TrainingPage: React.FC = () => {
                     }}
                   >
                     <option value="Bayesian">Bayesian</option>
-                    <option value="Grille">Grid search</option>
+                    <option value="Grid">Grid search</option>
                     <option value="Random">Random</option>
                   </select>
                 </div>
                 <div>
                   <label className="font-mono" style={{ fontSize: '0.65rem', color: 'var(--text-muted)', display: 'block', marginBottom: '0.25rem' }}>
-                    ESSAIS (TRIALS)
+                    TRIALS
                   </label>
                   <input
                     type="number"
@@ -938,7 +938,7 @@ export const TrainingPage: React.FC = () => {
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
                 <div>
                   <label className="font-mono" style={{ fontSize: '0.65rem', color: 'var(--text-muted)', display: 'block', marginBottom: '0.25rem' }}>
-                    LIMITE DE TEMPS
+                    TIME LIMIT
                   </label>
                   <input
                     type="text"
@@ -1062,7 +1062,7 @@ export const TrainingPage: React.FC = () => {
                     </span>
                   </div>
                   <div className="font-mono" style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginLeft: '1.35rem' }}>
-                    {config?.checks.smote_rows_in_train?.toLocaleString('en-US') || '13 899'} rows smote · none in val ou test
+                    {config?.checks.smote_rows_in_train?.toLocaleString('en-US') || '13,899'} rows smote · none in val or test
                   </div>
                 </div>
 
@@ -1111,7 +1111,7 @@ export const TrainingPage: React.FC = () => {
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
                     <Check size={14} color="#22c55e" strokeWidth={2.5} />
                     <span className="font-mono" style={{ fontSize: '0.78rem', color: 'var(--text-main)', fontWeight: 500 }}>
-                      Baseline incluse
+                      Baseline included
                     </span>
                   </div>
                   <div className="font-mono" style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginLeft: '1.35rem' }}>
@@ -1428,7 +1428,7 @@ export const TrainingPage: React.FC = () => {
                               fontWeight: 600,
                             }}
                           >
-                            CANDIDAT
+                            CANDIDATE
                           </span>
                         ) : r.tag === 'baseline' ? (
                           <span
@@ -1859,7 +1859,7 @@ export const TrainingPage: React.FC = () => {
             }}
           >
             <div className="font-mono" style={{ fontSize: '0.68rem', color: 'var(--text-muted)', letterSpacing: '0.06em' }}>
-              JEU DE TEST
+              TEST SET
             </div>
             <div
               className="font-serif"
@@ -2387,7 +2387,7 @@ export const TrainingPage: React.FC = () => {
             className="font-serif"
             style={{ fontSize: '1.75rem', fontWeight: 400, color: 'var(--text-main)' }}
           >
-            4 · Comparer et promouvoir
+            4 · Compare and promote
           </h2>
           <span
             className="font-mono"
@@ -2413,16 +2413,16 @@ export const TrainingPage: React.FC = () => {
                 <tr className="font-mono" style={{ borderBottom: '1px solid var(--border)', fontSize: '0.68rem', color: 'var(--text-muted)' }}>
                   <th style={{ padding: '0.5rem 0.75rem' }}>METRIC</th>
                   <th style={{ padding: '0.5rem 0.75rem' }}>PRODUCTION ({compareData?.prod_run_name || 'churn-xgb-07'})</th>
-                  <th style={{ padding: '0.5rem 0.75rem' }}>CANDIDAT ({compareData?.cand_run_name || 'churn-xgb-08'})</th>
+                  <th style={{ padding: '0.5rem 0.75rem' }}>CANDIDATE ({compareData?.cand_run_name || 'churn-xgb-08'})</th>
                   <th style={{ padding: '0.5rem 0.75rem', textAlign: 'right' }}>CHANGE</th>
                 </tr>
               </thead>
               <tbody>
                 {(compareData?.comparison_table || [
-                  { metric_name: 'Empreinte du jeu de test', prod_val: 'a91f...c02', cand_val: 'a91f...c02', change: '✓ identique', is_positive: true },
+                  { metric_name: 'Test set fingerprint', prod_val: 'a91f...c02', cand_val: 'a91f...c02', change: '✓ identical', is_positive: true },
                   { metric_name: 'Trained on', prod_val: 'v3', cand_val: 'v4 · 96 labels corrected', change: '+96 corrections', is_positive: true },
-                  { metric_name: 'Recall · oui', prod_val: '0.82', cand_val: '0.88', change: '+6.0 %', is_positive: true },
-                  { metric_name: 'Precision · oui', prod_val: '0.61', cand_val: '0.64', change: '+3.0 %', is_positive: true },
+                  { metric_name: 'Recall · yes', prod_val: '0.82', cand_val: '0.88', change: '+6.0 %', is_positive: true },
+                  { metric_name: 'Precision · yes', prod_val: '0.61', cand_val: '0.64', change: '+3.0 %', is_positive: true },
                   { metric_name: 'Worst segment · tenure < 3 m', prod_val: '55 %', cand_val: '62 %', change: '+7.0 %', is_positive: true },
                   { metric_name: 'Monthly cost at optimal threshold', prod_val: '52 400 MAD', cand_val: '48 200 MAD', change: '-4 200 MAD', is_positive: true },
                   { metric_name: "Inference time · 1k rows", prod_val: '12 ms', cand_val: '14 ms', change: '+2 ms', is_positive: false },
@@ -2514,7 +2514,7 @@ export const TrainingPage: React.FC = () => {
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                 <Check size={15} color="#22c55e" strokeWidth={2.5} />
                 <span className="font-mono" style={{ fontSize: '0.78rem', color: 'var(--text-main)' }}>
-                  No segment regressed de plus de 2 %
+                  No segment regressed by more than 2%
                 </span>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
@@ -2648,9 +2648,9 @@ export const TrainingPage: React.FC = () => {
           <Award size={18} color="var(--amber)" />
           <div className="font-mono" style={{ fontSize: '0.78rem', color: 'var(--text-main)' }}>
             <span style={{ fontWeight: 600, color: 'var(--amber)' }}>
-              {runDetail?.run_name || headerSummary?.candidate_run_name || 'candidat'}
+              {runDetail?.run_name || headerSummary?.candidate_run_name || 'candidate'}
             </span>{' '}
-            · {runDetail?.model_type || 'XGBoost'} · {runDetail?.recall_yes !== undefined ? runDetail.recall_yes.toFixed(2) : '0.88'} recall · surpasse la production · jeu de test locked
+            · {runDetail?.model_type || 'XGBoost'} · {runDetail?.recall_yes !== undefined ? runDetail.recall_yes.toFixed(2) : '0.88'} recall · outperforms production · test set locked
           </div>
         </div>
 
@@ -2675,7 +2675,7 @@ export const TrainingPage: React.FC = () => {
             }}
           >
             {isPromoting ? <RefreshCw size={13} className="spin" /> : <Award size={13} color="var(--amber)" />}
-            <span>Promote to productionuction</span>
+            <span>Promote to production</span>
           </button>
 
           <button

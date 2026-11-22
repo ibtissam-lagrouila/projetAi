@@ -442,7 +442,7 @@ export const LabelingPage: React.FC = () => {
       <section style={{ marginBottom: '3.5rem' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '1.25rem' }}>
           <h2 className="font-serif" style={{ fontSize: '1.85rem', fontWeight: 400 }}>
-            1 • Files d'attente
+            1 • Review queues
           </h2>
           <span className="font-mono" style={{ fontSize: '0.72rem', color: 'var(--text-muted)', letterSpacing: '0.08em' }}>
             ROWS MOST LIKELY INCORRECT FIRST
@@ -645,7 +645,7 @@ export const LabelingPage: React.FC = () => {
       <section style={{ marginBottom: '3.5rem' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '1.25rem', flexWrap: 'wrap', gap: '1rem' }}>
           <h2 className="font-serif" style={{ fontSize: '1.85rem', fontWeight: 400 }}>
-            2 • Espace de travail
+            2 • Workspace
           </h2>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
@@ -778,8 +778,8 @@ export const LabelingPage: React.FC = () => {
 
               {/* Legend Caption */}
               <div className="font-mono" style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginBottom: '2rem' }}>
-                <span style={{ color: '#38bdf8' }}>Bleu</span> = columns qui font dire '{status?.pos_label}' au model.{' '}
-                <span style={{ color: '#ef4444' }}>Rouge</span> = un fait qui contredit le label actuel.
+                <span style={{ color: '#38bdf8' }}>Blue</span> = features pushing model towards '{status?.pos_label}'.{' '}
+                <span style={{ color: '#ef4444' }}>Red</span> = evidence contradicting current label.
               </div>
 
               {/* Decision Section */}
@@ -912,13 +912,13 @@ export const LabelingPage: React.FC = () => {
                     fontSize: '0.82rem',
                   }}
                 >
-                  <option value="Late cancellation entry in le CRM">Late cancellation entry in le CRM</option>
+                  <option value="Late cancellation entry in CRM">Late cancellation entry in CRM</option>
                   <option value="Typo in CRM">Typo in CRM</option>
                   <option value="Billing dispute resolved">Billing dispute resolved</option>
                   <option value="Customer confirmation following contact">Customer confirmation following contact</option>
                   <option value="Contract terminated manually">Contract terminated manually</option>
                   <option value="Account suspended for non-payment">Account suspended for non-payment</option>
-                  <option value="Autre motif professionnel...">Autre motif professionnel...</option>
+                  <option value="Other professional reason...">Other professional reason...</option>
                 </select>
               </div>
 
@@ -1005,7 +1005,7 @@ export const LabelingPage: React.FC = () => {
                 </div>
 
                 <div className="font-mono" style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>
-                  5 nearest customers • {candidate.nearest_customers.filter((c) => c.label === 'YES' || c.label === 'YES').length} partis
+                  5 nearest customers • {candidate.nearest_customers.filter((c) => c.label === 'YES' || c.label === 'YES').length} churned
                 </div>
               </div>
 

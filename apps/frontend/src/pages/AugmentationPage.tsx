@@ -763,14 +763,14 @@ export const AugmentationPage: React.FC = () => {
             {generatedRows !== null ? generatedRows.toLocaleString('en-US') : '—'}
           </div>
           <div className="font-mono" style={{ fontSize: '0.72rem', color: '#71717a', marginTop: '0.2rem' }}>
-            {generatedPctOfTrain !== null ? `${generatedPctOfTrain}% du train` : '—'}
+            {generatedPctOfTrain !== null ? `${generatedPctOfTrain}% of train` : '—'}
           </div>
         </div>
 
-        {/* Metric 3: JEU DE TEST */}
+        {/* Metric 3: TEST SET */}
         <div>
           <div className="font-mono" style={{ fontSize: '0.68rem', color: '#71717a', letterSpacing: '0.06em', marginBottom: '0.35rem' }}>
-            JEU DE TEST
+            TEST SET
           </div>
           <div className="font-mono" style={{ fontSize: '1.45rem', fontWeight: 600, color: 'var(--text-main)' }}>
             {testSetSize !== null ? testSetSize.toLocaleString('en-US') : '—'}

@@ -600,7 +600,7 @@ export const VersioningPage: React.FC = () => {
               marginTop: '0.25rem',
             }}
           >
-            VERSION COURANTE
+            CURRENT VERSION
           </div>
         </div>
       </div>
@@ -1016,13 +1016,13 @@ export const VersioningPage: React.FC = () => {
       <section style={{ marginBottom: '3.5rem' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem', flexWrap: 'wrap', gap: '1rem' }}>
           <h2 className="font-serif" style={{ fontSize: '1.85rem', fontWeight: 400 }}>
-            2 • Comparer
+            2 • Compare
           </h2>
 
           {/* Selectors FROM / TO / ROW KEY */}
           {lineage && lineage.nodes.length >= 2 ? (
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', fontSize: '0.8rem', flexWrap: 'wrap' }}>
-              <span className="font-mono" style={{ color: 'var(--text-muted)' }}>DE</span>
+              <span className="font-mono" style={{ color: 'var(--text-muted)' }}>FROM</span>
               <select
                 value={compareBaseHash}
                 onChange={(e) => setCompareBaseHash(e.target.value)}
@@ -1118,10 +1118,10 @@ export const VersioningPage: React.FC = () => {
                 marginBottom: '1.5rem',
               }}
             >
-              {/* ADDEDES */}
+              {/* ADDED */}
               <div className="card" style={{ padding: '1.25rem 1.5rem' }}>
                 <div className="font-mono" style={{ fontSize: '0.72rem', color: 'var(--text-muted)', letterSpacing: '0.08em', marginBottom: '0.5rem' }}>
-                  ADDEDES
+                  ADDED
                 </div>
                 <div className="font-serif" style={{ fontSize: '2.2rem', fontWeight: 500, lineHeight: 1.1, marginBottom: '0.35rem', color: '#22c55e' }}>
                   +{compareResult.added_count.toLocaleString('en-US')}
@@ -1160,7 +1160,7 @@ export const VersioningPage: React.FC = () => {
               {/* TEST SET */}
               <div className="card" style={{ padding: '1.25rem 1.5rem' }}>
                 <div className="font-mono" style={{ fontSize: '0.72rem', color: 'var(--text-muted)', letterSpacing: '0.08em', marginBottom: '0.5rem' }}>
-                  JEU DE TEST
+                  TEST SET
                 </div>
                 <div
                   className="font-serif"
@@ -1410,7 +1410,7 @@ export const VersioningPage: React.FC = () => {
         ) : lineage && lineage.nodes.length < 2 ? (
           <div className="card" style={{ padding: '2.5rem', textAlign: 'center', color: 'var(--text-muted)' }}>
             <p className="font-serif" style={{ fontSize: '1.2rem', marginBottom: '0.5rem', color: 'var(--text-main)' }}>
-              Une seule version disponible ({lineage.nodes[0]?.version_label || 'v1'} • brute)
+              Only one version available ({lineage.nodes[0]?.version_label || 'v1'} • raw)
             </p>
             <p className="font-mono" style={{ fontSize: '0.8rem', maxWidth: '540px', margin: '0 auto', color: 'var(--text-secondary)' }}>
               Comparison requires at least two versions. Create a new version via Cleaning (Step 02) or Augmentation (Step 03) to inspect differences and shifts here.

@@ -612,28 +612,6 @@ export const TextCleaningPage: React.FC = () => {
             );
           })}
         </div>
-
-        {/* Add manual step footer link */}
-        <div style={{ marginTop: 14 }}>
-          <button
-            type="button"
-            onClick={() => showNotif("Manual step module: lowercase, strip URLs, regex replace (ready for extension).", true)}
-            style={{
-              background: 'none',
-              border: 'none',
-              color: C.muted,
-              fontSize: 12,
-              fontFamily: 'monospace',
-              cursor: 'pointer',
-              padding: 0,
-              transition: 'color 0.15s',
-            }}
-            onMouseEnter={e => (e.currentTarget.style.color = C.amber)}
-            onMouseLeave={e => (e.currentTarget.style.color = C.muted)}
-          >
-            + Add a manual step — lowercase, strip URLs, keep one language, regex replace
-          </button>
-        </div>
       </div>
 
       {/* ── 2-COLUMN SECTION: PREVIEW & QUALITY IMPACT (Mockup 2) ────────── */}

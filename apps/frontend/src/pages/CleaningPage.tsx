@@ -14,7 +14,6 @@ import {
 } from '../types';
 import {
   RefreshCw,
-  Plus,
   CheckCircle2,
   AlertTriangle,
   X,
@@ -74,9 +73,6 @@ export const CleaningPage: React.FC = () => {
 
   // Modals
   const [showExportModal, setShowExportModal] = useState<boolean>(false);
-  const [showManualModal, setShowManualModal] = useState<boolean>(false);
-  const [manualStepType, setManualStepType] = useState<string>('DROP_COLUMN');
-  const [manualStepCol, setManualStepCol] = useState<string>('');
 
   // Initial load
   useEffect(() => {
@@ -1211,24 +1207,6 @@ export const CleaningPage: React.FC = () => {
                 </div>
               </div>
             )}
-
-            {/* Add a manual step line */}
-            <div
-              className="add-manual-step"
-              onClick={() => setShowManualModal(true)}
-              style={{
-                border: '1px dashed #26262b',
-                borderRadius: 6,
-                padding: '0.85rem',
-                textAlign: 'center',
-                color: 'var(--text-muted)',
-                fontSize: '0.78rem',
-                cursor: 'pointer',
-                marginTop: '0.35rem',
-              }}
-            >
-              <span>+ Add manual step — drop column, change type, filter rows, rename</span>
-            </div>
           </div>
         </div>
       )}
@@ -1506,90 +1484,6 @@ export const CleaningPage: React.FC = () => {
           { number: '04', title: 'OUTLIER CLIPPING (IQR)', detail: 'Clamp extreme outliers to 1.5 * IQR bounds', param: step04Method },
         ]}
       />
-
-      {/* Modal: Add Manual Step */}
-      {showManualModal && (
-        <div className="modal-backdrop">
-          <div className="modal-content" style={{ maxWidth: '520px' }}>
-            <div className="modal-header">
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
-                <Plus size={18} color="var(--amber)" />
-                <h3 className="modal-title font-serif" style={{ fontSize: '1.25rem' }}>
-                  Add manual step
-                </h3>
-              </div>
-              <button
-                type="button"
-                className="close-button"
-                onClick={() => setShowManualModal(false)}
-              >
-                <X size={18} />
-              </button>
-            </div>
-
-            <div style={{ padding: '1.5rem' }}>
-              <div style={{ marginBottom: '1.25rem' }}>
-                <label className="font-mono" style={{ fontSize: '0.72rem', color: 'var(--text-muted)', display: 'block', marginBottom: '0.4rem' }}>
-                  OPERATION TYPE
-                </label>
-                <select
-                  value={manualStepType}
-                  onChange={(e) => setManualStepType(e.target.value)}
-                  style={{ width: '100%', background: '#121214', border: '1px solid #27272a', padding: '0.5rem', borderRadius: 4, color: '#f4f4f6', fontSize: '0.8rem' }}
-                >
-                  <option value="DROP_COLUMN">Drop column</option>
-                  <option value="CHANGE_TYPE">Change type</option>
-                  <option value="FILTER_ROWS">Filter rows</option>
-                  <option value="RENAME_COLUMN">Rename column</option>
-                </select>
-              </div>
-
-              <div style={{ marginBottom: '1.5rem' }}>
-                <label className="font-mono" style={{ fontSize: '0.72rem', color: 'var(--text-muted)', display: 'block', marginBottom: '0.4rem' }}>
-                  TARGET COLUMN
-                </label>
-                <select
-                  value={manualStepCol}
-                  onChange={(e) => setManualStepCol(e.target.value)}
-                  style={{ width: '100%', background: '#121214', border: '1px solid #27272a', padding: '0.5rem', borderRadius: 4, color: '#f4f4f6', fontSize: '0.8rem' }}
-                >
-                  <option value="">Select a column...</option>
-                  {profile?.columns.map((c) => (
-                    <option key={c.name} value={c.name}>
-                      {c.name} ({c.detected_type})
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem' }}>
-                <button
-                  type="button"
-                  className="btn btn-secondary font-mono"
-                  style={{ fontSize: '0.78rem' }}
-                  onClick={() => setShowManualModal(false)}
-                >
-                  Cancel
-                </button>
-                <button
-                  type="button"
-                  className="btn btn-primary font-mono"
-                  style={{ fontSize: '0.78rem' }}
-                  onClick={() => {
-                    setShowManualModal(false);
-                    setFeedbackMsg({
-                      type: 'info',
-                      text: `Manual step '${manualStepType}' on '${manualStepCol || 'column'}' added to recipe.`,
-                    });
-                  }}
-                >
-                  Add step
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };

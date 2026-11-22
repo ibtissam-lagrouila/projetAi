@@ -606,28 +606,6 @@ export const ImageCleaningPage: React.FC = () => {
             );
           })}
         </div>
-
-        {/* Add manual step footer link */}
-        <div style={{ marginTop: 14 }}>
-          <button
-            type="button"
-            onClick={() => showNotif("Manual image step module: crop, grayscale, drop a class, filter by camera (ready for extension).", true)}
-            style={{
-              background: 'none',
-              border: 'none',
-              color: C.muted,
-              fontSize: 12,
-              fontFamily: 'monospace',
-              cursor: 'pointer',
-              padding: 0,
-              transition: 'color 0.15s',
-            }}
-            onMouseEnter={e => (e.currentTarget.style.color = C.amber)}
-            onMouseLeave={e => (e.currentTarget.style.color = C.muted)}
-          >
-            + Add a manual step — crop, grayscale, drop a class, filter by camera
-          </button>
-        </div>
       </div>
 
       {/* ── 2-COLUMN SECTION: PREVIEW & QUALITY IMPACT (Mockup 2) ────────── */}

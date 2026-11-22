@@ -87,14 +87,177 @@ class ImageLabelingService:
     ) -> Dict[str, Any]:
         output_v = f"v{max(4, v_count + 1)}"
 
-        # 6 Filmstrip images
+        # Queue-specific configurations and items
+        queue_configs = {
+            "unlabeled": {
+                "prefix": "IMG_0773",
+                "count": 1120,
+                "why": "unlabeled image · ready for bounding box annotation",
+                "boxes": [
+                    {
+                        "id": "box_1",
+                        "label": "crack",
+                        "tag": "you · selected",
+                        "type": "human",
+                        "x": 140,
+                        "y": 80,
+                        "width": 150,
+                        "height": 90,
+                        "color": "#f59e0b",
+                        "selected": True,
+                    },
+                    {
+                        "id": "box_2",
+                        "label": "dent",
+                        "tag": "model 0.58",
+                        "type": "model",
+                        "confidence": 0.58,
+                        "x": 320,
+                        "y": 145,
+                        "width": 80,
+                        "height": 80,
+                        "color": "#3b82f6",
+                        "selected": False,
+                    },
+                ],
+                "suggestions": [
+                    {"label": "crack", "confidence": 0.62},
+                    {"label": "dent", "confidence": 0.28},
+                ],
+                "banner": None,
+            },
+            "suspected_errors": {
+                "prefix": "IMG_ERR_081",
+                "count": 214,
+                "why": "model disagrees ≥ 0.9 on bounding box class",
+                "boxes": [
+                    {
+                        "id": "box_1",
+                        "label": "scratch",
+                        "tag": "human (disputed)",
+                        "type": "human",
+                        "x": 115,
+                        "y": 65,
+                        "width": 170,
+                        "height": 105,
+                        "color": "#ef4444",
+                        "selected": True,
+                    },
+                    {
+                        "id": "box_2",
+                        "label": "crack",
+                        "tag": "model 0.94",
+                        "type": "model",
+                        "confidence": 0.94,
+                        "x": 120,
+                        "y": 70,
+                        "width": 160,
+                        "height": 95,
+                        "color": "#3b82f6",
+                        "selected": False,
+                    },
+                ],
+                "suggestions": [
+                    {"label": "crack", "confidence": 0.94},
+                    {"label": "scratch", "confidence": 0.05},
+                ],
+                "banner": {
+                    "type": "error",
+                    "title": "SUSPECTED LABEL ERROR",
+                    "message": "Human annotator previously labeled this box as 'scratch', but model detects 'crack' with 94% confidence.",
+                },
+            },
+            "low_confidence": {
+                "prefix": "IMG_UNCERT_04",
+                "count": 342,
+                "why": "uncertain detection (margin < 0.05 feeds Active Learning)",
+                "boxes": [
+                    {
+                        "id": "box_1",
+                        "label": "crack",
+                        "tag": "model 0.49",
+                        "type": "model",
+                        "confidence": 0.49,
+                        "x": 150,
+                        "y": 95,
+                        "width": 130,
+                        "height": 80,
+                        "color": "#3b82f6",
+                        "selected": True,
+                    },
+                    {
+                        "id": "box_2",
+                        "label": "dent",
+                        "tag": "model 0.46",
+                        "type": "model",
+                        "confidence": 0.46,
+                        "x": 300,
+                        "y": 130,
+                        "width": 90,
+                        "height": 85,
+                        "color": "#3b82f6",
+                        "selected": False,
+                    },
+                ],
+                "suggestions": [
+                    {"label": "crack", "confidence": 0.49},
+                    {"label": "dent", "confidence": 0.46},
+                ],
+                "banner": {
+                    "type": "warning",
+                    "title": "ACTIVE LEARNING CANDIDATE",
+                    "message": "Model hesitates closely between 'crack' (0.49) and 'dent' (0.46). Bounding box validation provides maximum learning gain.",
+                },
+            },
+            "to_review": {
+                "prefix": "IMG_REV_09",
+                "count": 86,
+                "why": "inter-annotator disagreement · supervisor review",
+                "boxes": [
+                    {
+                        "id": "box_1",
+                        "label": "crack",
+                        "tag": "annotator 1",
+                        "type": "human",
+                        "x": 130,
+                        "y": 80,
+                        "width": 140,
+                        "height": 85,
+                        "color": "#f59e0b",
+                        "selected": True,
+                    },
+                    {
+                        "id": "box_2",
+                        "label": "scratch",
+                        "tag": "annotator 2",
+                        "type": "human",
+                        "x": 140,
+                        "y": 85,
+                        "width": 150,
+                        "height": 90,
+                        "color": "#8b5cf6",
+                        "selected": False,
+                    },
+                ],
+                "suggestions": [
+                    {"label": "crack", "confidence": 0.52},
+                    {"label": "scratch", "confidence": 0.48},
+                ],
+                "banner": {
+                    "type": "info",
+                    "title": "SECONDARY REVIEW (DOUBLE ANNOTATION)",
+                    "message": "Annotator 1 (crack) and Annotator 2 (scratch) disagreed on bounding box bounds. Senior consensus validation required.",
+                },
+            },
+        }
+
+        q_cfg = queue_configs.get(queue, queue_configs["unlabeled"])
+        prefix = q_cfg["prefix"]
+
+        # 6 Filmstrip images for current queue
         filmstrip = [
-            {"id": "IMG_07732.JPG", "index": 0, "status": "labeled", "thumb": _create_thumb_b64(70, 50, 0)},
-            {"id": "IMG_07733.JPG", "index": 1, "status": "labeled", "thumb": _create_thumb_b64(70, 50, 1)},
-            {"id": "IMG_07734.JPG", "index": 2, "status": "current", "thumb": _create_thumb_b64(70, 50, 2)},
-            {"id": "IMG_07735.JPG", "index": 3, "status": "unlabeled", "thumb": _create_thumb_b64(70, 50, 3)},
-            {"id": "IMG_07736.JPG", "index": 4, "status": "unlabeled", "thumb": _create_thumb_b64(70, 50, 4)},
-            {"id": "IMG_07737.JPG", "index": 5, "status": "unlabeled", "thumb": _create_thumb_b64(70, 50, 5)},
+            {"id": f"{prefix}{i}.JPG", "index": i, "status": "current" if i == image_index else ("labeled" if i < image_index else "unlabeled"), "thumb": _create_thumb_b64(70, 50, i)}
+            for i in range(6)
         ]
 
         # Current active image details
@@ -171,53 +334,13 @@ class ImageLabelingService:
             "workspace": {
                 "queue_name": queue.upper(),
                 "image_name": active_img["id"],
-                "image_position": f"{image_index + 413} / 1,120",
+                "image_position": f"{image_index + 1} / {q_cfg['count']:,}",
                 "image_url": _create_sample_image_b64(),
                 "filmstrip": filmstrip,
                 "active_filmstrip_index": image_index,
-                "boxes": [
-                    {
-                        "id": "box_1",
-                        "label": "crack",
-                        "tag": "you · selected",
-                        "type": "human",
-                        "x": 140,
-                        "y": 80,
-                        "width": 150,
-                        "height": 90,
-                        "color": "#f59e0b",
-                        "selected": True,
-                    },
-                    {
-                        "id": "box_2",
-                        "label": "dent",
-                        "tag": "model 0.58",
-                        "type": "model",
-                        "confidence": 0.58,
-                        "x": 320,
-                        "y": 145,
-                        "width": 80,
-                        "height": 80,
-                        "color": "#3b82f6",
-                        "selected": False,
-                    },
-                    {
-                        "id": "box_3",
-                        "label": "new box",
-                        "tag": "no class yet",
-                        "type": "drawing",
-                        "x": 90,
-                        "y": 190,
-                        "width": 110,
-                        "height": 60,
-                        "color": "#f59e0b",
-                        "selected": False,
-                    },
-                ],
-                "model_suggestions": [
-                    {"label": "dent", "confidence": 0.58},
-                    {"label": "stain", "confidence": 0.31},
-                ],
+                "boxes": q_cfg["boxes"],
+                "model_suggestions": q_cfg["suggestions"],
+                "queue_banner": q_cfg["banner"],
                 "classes": [
                     {"id": 1, "name": "ok", "count": "2,470", "shortcut": "1", "is_rare": False},
                     {"id": 2, "name": "scratch", "count": "1,600", "shortcut": "2", "is_rare": False},
@@ -297,12 +420,181 @@ class ImageLabelingService:
         low_confidence = max(5, int(round(to_label * 0.25)))
         to_review = max(2, int(round(to_label * 0.08)))
 
+        c1 = classes[0]
+        c2 = classes[1] if len(classes) > 1 else classes[0]
+
+        # Queue-specific configurations and boxes
+        queue_specs = {
+            "unlabeled": {
+                "prefix": "IMG_UNL_",
+                "count": to_label,
+                "why": "unlabeled image · awaiting initial bounding box review",
+                "boxes": [
+                    {
+                        "id": "box_1",
+                        "label": c1,
+                        "tag": "you · selected",
+                        "type": "human",
+                        "x": 130,
+                        "y": 75,
+                        "width": 140,
+                        "height": 85,
+                        "color": "#f59e0b",
+                        "selected": True,
+                    },
+                    {
+                        "id": "box_2",
+                        "label": c2,
+                        "tag": "model 0.62",
+                        "type": "model",
+                        "confidence": 0.62,
+                        "x": 310,
+                        "y": 140,
+                        "width": 80,
+                        "height": 75,
+                        "color": "#3b82f6",
+                        "selected": False,
+                    },
+                ],
+                "suggestions": [
+                    {"label": c1, "confidence": 0.62},
+                    {"label": c2, "confidence": 0.28},
+                ],
+                "banner": None,
+            },
+            "suspected_errors": {
+                "prefix": "IMG_ERR_",
+                "count": suspected_errors,
+                "why": f"model disagrees ≥ 0.9 with human box on {c1}",
+                "boxes": [
+                    {
+                        "id": "box_1",
+                        "label": c1,
+                        "tag": "human (disputed)",
+                        "type": "human",
+                        "x": 110,
+                        "y": 60,
+                        "width": 165,
+                        "height": 95,
+                        "color": "#ef4444",
+                        "selected": True,
+                    },
+                    {
+                        "id": "box_2",
+                        "label": c2,
+                        "tag": "model 0.94",
+                        "type": "model",
+                        "confidence": 0.94,
+                        "x": 115,
+                        "y": 65,
+                        "width": 155,
+                        "height": 90,
+                        "color": "#3b82f6",
+                        "selected": False,
+                    },
+                ],
+                "suggestions": [
+                    {"label": c2, "confidence": 0.94},
+                    {"label": c1, "confidence": 0.05},
+                ],
+                "banner": {
+                    "type": "error",
+                    "title": "SUSPECTED LABEL ERROR",
+                    "message": f"Human annotator labeled this box as '{c1}', but model detects '{c2}' with 94% confidence.",
+                },
+            },
+            "low_confidence": {
+                "prefix": "IMG_UNCERT_",
+                "count": low_confidence,
+                "why": f"model margin < 0.05 between {c1} and {c2}",
+                "boxes": [
+                    {
+                        "id": "box_1",
+                        "label": c1,
+                        "tag": "model 0.49",
+                        "type": "model",
+                        "confidence": 0.49,
+                        "x": 145,
+                        "y": 90,
+                        "width": 125,
+                        "height": 75,
+                        "color": "#3b82f6",
+                        "selected": True,
+                    },
+                    {
+                        "id": "box_2",
+                        "label": c2,
+                        "tag": "model 0.46",
+                        "type": "model",
+                        "confidence": 0.46,
+                        "x": 295,
+                        "y": 125,
+                        "width": 85,
+                        "height": 80,
+                        "color": "#3b82f6",
+                        "selected": False,
+                    },
+                ],
+                "suggestions": [
+                    {"label": c1, "confidence": 0.49},
+                    {"label": c2, "confidence": 0.46},
+                ],
+                "banner": {
+                    "type": "warning",
+                    "title": "ACTIVE LEARNING CANDIDATE",
+                    "message": f"Model hesitates between '{c1}' (0.49) and '{c2}' (0.46). Bounding box review provides maximum retraining gain.",
+                },
+            },
+            "to_review": {
+                "prefix": "IMG_REV_",
+                "count": to_review,
+                "why": "inter-annotator disagreement · supervisor review",
+                "boxes": [
+                    {
+                        "id": "box_1",
+                        "label": c1,
+                        "tag": "annotator 1",
+                        "type": "human",
+                        "x": 125,
+                        "y": 75,
+                        "width": 135,
+                        "height": 80,
+                        "color": "#f59e0b",
+                        "selected": True,
+                    },
+                    {
+                        "id": "box_2",
+                        "label": c2,
+                        "tag": "annotator 2",
+                        "type": "human",
+                        "x": 135,
+                        "y": 80,
+                        "width": 145,
+                        "height": 85,
+                        "color": "#8b5cf6",
+                        "selected": False,
+                    },
+                ],
+                "suggestions": [
+                    {"label": c1, "confidence": 0.52},
+                    {"label": c2, "confidence": 0.48},
+                ],
+                "banner": {
+                    "type": "info",
+                    "title": "SECONDARY REVIEW (DOUBLE ANNOTATION)",
+                    "message": f"Annotator 1 ({c1}) and Annotator 2 ({c2}) disagreed on bounding box bounds. Senior consensus validation required.",
+                },
+            },
+        }
+
+        q_cfg = queue_specs.get(queue, queue_specs["unlabeled"])
+        prefix = q_cfg["prefix"]
+
         # Filmstrip
         filmstrip = [
-            {"id": f"IMG_00{i+100}.PNG", "index": i, "status": "labeled" if i < 2 else "unlabeled", "thumb": _create_thumb_b64(70, 50, i)}
+            {"id": f"{prefix}{i+101:03d}.PNG", "index": i, "status": "current" if i == image_index else ("labeled" if i < image_index else "unlabeled"), "thumb": _create_thumb_b64(70, 50, i)}
             for i in range(6)
         ]
-        filmstrip[image_index]["status"] = "current"
         active_img = filmstrip[min(image_index, len(filmstrip) - 1)]
 
         classes_list = []
@@ -315,9 +607,6 @@ class ImageLabelingService:
                 "shortcut": str(idx + 1),
                 "is_rare": idx == len(classes) - 1,
             })
-
-        c1 = classes[0]
-        c2 = classes[1] if len(classes) > 1 else classes[0]
 
         return {
             "dataset_id": str(dataset.id),
@@ -390,44 +679,15 @@ class ImageLabelingService:
             "workspace": {
                 "queue_name": queue.upper(),
                 "image_name": active_img["id"],
-                "image_position": f"{image_index + done_today} / {to_label}",
+                "image_position": f"{image_index + 1} / {q_cfg['count']:,}",
                 "image_url": _create_sample_image_b64(),
                 "filmstrip": filmstrip,
                 "active_filmstrip_index": image_index,
-                "boxes": [
-                    {
-                        "id": "box_1",
-                        "label": c1,
-                        "tag": "you · selected",
-                        "type": "human",
-                        "x": 130,
-                        "y": 75,
-                        "width": 140,
-                        "height": 85,
-                        "color": "#f59e0b",
-                        "selected": True,
-                    },
-                    {
-                        "id": "box_2",
-                        "label": c2,
-                        "tag": "model 0.62",
-                        "type": "model",
-                        "confidence": 0.62,
-                        "x": 310,
-                        "y": 140,
-                        "width": 80,
-                        "height": 75,
-                        "color": "#3b82f6",
-                        "selected": False,
-                    },
-                ],
-                "model_suggestions": [
-                    {"label": c1, "confidence": 0.62},
-                    {"label": c2, "confidence": 0.28},
-                ],
+                "boxes": q_cfg["boxes"],
+                "model_suggestions": q_cfg["suggestions"],
                 "classes": classes_list,
                 "image_meta": {
-                    "why_in_queue": "unlabeled",
+                    "why_in_queue": q_cfg["why"],
                     "split": "train",
                     "scene_group": "group-01",
                     "augmented_children": "0",
@@ -436,6 +696,7 @@ class ImageLabelingService:
                     "label": c1.upper(),
                     "desc": f"Definition for {c1} on {dataset.name}.",
                 },
+                "queue_banner": q_cfg["banner"],
             },
             "label_checks": [
                 {"title": "Boxes too small to be real", "sub": "under 8 px on a side", "count": 6},

@@ -1377,216 +1377,80 @@ export const TextLabelingPage: React.FC = () => {
         </div>
       </div>
 
-      {/* ── Section 3: Label Checks & Team ──────────────────────────────── */}
-      <div
-        style={{
-          display: 'grid',
-          gridTemplateColumns: '1.2fr 1fr',
-          gap: '2.5rem',
-          marginBottom: '3rem',
-        }}
-      >
-        {/* Left: 3·Label checks */}
-        <div>
-          <div
+      {/* ── Section 3: Label Checks ────────────────────────────────────────── */}
+      <div style={{ marginBottom: '3rem' }}>
+        <div
+          style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'baseline',
+            borderBottom: `1px solid ${C.border}`,
+            paddingBottom: '0.6rem',
+            marginBottom: '1rem',
+          }}
+        >
+          <h2
             style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'baseline',
-              borderBottom: `1px solid ${C.border}`,
-              paddingBottom: '0.6rem',
-              marginBottom: '1rem',
+              fontSize: '1.5rem',
+              fontWeight: 400,
+              fontStyle: 'italic',
+              fontFamily: '"Playfair Display", Georgia, serif',
+              margin: 0,
+              color: '#ffffff',
             }}
           >
-            <h2
-              style={{
-                fontSize: '1.5rem',
-                fontWeight: 400,
-                fontStyle: 'italic',
-                fontFamily: '"Playfair Display", Georgia, serif',
-                margin: 0,
-                color: '#ffffff',
-              }}
-            >
-              3·Label checks
-            </h2>
-            <span style={{ fontSize: '0.65rem', fontFamily: 'monospace', color: C.textMuted, letterSpacing: '0.1em' }}>
-              RUN ON EVERY SAVE
-            </span>
-          </div>
-
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-            {data.label_checks.map((chk, idx) => (
-              <div
-                key={idx}
-                style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  padding: '0.6rem 0',
-                  borderBottom: `1px solid rgba(255, 255, 255, 0.05)`,
-                }}
-              >
-                <div>
-                  <div style={{ fontSize: '0.82rem', color: '#f1f5f9', fontWeight: 500 }}>{chk.title}</div>
-                  <div style={{ fontSize: '0.7rem', color: C.textMuted }}>{chk.desc}</div>
-                </div>
-
-                <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem' }}>
-                  <span style={{ fontSize: '1rem', fontWeight: 600, color: C.amber, fontFamily: 'monospace' }}>
-                    {chk.count}
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setActiveFixCheck(chk);
-                      setShowFixModal(true);
-                    }}
-                    style={{
-                      backgroundColor: 'transparent',
-                      border: `1px solid ${C.borderLight}`,
-                      color: C.text,
-                      borderRadius: '4px',
-                      padding: '0.3rem 0.75rem',
-                      fontSize: '0.72rem',
-                      fontFamily: 'monospace',
-                      cursor: 'pointer',
-                    }}
-                  >
-                    Fix →
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
+            3·Label checks
+          </h2>
+          <span style={{ fontSize: '0.65rem', fontFamily: 'monospace', color: C.textMuted, letterSpacing: '0.1em' }}>
+            RUN ON EVERY SAVE
+          </span>
         </div>
 
-        {/* Right: Team */}
-        <div>
-          <div
-            style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'baseline',
-              borderBottom: `1px solid ${C.border}`,
-              paddingBottom: '0.6rem',
-              marginBottom: '1rem',
-            }}
-          >
-            <h2
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '0.75rem' }}>
+          {data.label_checks.map((chk, idx) => (
+            <div
+              key={idx}
               style={{
-                fontSize: '1.5rem',
-                fontWeight: 400,
-                fontStyle: 'italic',
-                fontFamily: '"Playfair Display", Georgia, serif',
-                margin: 0,
-                color: '#ffffff',
+                backgroundColor: C.card,
+                border: `1px solid ${C.border}`,
+                borderRadius: '6px',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                padding: '0.85rem 1.15rem',
               }}
             >
-              Team
-            </h2>
-            <span style={{ fontSize: '0.65rem', fontFamily: 'monospace', color: C.textMuted, letterSpacing: '0.1em' }}>
-              TODAY
-            </span>
-          </div>
+              <div>
+                <div style={{ fontSize: '0.82rem', color: '#f1f5f9', fontWeight: 500 }}>{chk.title}</div>
+                <div style={{ fontSize: '0.7rem', color: C.textMuted }}>{chk.desc}</div>
+              </div>
 
-          <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: '1rem' }}>
-            <thead>
-              <tr style={{ borderBottom: `1px solid ${C.border}` }}>
-                <th
+              <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem' }}>
+                <span style={{ fontSize: '1rem', fontWeight: 600, color: C.amber, fontFamily: 'monospace' }}>
+                  {chk.count}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setActiveFixCheck(chk);
+                    setShowFixModal(true);
+                  }}
                   style={{
-                    textAlign: 'left',
-                    padding: '0.5rem 0',
-                    fontSize: '0.65rem',
-                    color: C.textMuted,
+                    backgroundColor: 'transparent',
+                    border: `1px solid ${C.borderLight}`,
+                    color: C.text,
+                    borderRadius: '4px',
+                    padding: '0.3rem 0.75rem',
+                    fontSize: '0.72rem',
                     fontFamily: 'monospace',
+                    cursor: 'pointer',
                   }}
                 >
-                  ANNOTATOR
-                </th>
-                <th
-                  style={{
-                    textAlign: 'right',
-                    padding: '0.5rem 0',
-                    fontSize: '0.65rem',
-                    color: C.textMuted,
-                    fontFamily: 'monospace',
-                  }}
-                >
-                  TICKETS / H
-                </th>
-                <th
-                  style={{
-                    textAlign: 'right',
-                    padding: '0.5rem 0',
-                    fontSize: '0.65rem',
-                    color: C.textMuted,
-                    fontFamily: 'monospace',
-                  }}
-                >
-                  ACCEPTS AI
-                </th>
-                <th
-                  style={{
-                    textAlign: 'right',
-                    padding: '0.5rem 0',
-                    fontSize: '0.65rem',
-                    color: C.textMuted,
-                    fontFamily: 'monospace',
-                  }}
-                >
-                  AGREEMENT
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {data.team.map((mem, idx) => (
-                <tr key={idx} style={{ borderBottom: `1px solid rgba(255, 255, 255, 0.05)` }}>
-                  <td style={{ padding: '0.75rem 0', fontSize: '0.78rem', fontFamily: 'monospace', color: '#cbd5e1' }}>
-                    {mem.name}
-                  </td>
-                  <td
-                    style={{
-                      padding: '0.75rem 0',
-                      textAlign: 'right',
-                      fontSize: '0.78rem',
-                      fontFamily: 'monospace',
-                      color: '#fff',
-                    }}
-                  >
-                    {mem.tickets_per_h}
-                  </td>
-                  <td
-                    style={{
-                      padding: '0.75rem 0',
-                      textAlign: 'right',
-                      fontSize: '0.78rem',
-                      fontFamily: 'monospace',
-                      color: '#fff',
-                    }}
-                  >
-                    {mem.accepts_ai}
-                  </td>
-                  <td
-                    style={{
-                      padding: '0.75rem 0',
-                      textAlign: 'right',
-                      fontSize: '0.78rem',
-                      fontFamily: 'monospace',
-                      color: '#fff',
-                    }}
-                  >
-                    {mem.agreement}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-
-          <div style={{ fontSize: '0.7rem', color: C.textMuted, lineHeight: '1.4' }}>
-            Agreement is measured on the 10% labeled twice. A darija-speaking reviewer is assigned tickets in darija and
-            arabizi.
-          </div>
+                  Fix →
+                </button>
+              </div>
+            </div>
+          ))}
         </div>
       </div>
 

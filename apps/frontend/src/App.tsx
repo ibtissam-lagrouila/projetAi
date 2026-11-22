@@ -179,7 +179,7 @@ const TopBar: React.FC<{ modality: 'tabular' | 'text' | 'image'; onModalityChang
               <ArrowRight size={14} />
             </button>
           </>
-        ) : location.pathname === '/augmentation' && modality === 'image' ? (
+        ) : (location.pathname === '/augmentation' && modality === 'image') || location.pathname === '/image-augmentation' ? (
           <>
             <button
               type="button"
@@ -198,7 +198,7 @@ const TopBar: React.FC<{ modality: 'tabular' | 'text' | 'image'; onModalityChang
               <span>Continue to versioning →</span>
             </button>
           </>
-        ) : location.pathname === '/augmentation' && modality === 'text' ? (
+        ) : (location.pathname === '/augmentation' && modality === 'text') || location.pathname === '/text-augmentation' ? (
           <>
             <button
               type="button"

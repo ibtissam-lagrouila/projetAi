@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { api } from '../services/api';
+import { filterDatasetsByModality } from '../utils/formatters';
 import { Dataset, TextCleaningRecipeResponse } from '../types';
 import { RefreshCw, AlertCircle } from 'lucide-react';
 
@@ -67,7 +68,7 @@ export const TextCleaningPage: React.FC = () => {
       const textList = list.filter(
         d => d.name.endsWith('.jsonl') || d.name.endsWith('.txt') || d.name.includes('text') || d.name.includes('ticket') || d.name.includes('review')
       );
-      setDatasets(textList.length > 0 ? textList : list);
+      setDatasets(filterDatasetsByModality(list, 'text'));
 
       const savedId = localStorage.getItem('datalift_selected_dataset_id');
       const match = (textList.length > 0 ? textList : list).find(d => d.id === savedId);

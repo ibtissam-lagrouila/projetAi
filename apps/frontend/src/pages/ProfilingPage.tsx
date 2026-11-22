@@ -1,8 +1,10 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { api } from '../services/api';
+import { filterDatasetsByModality } from '../utils/formatters';
 import { Dataset, DatasetVersion, VersionProfile, ColumnProfile } from '../types';
-import { RefreshCw, Database, ArrowRight } from 'lucide-react';
-import { Link, useNavigate } from 'react-router-dom';
+import { RefreshCw, Database, ArrowRight, Upload, AlertCircle, X, CheckCircle2 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { UploadModal } from '../components/UploadModal';
 
 const SegmentedGauge: React.FC<{ value: number | null }> = ({ value }) => {
   const totalBlocks = 20;
@@ -41,6 +43,46 @@ export const ProfilingPage: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const [profileLoading, setProfileLoading] = useState<boolean>(false);
   const [activeFilter, setActiveFilter] = useState<'ALL' | 'FLAGGED' | 'NUMERIC' | 'CATEGORY'>('ALL');
+  const [isUploadModalOpen, setIsUploadModalOpen] = useState<boolean>(false);
+  const [uploading, setUploading] = useState<boolean>(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+  const [uploadSuccess, setUploadSuccess] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+
+  const handleFileUpload = async (file: File) => {
+    if (!file) return;
+    const lowerName = file.name.toLowerCase();
+    if (!lowerName.endsWith('.csv') && !lowerName.endsWith('.tsv') && !lowerName.endsWith('.txt')) {
+      setUploadError('Invalid format. Only CSV files (.csv, .tsv, .txt) are accepted.');
+      return;
+    }
+
+    try {
+      setUploading(true);
+      setUploadError(null);
+      setUploadSuccess(null);
+      const datasetName = file.name.replace(/\.[^/.]+$/, '').trim() || 'dataset';
+      const createdDataset = await api.uploadRaw(datasetName, undefined, file);
+
+      // Reload datasets and switch to the newly created dataset
+      const all = await api.getDatasets();
+      const freshDatasets = filterDatasetsByModality(all, 'tabular');
+      setDatasets(freshDatasets);
+      setSelectedDatasetId(createdDataset.id);
+      await loadVersions(createdDataset.id);
+      setUploadSuccess(`File "${file.name}" uploaded successfully! Data profiling computed.`);
+      setTimeout(() => setUploadSuccess(null), 5000);
+    } catch (err: any) {
+      console.error('Upload failed:', err);
+      const detail = err.response?.data?.detail || err.message || 'Error uploading CSV file.';
+      setUploadError(typeof detail === 'string' ? detail : JSON.stringify(detail));
+    } finally {
+      setUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
+
+
 
   useEffect(() => {
     loadDatasets();
@@ -49,7 +91,8 @@ export const ProfilingPage: React.FC = () => {
   const loadDatasets = async () => {
     try {
       setLoading(true);
-      const data = await api.getDatasets();
+      const all = await api.getDatasets();
+      const data = filterDatasetsByModality(all, 'tabular');
       setDatasets(data);
 
       if (data.length > 0) {
@@ -226,11 +269,29 @@ export const ProfilingPage: React.FC = () => {
             No dataset registered
           </h3>
           <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', marginBottom: '1.5rem', maxWidth: '480px', margin: '0 auto 1.5rem auto' }}>
-            First upload a CSV file in <strong>Versioning</strong> so Datalift can generate its integrity report.
+            Upload a CSV file to immediately generate data health profiling and start your workflow.
           </p>
-          <Link to="/versioning" className="btn btn-primary">
-            Go to Versioning step
-          </Link>
+          <div style={{ display: 'flex', justifyContent: 'center', gap: '0.75rem' }}>
+            <button
+              type="button"
+              className="btn btn-primary font-mono"
+              style={{ fontSize: '0.8rem', padding: '0.55rem 1.25rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}
+              onClick={() => fileInputRef.current?.click()}
+              disabled={uploading}
+            >
+              <Upload size={14} />
+              <span>{uploading ? 'Analyzing CSV...' : 'Upload CSV file'}</span>
+            </button>
+            <input
+              type="file"
+              ref={fileInputRef}
+              onChange={(e) => {
+                if (e.target.files?.[0]) handleFileUpload(e.target.files[0]);
+              }}
+              accept=".csv,.tsv,.txt"
+              style={{ display: 'none' }}
+            />
+          </div>
         </div>
       </div>
     );
@@ -244,6 +305,30 @@ export const ProfilingPage: React.FC = () => {
 
   return (
     <div style={{ padding: '2rem 3rem 4rem 3rem', maxWidth: '1440px', width: '100%' }}>
+      {uploadError && (
+        <div style={{ backgroundColor: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.3)', color: '#f87171', padding: '0.65rem 1rem', borderRadius: '6px', fontSize: '0.8rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.25rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <AlertCircle size={15} />
+            <span>{uploadError}</span>
+          </div>
+          <button onClick={() => setUploadError(null)} style={{ background: 'none', border: 'none', color: '#f87171', cursor: 'pointer' }}>
+            <X size={14} />
+          </button>
+        </div>
+      )}
+
+      {uploadSuccess && (
+        <div style={{ backgroundColor: 'rgba(52, 211, 153, 0.1)', border: '1px solid rgba(52, 211, 153, 0.3)', color: '#34d399', padding: '0.65rem 1rem', borderRadius: '6px', fontSize: '0.8rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.25rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <CheckCircle2 size={15} />
+            <span>{uploadSuccess}</span>
+          </div>
+          <button onClick={() => setUploadSuccess(null)} style={{ background: 'none', border: 'none', color: '#34d399', cursor: 'pointer' }}>
+            <X size={14} />
+          </button>
+        </div>
+      )}
+
       {/* Top Selectors Bar */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1rem', marginBottom: '1.75rem', paddingBottom: '1rem', borderBottom: '1px solid var(--border)' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem', flexWrap: 'wrap' }}>
@@ -279,13 +364,48 @@ export const ProfilingPage: React.FC = () => {
           </div>
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+        {/* Buttons right: Import CSV + Continue to cleaning */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
           {profileLoading && (
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', fontSize: '0.75rem', color: 'var(--amber)' }}>
               <RefreshCw className="animate-spin" size={13} />
               <span className="font-mono">Diagnosing...</span>
             </div>
           )}
+
+          <input
+            type="file"
+            ref={fileInputRef}
+            onChange={(e) => {
+              if (e.target.files?.[0]) handleFileUpload(e.target.files[0]);
+            }}
+            accept=".csv,.tsv,.txt"
+            style={{ display: 'none' }}
+          />
+
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            disabled={uploading}
+            style={{
+              background: '#1a1b20',
+              border: '1px solid var(--amber)',
+              color: 'var(--amber)',
+              padding: '7px 16px',
+              borderRadius: 6,
+              fontSize: 12,
+              fontFamily: 'monospace',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 8,
+              transition: 'all 0.15s',
+            }}
+          >
+            <Upload size={14} />
+            <span>{uploading ? 'Importing…' : 'Import a tabular file (.csv, .tsv)'}</span>
+          </button>
+
           <button
             type="button"
             className="btn btn-primary"
@@ -305,7 +425,7 @@ export const ProfilingPage: React.FC = () => {
             {/* Left: Dataset Name & 4 KPIs */}
             <div>
               <div className="font-mono" style={{ fontSize: '0.7rem', color: 'var(--text-muted)', letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: '0.5rem' }}>
-                DATASET • #{profile.version_hash.slice(0, 8)} RAW • SOURCE D'ORIGINE
+                DATASET • #{profile.version_hash.slice(0, 8)} RAW • ORIGINAL SOURCE
               </div>
 
               {/* Title with original file name (extension in grey italics) */}
@@ -609,7 +729,7 @@ export const ProfilingPage: React.FC = () => {
                       </div>
                     ) : (
                       <div className="font-mono" style={{ fontSize: '0.68rem', color: 'var(--text-faint)' }}>
-                        {col.stats ? `moy: ${col.stats.mean}` : 'Integrity verified'}
+                        {col.stats ? `mean: ${col.stats.mean}` : 'Integrity verified'}
                       </div>
                     )}
                   </div>
@@ -625,6 +745,21 @@ export const ProfilingPage: React.FC = () => {
           </div>
         </>
       )}
+
+      {/* Upload Modal for custom dataset name / existing dataset attachment */}
+      <UploadModal
+        isOpen={isUploadModalOpen}
+        onClose={() => setIsUploadModalOpen(false)}
+        datasets={datasets}
+        selectedDatasetId={selectedDatasetId}
+        onSuccess={async (newDatasetId) => {
+          const freshDatasets = await api.getDatasets();
+          setDatasets(freshDatasets);
+          const targetId = newDatasetId || (freshDatasets[0]?.id ?? '');
+          setSelectedDatasetId(targetId);
+          await loadVersions(targetId);
+        }}
+      />
     </div>
   );
 };

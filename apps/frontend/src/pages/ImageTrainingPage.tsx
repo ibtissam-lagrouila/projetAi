@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Check, AlertTriangle, X, Play, Copy, CheckCircle2 } from 'lucide-react';
 import { api } from '../services/api';
+import { filterDatasetsByModality } from '../utils/formatters';
 import { Dataset, ImageTrainingDataResponse } from '../types';
 
 const C = {
@@ -97,7 +98,7 @@ export const ImageTrainingPage: React.FC = () => {
           );
         });
         const usableList = imageDatasets.length > 0 ? imageDatasets : list;
-        setDatasets(usableList);
+        setDatasets(filterDatasetsByModality(list, 'image'));
 
         const preferred =
           usableList.find((d) => d.name.toLowerCase().includes('defect') || d.name.toLowerCase().includes('product')) ||

@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../services/api';
+import { filterDatasetsByModality } from '../utils/formatters';
 import { Dataset, TextVersioningDataResponse } from '../types';
 import { RefreshCw, AlertCircle, Check, Copy, Download } from 'lucide-react';
 
@@ -70,7 +71,7 @@ export const TextVersioningPage: React.FC = () => {
         );
       });
       const candidates = textSets.length > 0 ? textSets : all;
-      setDatasets(candidates);
+      setDatasets(filterDatasetsByModality(all, 'text'));
 
       if (candidates.length > 0 && !selectedDatasetId) {
         const preferred =

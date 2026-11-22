@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Check, AlertTriangle, CheckCircle2 } from 'lucide-react';
 import { api } from '../services/api';
+import { filterDatasetsByModality } from '../utils/formatters';
 import {
   Dataset,
   TextDriftDataResponse,
@@ -90,7 +91,7 @@ export const TextDriftPage: React.FC = () => {
           );
         });
         const usableList = textDatasets.length > 0 ? textDatasets : list;
-        setDatasets(usableList);
+        setDatasets(filterDatasetsByModality(list, 'text'));
 
         const stored = localStorage.getItem('datalift_selected_dataset_id');
         const match = usableList.find((d) => d.id === stored);

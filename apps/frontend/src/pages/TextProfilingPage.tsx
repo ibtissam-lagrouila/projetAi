@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { api } from '../services/api';
+import { filterDatasetsByModality } from '../utils/formatters';
 import { Dataset, TextProfileResponse, TextHistogramItem } from '../types';
 import { RefreshCw, Upload } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
@@ -79,7 +80,8 @@ export const TextProfilingPage: React.FC = () => {
   const loadDatasets = async () => {
     try {
       setLoading(true);
-      const data = await api.getDatasets();
+      const all = await api.getDatasets();
+      const data = filterDatasetsByModality(all, 'text');
       setDatasets(data);
 
       if (data.length > 0) {
@@ -158,7 +160,8 @@ export const TextProfilingPage: React.FC = () => {
       setProfile(newProfile);
       showNotif(`File "${file.name}" imported and analyzed successfully!`, true);
       // Reload datasets list
-      const freshDs = await api.getDatasets();
+      const all = await api.getDatasets();
+      const freshDs = filterDatasetsByModality(all, 'text');
       setDatasets(freshDs);
       setSelectedDatasetId(newProfile.dataset_id);
       localStorage.setItem('datalift_selected_dataset_id', newProfile.dataset_id);
@@ -223,7 +226,7 @@ export const TextProfilingPage: React.FC = () => {
             }}
           >
             <Upload size={14} />
-            <span>{uploading ? 'Importation…' : 'Import a text file (.jsonl, .csv, .txt)'}</span>
+            <span>{uploading ? 'Importing…' : 'Import a text file (.jsonl, .csv, .txt)'}</span>
           </button>
         </div>
 
@@ -372,7 +375,7 @@ export const TextProfilingPage: React.FC = () => {
             }}
           >
             <Upload size={14} />
-            <span>{uploading ? 'Importation…' : 'Import a text file (.jsonl, .csv, .txt)'}</span>
+            <span>{uploading ? 'Importing…' : 'Import a text file (.jsonl, .csv, .txt)'}</span>
           </button>
 
           <button

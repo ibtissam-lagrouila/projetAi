@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useMemo, useCallback } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { api } from '../services/api';
+import { filterDatasetsByModality } from '../utils/formatters';
 import {
   Dataset,
   DatasetVersion,
@@ -93,7 +94,8 @@ export const CleaningPage: React.FC = () => {
   const loadDatasets = async () => {
     try {
       setLoading(true);
-      const data = await api.getDatasets();
+      const all = await api.getDatasets();
+      const data = filterDatasetsByModality(all, 'tabular');
       setDatasets(data);
 
       if (data.length > 0) {

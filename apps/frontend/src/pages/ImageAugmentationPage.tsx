@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../services/api';
+import { filterDatasetsByModality } from '../utils/formatters';
 import { Dataset, ImageAugmentationRecipeResponse, ImageAugmentationComparisonResponse } from '../types';
 import { RefreshCw, AlertCircle, Lock, Check, AlertTriangle } from 'lucide-react';
 
@@ -90,7 +91,7 @@ export const ImageAugmentationPage: React.FC = () => {
         );
       });
       const candidates = imageSets.length > 0 ? imageSets : all;
-      setDatasets(candidates);
+      setDatasets(filterDatasetsByModality(all, 'image'));
 
       if (candidates.length > 0 && !selectedDatasetId) {
         const preferred =

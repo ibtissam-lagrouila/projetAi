@@ -277,6 +277,44 @@ export const ImageProfilingPage: React.FC = () => {
 
   const showNotif = useCallback((msg: string, ok = true) => setNotif({ msg, ok }), []);
 
+  const handleImageFindingAction = (f: any) => {
+    const curDataset = datasets.find(d => d.id === selectedDatasetId);
+    const dsId = selectedDatasetId || curDataset?.id || profile?.dataset_name || 'dataset';
+    const vHash = selectedVersionHash || profile?.version_hash || 'latest';
+    const actionLabel = (f.action_label || '').toLowerCase();
+    const titleLower = (f.title || '').toLowerCase();
+
+    // 1. Augmentation / class imbalance
+    if (actionLabel.includes('augment') || titleLower.includes('imbalance') || titleLower.includes('defect') || titleLower.includes('rare')) {
+      navigate(`/image-augmentation?dataset=${encodeURIComponent(dsId)}&version=${encodeURIComponent(vHash)}`, {
+        state: { datasetId: dsId, versionHash: vHash },
+      });
+      return;
+    }
+
+    // 2. Unlabeled / missing bounding boxes -> Labeling
+    if (actionLabel.includes('label') || titleLower.includes('unlabeled') || titleLower.includes('missing box') || titleLower.includes('annotation')) {
+      navigate(`/image-labeling?dataset=${encodeURIComponent(dsId)}&version=${encodeURIComponent(vHash)}`, {
+        state: { datasetId: dsId, versionHash: vHash },
+      });
+      return;
+    }
+
+    // 3. Cleaning operations: duplicates, blurry/exposure, corrupt
+    let targetAction = 'remove_duplicates';
+    if (actionLabel.includes('group') || titleLower.includes('duplicate') || titleLower.includes('similar')) {
+      targetAction = 'remove_duplicates';
+    } else if (actionLabel.includes('review') || titleLower.includes('blurry') || titleLower.includes('dark') || titleLower.includes('exposure') || titleLower.includes('resolution')) {
+      targetAction = 'exclude_blurry';
+    } else if (actionLabel.includes('remove') || titleLower.includes('corrupt') || titleLower.includes('unreadable')) {
+      targetAction = 'remove_corrupted';
+    }
+
+    navigate(`/image-cleaning?dataset=${encodeURIComponent(dsId)}&version=${encodeURIComponent(vHash)}&action=${encodeURIComponent(targetAction)}`, {
+      state: { datasetId: dsId, versionHash: vHash, action: targetAction },
+    });
+  };
+
   const handleGenerateAuditReport = useCallback(() => {
     if (!profile) return;
     const curDataset = datasets.find(d => d.id === selectedDatasetId);
@@ -820,17 +858,10 @@ export const ImageProfilingPage: React.FC = () => {
               {/* Action Button */}
               <div style={{ textAlign: 'right' }}>
                 <button
-                  onClick={() => showNotif(`Action: ${f.action_label}`)}
-                  style={{
-                    background: '#15161a',
-                    border: `1px solid ${C.border}`,
-                    color: C.text,
-                    padding: '5px 14px',
-                    borderRadius: 4,
-                    fontSize: 11,
-                    fontFamily: 'monospace',
-                    cursor: 'pointer',
-                  }}
+                  type="button"
+                  className="finding-action-btn font-mono"
+                  onClick={() => handleImageFindingAction(f)}
+                  title={`Open in resolution step (${f.action_label})`}
                 >
                   {f.action_label}
                 </button>

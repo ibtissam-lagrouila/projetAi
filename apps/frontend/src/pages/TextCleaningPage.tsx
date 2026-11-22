@@ -90,6 +90,14 @@ export const TextCleaningPage: React.FC = () => {
         localStorage.setItem('datalift_selected_dataset_id', target.id);
         localStorage.setItem('datalift_selected_dataset_text', target.id);
       }
+
+      const queryAction = queryParams.get('action') || (location.state as any)?.action;
+      if (queryAction) {
+        if (queryAction === 'pii' || queryAction === 'mask_pii') setPreviewStepId('mask_pii');
+        else if (queryAction === 'duplicates' || queryAction === 'remove_duplicates') setPreviewStepId('remove_duplicates');
+        else if (queryAction === 'encoding' || queryAction === 'repair_encoding') setPreviewStepId('repair_encoding');
+        else if (queryAction === 'empty' || queryAction === 'remove_empty') setPreviewStepId('remove_empty');
+      }
     } catch (err: any) {
       console.error(err);
       setError('Error loading datasets');

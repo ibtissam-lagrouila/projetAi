@@ -67,6 +67,38 @@ export const TextProfilingPage: React.FC = () => {
 
   const showNotif = useCallback((msg: string, ok = true) => setNotif({ msg, ok }), []);
 
+  const handleTextFindingAction = (f: any) => {
+    const curDataset = datasets.find(d => d.id === selectedDatasetId);
+    const dsId = selectedDatasetId || curDataset?.id || profile?.dataset_name || 'dataset';
+    const vHash = selectedVersionHash || profile?.version_hash || 'latest';
+    const actionLabel = (f.action_label || '').toLowerCase();
+    const titleLower = (f.title || '').toLowerCase();
+
+    // Rebalance / class imbalance -> Step 03 Augmentation
+    if (actionLabel.includes('option') || titleLower.includes('imbalance') || titleLower.includes('class')) {
+      navigate(`/text-augmentation?dataset=${encodeURIComponent(dsId)}&version=${encodeURIComponent(vHash)}`, {
+        state: { datasetId: dsId, versionHash: vHash },
+      });
+      return;
+    }
+
+    // Cleaning operations: PII, duplicates, encoding, empty
+    let targetAction = 'mask_pii';
+    if (actionLabel.includes('mask') || titleLower.includes('personal') || titleLower.includes('pii') || titleLower.includes('email') || titleLower.includes('phone')) {
+      targetAction = 'mask_pii';
+    } else if (actionLabel.includes('delete') || titleLower.includes('duplicate')) {
+      targetAction = 'remove_duplicates';
+    } else if (actionLabel.includes('repair') || titleLower.includes('corrupt') || titleLower.includes('encoding') || titleLower.includes('utf')) {
+      targetAction = 'repair_encoding';
+    } else if (actionLabel.includes('clean') || titleLower.includes('empty') || titleLower.includes('short')) {
+      targetAction = 'remove_empty';
+    }
+
+    navigate(`/text-cleaning?dataset=${encodeURIComponent(dsId)}&version=${encodeURIComponent(vHash)}&action=${encodeURIComponent(targetAction)}`, {
+      state: { datasetId: dsId, versionHash: vHash, action: targetAction },
+    });
+  };
+
   const handleGenerateAuditReport = useCallback(() => {
     if (!profile) return;
     const curDataset = datasets.find(d => d.id === selectedDatasetId);
@@ -616,17 +648,10 @@ export const TextProfilingPage: React.FC = () => {
               {/* Action Button */}
               <div style={{ textAlign: 'right' }}>
                 <button
-                  onClick={() => showNotif(`Action executed: ${f.action_label}`)}
-                  style={{
-                    background: '#15161a',
-                    border: `1px solid ${C.border}`,
-                    color: C.text,
-                    padding: '5px 14px',
-                    borderRadius: 4,
-                    fontSize: 11,
-                    fontFamily: 'monospace',
-                    cursor: 'pointer',
-                  }}
+                  type="button"
+                  className="finding-action-btn font-mono"
+                  onClick={() => handleTextFindingAction(f)}
+                  title={`Open in resolution step (${f.action_label})`}
                 >
                   {f.action_label}
                 </button>

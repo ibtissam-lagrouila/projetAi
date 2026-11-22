@@ -91,6 +91,11 @@ export const ImageCleaningPage: React.FC = () => {
         localStorage.setItem('datalift_selected_dataset_id', target.id);
         localStorage.setItem('datalift_selected_dataset_image', target.id);
       }
+
+      const queryAction = queryParams.get('action') || (location.state as any)?.action;
+      if (queryAction && stepToggles[queryAction] !== undefined) {
+        setPreviewStepId(queryAction);
+      }
     } catch (err: any) {
       console.error(err);
       setError('Error loading image datasets');

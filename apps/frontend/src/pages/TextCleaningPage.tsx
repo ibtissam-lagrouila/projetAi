@@ -78,7 +78,7 @@ export const TextCleaningPage: React.FC = () => {
       }
     } catch (err: any) {
       console.error(err);
-      setError('Erreur lors du chargement des jeux de données');
+      setError('Error loading datasets');
     }
   }, []);
 
@@ -105,7 +105,7 @@ export const TextCleaningPage: React.FC = () => {
       }
     } catch (err: any) {
       console.error(err);
-      setError('Erreur lors de la récupération de la recette de nettoyage.');
+      setError('Error loading cleaning recipe.');
     } finally {
       setLoading(false);
     }
@@ -165,9 +165,9 @@ export const TextCleaningPage: React.FC = () => {
         enabled_steps: enabledList,
         parameters: stepParams,
       });
-      showNotif(res.message || 'Dry run terminé avec succès sur 2 000 textes.', true);
+      showNotif(res.message || 'Dry run completed successfully on 2,000 texts.', true);
     } catch (err: any) {
-      showNotif('Erreur lors du dry run: ' + (err.message || 'inconnue'), false);
+      showNotif('Error during dry run: ' + (err.message || 'unknown'), false);
     } finally {
       setDryRunning(false);
     }
@@ -184,9 +184,9 @@ export const TextCleaningPage: React.FC = () => {
         parameters: stepParams,
       });
       setRecipe(res);
-      showNotif(`Recette appliquée ! Version ${res.kpis.output || 'v2'} générée avec succès.`, true);
+      showNotif(`Recipe applied! Version ${res.kpis.output || 'v2'} generated successfully.`, true);
     } catch (err: any) {
-      showNotif('Erreur application: ' + (err.message || 'inconnue'), false);
+      showNotif('Error applying: ' + (err.message || 'unknown'), false);
     } finally {
       setApplying(false);
     }
@@ -202,14 +202,14 @@ export const TextCleaningPage: React.FC = () => {
     a.download = `recipe_${recipe.display_title || 'text'}.json`;
     a.click();
     URL.revokeObjectURL(url);
-    showNotif('Recette de nettoyage exportée au format JSON.');
+    showNotif('Cleaning recipe exported as JSON.');
   };
 
   if (loading && !recipe) {
     return (
       <div style={{ padding: 48, textAlign: 'center', color: C.muted, fontFamily: 'monospace' }}>
         <RefreshCw size={24} className="animate-spin" style={{ margin: '0 auto 16px', display: 'block', color: C.amber }} />
-        Chargement de la recette de nettoyage de texte...
+        Loading text cleaning recipe...
       </div>
     );
   }
@@ -276,7 +276,7 @@ export const TextCleaningPage: React.FC = () => {
         {/* Dataset selector */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
           <span style={{ fontSize: 11, fontFamily: 'monospace', color: C.muted, textTransform: 'uppercase', letterSpacing: 0.8 }}>
-            Jeu de données :
+            Dataset :
           </span>
           <select
             value={selectedDatasetId}
@@ -589,7 +589,7 @@ export const TextCleaningPage: React.FC = () => {
         <div style={{ marginTop: 14 }}>
           <button
             type="button"
-            onClick={() => showNotif("Module d'étape manuelle : lowercase, strip URLs, regex replace (prêt pour extension).", true)}
+            onClick={() => showNotif("Manual step module: lowercase, strip URLs, regex replace (ready for extension).", true)}
             style={{
               background: 'none',
               border: 'none',

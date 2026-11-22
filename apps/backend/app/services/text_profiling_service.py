@@ -56,7 +56,7 @@ ENGLISH_MARKERS = {
 
 
 def normalize_text_for_dedup(text: str) -> str:
-    """Règle de normalisation pour détecter les quasi-doublons."""
+    """Normalization rule to detect near-duplicates."""
     t = unicodedata.normalize("NFKD", text)
     t = "".join(c for c in t if not unicodedata.combining(c))
     t = t.lower()
@@ -66,26 +66,26 @@ def normalize_text_for_dedup(text: str) -> str:
 
 def detect_document_language(text: str) -> Tuple[str, bool]:
     """
-    Détecte la langue d'un document texte.
-    Retourne (langue, is_mixed).
-    Gère les textes courts en 'indéterminée'.
-    Ne propose 'Darija' que si un détecteur le gère réellement.
-    Ne compte 'Mixte' que si deux langues sont réellement détectées dans des phrases distinctes.
+    Detects the language of a text document.
+    Returns (language, is_mixed).
+    Marks short texts as 'undetermined'.
+    Only suggests 'Darija' if a detector actually supports it.
+    Only counts 'Mixed' if two languages are truly detected in distinct sentences.
     """
     stripped = text.strip()
     alpha_chars = re.findall(r"[a-zA-Z\u0600-\u06FF\u00C0-\u017F]", stripped)
     words = re.findall(r"\b[a-zA-Z\u0600-\u06FF\u00C0-\u017F\']+\b", stripped.lower())
 
-    # 1. Textes trop courts, répétitifs, ou sans contenu textuel
+    # 1. Very short, repetitive, or non-textual documents
     if len(alpha_chars) < 4 or len(set(alpha_chars)) < 3 or (len(words) < 2 and len(alpha_chars) < 7):
-        return ("indéterminée", False)
+        return ("undetermined", False)
 
-    # 2. Caractères arabes
+    # 2. Arabic characters
     ar_chars = re.findall(r"[\u0600-\u06FF]", stripped)
     if len(ar_chars) >= 4 and len(ar_chars) / max(len(alpha_chars), 1) > 0.4:
-        return ("Arabe", False)
+        return ("Arabic", False)
 
-    # 3. Vérification des documents mixtes (deux phrases dans des langues distinctes)
+    # 3. Check for mixed documents (two sentences in distinct languages)
     sentences = [s.strip() for s in re.split(r"[.!?\n]+", stripped) if len(s.strip()) > 8]
     if len(sentences) >= 2:
         sentence_langs = set()
@@ -96,28 +96,28 @@ def detect_document_language(text: str) -> Tuple[str, bool]:
                 en_s = len(s_words & ENGLISH_MARKERS)
                 es_s = len(s_words & SPANISH_MARKERS)
                 if fr_s >= 2 and fr_s > en_s and fr_s > es_s:
-                    sentence_langs.add("Français")
+                    sentence_langs.add("French")
                 elif en_s >= 2 and en_s > fr_s and en_s > es_s:
-                    sentence_langs.add("Anglais")
+                    sentence_langs.add("English")
                 elif es_s >= 2 and es_s > fr_s and es_s > en_s:
-                    sentence_langs.add("Espagnol")
+                    sentence_langs.add("Spanish")
         if len(sentence_langs) >= 2:
-            return ("Mixte", True)
+            return ("Mixed", True)
 
-    # 4. Score de mots-clés lexicaux
+    # 4. Lexical keyword scoring
     word_set = set(words)
     fr_score = len(word_set & FRENCH_MARKERS)
     es_score = len(word_set & SPANISH_MARKERS)
     en_score = len(word_set & ENGLISH_MARKERS)
 
     if fr_score >= 2 and fr_score > en_score and fr_score > es_score:
-        return ("Français", False)
+        return ("French", False)
     if es_score >= 2 and es_score > fr_score and es_score > en_score:
-        return ("Espagnol", False)
+        return ("Spanish", False)
     if en_score >= 2 and en_score > fr_score and en_score > es_score:
-        return ("Anglais", False)
+        return ("English", False)
 
-    # 5. Détection statistique avec langdetect sur texte nettoyé en minuscules
+    # 5. Statistical detection with langdetect on lowercase cleaned text
     clean_text = re.sub(r"[^\w\s\u0600-\u06FF\u00C0-\u017F]", " ", stripped.lower()).strip()
     try:
         langs = detect_langs(clean_text)
@@ -129,33 +129,33 @@ def detect_document_language(text: str) -> Tuple[str, bool]:
         prob = 0.0
 
     if es_score >= 1 and es_score > fr_score and es_score > en_score:
-        return ("Espagnol", False)
+        return ("Spanish", False)
     if en_score >= 1 and en_score > fr_score and en_score > es_score:
-        return ("Anglais", False)
+        return ("English", False)
     if fr_score >= 1:
-        return ("Français", False)
+        return ("French", False)
     if code == "es":
-        return ("Espagnol", False)
+        return ("Spanish", False)
     if code == "en":
-        return ("Anglais", False)
+        return ("English", False)
     if code == "fr":
-        return ("Français", False)
+        return ("French", False)
     if code == "ar":
-        return ("Arabe", False)
+        return ("Arabic", False)
 
     if prob > 0.8:
         mapping = {
-            "fr": "Français",
-            "en": "Anglais",
-            "es": "Espagnol",
-            "ar": "Arabe",
-            "de": "Allemand",
-            "it": "Italien",
-            "pt": "Portugais",
+            "fr": "French",
+            "en": "English",
+            "es": "Spanish",
+            "ar": "Arabic",
+            "de": "German",
+            "it": "Italian",
+            "pt": "Portuguese",
         }
-        return (mapping.get(code, "indéterminée"), False)
+        return (mapping.get(code, "undetermined"), False)
 
-    return ("indéterminée", False)
+    return ("undetermined", False)
 
 
 class TextProfilingService:
@@ -179,7 +179,7 @@ class TextProfilingService:
     def profile_dataset(self, dataset_id: str, db: Session, version_hash: Optional[str] = None) -> Dict[str, Any]:
         dataset = db.query(Dataset).filter(Dataset.id == dataset_id).first()
         if not dataset:
-            raise HTTPException(status_code=404, detail="Dataset non trouvé")
+            raise HTTPException(status_code=404, detail="Dataset not found")
 
         # Pick version
         if version_hash:
@@ -197,7 +197,7 @@ class TextProfilingService:
             )
 
         if not version or not version.storage_path or not Path(version.storage_path).exists():
-            raise HTTPException(status_code=404, detail="Fichier Parquet introuvable")
+            raise HTTPException(status_code=404, detail="Parquet file not found")
 
         df = pq.read_table(version.storage_path).to_pandas()
         total_rows = len(df)
@@ -216,103 +216,103 @@ class TextProfilingService:
                 raw_size_bytes = trans.parameters["raw_size_bytes"]
 
         if raw_size_bytes < 1024 * 1024:
-            size_str = f"{max(1, round(raw_size_bytes / 1024))} Ko"
+            size_str = f"{max(1, round(raw_size_bytes / 1024))} KB"
         else:
-            size_str = f"{round(raw_size_bytes / (1024 * 1024), 1)} Mo"
+            size_str = f"{round(raw_size_bytes / (1024 * 1024), 1)} MB"
 
         text_col, target_col, id_col = self._find_text_columns(df)
         series_text = df[text_col].fillna("").astype(str)
 
-        # ─── If this is support_tickets.jsonl template, provide clean French values ───
+        # ─── If this is support_tickets.jsonl template, provide clean English values ───
         is_support_template = "support_tickets" in dataset.name.lower()
         if is_support_template and total_rows == 58300:
             return {
                 "dataset_id": str(dataset.id),
                 "dataset_name": dataset.name,
                 "version_hash": version.version_hash,
-                "breadcrumb": "DATASET · v1 BRUT · CLASSIFICATION DE TEXTES",
+                "breadcrumb": "DATASET · v1 RAW · TEXT CLASSIFICATION",
                 "original_filename": dataset.name if "." in dataset.name else f"{dataset.name}.jsonl",
                 "kpis": {
-                    "documents": "58 300",
+                    "documents": "58,300",
                     "languages": 4,
                     "labels": 7,
-                    "size": "41 Mo",
+                    "size": "41 MB",
                 },
                 "health": {
                     "score": 74,
                     "bars": [
-                        {"label": "Complétude", "pct": 99, "color": "amber"},
-                        {"label": "Unicité", "pct": 97, "color": "amber"},
-                        {"label": "Encodage", "pct": 95, "color": "amber"},
-                        {"label": "Confidentialité", "pct": 52, "color": "red"},
-                        {"label": "Équilibre des étiquettes", "pct": 58, "color": "red"},
+                        {"label": "Completeness", "pct": 99, "color": "amber"},
+                        {"label": "Uniqueness", "pct": 97, "color": "amber"},
+                        {"label": "Encoding", "pct": 95, "color": "amber"},
+                        {"label": "Privacy", "pct": 52, "color": "red"},
+                        {"label": "Label balance", "pct": 58, "color": "red"},
                     ],
                 },
                 "findings": [
                     {
                         "rank": "01",
                         "severity": "HIGH",
-                        "title": "Données personnelles dans 2 310 textes",
-                        "subtitle": "Numéros de téléphone, adresses email, noms",
-                        "action_label": "Masquer →",
+                        "title": "Personal data in 2,310 texts",
+                        "subtitle": "Phone numbers, email addresses, names",
+                        "action_label": "Mask →",
                     },
                     {
                         "rank": "02",
                         "severity": "HIGH",
-                        "title": "Déséquilibre des étiquettes",
-                        "subtitle": '« billing » représente 41 % de l\'ensemble des documents',
-                        "action_label": "Voir les options →",
+                        "title": "Label imbalance",
+                        "subtitle": '« billing » accounts for 41% of all documents',
+                        "action_label": "View options →",
                     },
                     {
                         "rank": "03",
                         "severity": "MEDIUM",
-                        "title": "1 840 textes en double",
-                        "subtitle": "Même message envoyé plusieurs fois",
-                        "action_label": "Supprimer →",
+                        "title": "1,840 duplicate texts",
+                        "subtitle": "Same message sent multiple times",
+                        "action_label": "Delete →",
                     },
                     {
                         "rank": "04",
                         "severity": "MEDIUM",
-                        "title": "96 textes avec des caractères corrompus",
-                        "subtitle": "Mauvais encodage : é affiché comme Ã©",
-                        "action_label": "Réparer →",
+                        "title": "96 texts with corrupted characters",
+                        "subtitle": "Encoding issue: é displayed as Ã©",
+                        "action_label": "Repair →",
                     },
                     {
                         "rank": "05",
                         "severity": "LOW",
-                        "title": "412 textes vides",
-                        "subtitle": "Uniquement des espaces ou une signature",
-                        "action_label": "Supprimer →",
+                        "title": "412 empty texts",
+                        "subtitle": "Whitespace or signature only",
+                        "action_label": "Delete →",
                     },
                 ],
                 "languages": {
                     "detected_count": 4,
                     "slices": [
-                        {"name": "Français", "pct": 52, "color": "#f59e0b"},
-                        {"name": "Arabe", "pct": 21, "color": "#86efac"},
+                        {"name": "French", "pct": 52, "color": "#f59e0b"},
+                        {"name": "Arabic", "pct": 21, "color": "#86efac"},
                         {"name": "Darija", "pct": 14, "color": "#93c5fd"},
-                        {"name": "Anglais", "pct": 13, "color": "#fef08a"},
+                        {"name": "English", "pct": 13, "color": "#fef08a"},
                     ],
-                    "mixed_text": "8 140 documents mélangent deux langues dans le même texte.",
+                    "mixed_text": "8,140 documents mix two languages in the same text.",
                 },
                 "length": {
                     "median": 42,
                     "max_label": "800+",
-                    "footnote_empty": "412 vides",
-                    "footnote_long": "230 au-delà de la limite du modèle",
+                    "footnote_empty": "412 empty",
+                    "footnote_long": "230 beyond model limit",
                     "histogram": [8, 14, 25, 42, 65, 82, 54, 38, 22, 16, 12, 7, 5, 4, 3, 2, 8],
                 },
                 "labels": {
                     "has_labels": True,
                     "classes_count": 7,
                     "bars": [
-                        {"label": "billing", "count_str": "23,9k", "pct": 41, "color": "#f87171"},
-                        {"label": "delivery", "count_str": "11,2k", "pct": 19, "color": "#f59e0b"},
-                        {"label": "refund", "count_str": "8,4k", "pct": 14, "color": "#f59e0b"},
-                        {"label": "account", "count_str": "6,1k", "pct": 10, "color": "#f59e0b"},
-                        {"label": "technical", "count_str": "4,7k", "pct": 8, "color": "#f59e0b"},
-                        {"label": "complaint", "count_str": "2,9k", "pct": 5, "color": "#f59e0b"},
-                        {"label": "other", "count_str": "1,1k", "pct": 3, "color": "#f59e0b"},
+                        {"label": "billing", "count_str": "23.9k", "pct": 41, "color": "#f87171"},
+                        {"label": "delivery", "count_str": "11.2k", "pct": 19, "color": "#f59e0b"},
+                        {"label": "refund", "count_str": "8.4k", "pct": 14, "color": "#f59e0b"},
+                        {"label": "account", "count_str": "6.1k", "pct": 10, "color": "#f59e0b"},
+                        {"label": "technical", "count_str": "4.7k", "pct": 8, "color": "#f59e0b"},
+                        {"label": "complaint", "count_str": "2.9k", "pct": 5, "color": "#f59e0b"},
+                        {"label": "other", "count_str": "1.1k", "pct": 3, "color": "#f59e0b"},
                     ],
                 },
                 "quotes": [
@@ -320,7 +320,7 @@ class TextProfilingService:
                         "prefix": "Bonjour, ma commande n'est pas arrivée. Appelez-moi au ",
                         "marked": "06 ···· 12",
                         "suffix": " svp.",
-                        "tag": "DONNÉES PERSONNELLES",
+                        "tag": "PERSONAL DATA",
                         "tag_color": "#f97316",
                         "meta": "#10482 · fr",
                         "mark_style": "wavy-orange",
@@ -329,7 +329,7 @@ class TextProfilingService:
                         "prefix": "Le produit est ",
                         "marked": "cassÃ©",
                         "suffix": " à la livraison, je veux un remboursement.",
-                        "tag": "ENCODAGE",
+                        "tag": "ENCODING",
                         "tag_color": "#f59e0b",
                         "meta": "#22917 · fr",
                         "mark_style": "wavy-amber",
@@ -338,7 +338,7 @@ class TextProfilingService:
                         "prefix": "Where is my refund? I asked three times already.",
                         "marked": "",
                         "suffix": "",
-                        "tag": "ÉTIQUETTE PROBABLEMENT INCORRECTE",
+                        "tag": "PROBABLY INCORRECT LABEL",
                         "tag_color": "#60a5fa",
                         "meta": "#34112 · en",
                         "mark_style": "none",
@@ -356,7 +356,7 @@ class TextProfilingService:
         exact_dup_excess = sum(v - 1 for v in exact_groups_dict.values())
         exact_groups_list = [{"text": k, "count": v} for k, v in sorted(exact_groups_dict.items(), key=lambda x: -x[1])]
 
-        # Quasi-doublons (Near-duplicates via normalization)
+        # Near-duplicates via normalization
         norm_dict: Dict[str, List[str]] = {}
         for s in series_text:
             n = normalize_text_for_dedup(s)
@@ -396,11 +396,11 @@ class TextProfilingService:
 
         # Color palette for languages
         lang_color_map = {
-            "Français": "#f59e0b",
+            "French": "#f59e0b",
             "Arabe": "#86efac",
             "Anglais": "#fef08a",
             "Espagnol": "#93c5fd",
-            "indéterminée": "#9ca3af",
+            "undetermined": "#9ca3af",
             "Mixte": "#c084fc",
         }
 
@@ -415,15 +415,15 @@ class TextProfilingService:
                 "color": lang_color_map.get(lang_name, "#cbd5e1"),
             })
 
-        # Count detected languages excluding 'indéterminée'
-        detected_languages_count = sum(1 for l in lang_counts if l != "indéterminée")
+        # Count detected languages excluding 'undetermined'
+        detected_languages_count = sum(1 for l in lang_counts if l != "undetermined")
 
         if mixed_docs_count == 0:
-            mixed_text_desc = "Aucun document mixte détecté dans ce corpus."
+            mixed_text_desc = "No mixed documents detected in this corpus."
         elif mixed_docs_count == 1:
-            mixed_text_desc = "1 document mélange deux langues dans le même texte."
+            mixed_text_desc = "1 document mixes two languages in the same text."
         else:
-            mixed_text_desc = f"{mixed_docs_count:,} documents mélangent deux langues dans le même texte."
+            mixed_text_desc = f"{mixed_docs_count:,} documents mix two languages in the same text."
 
         # ─── Labels / Target classes ───
         has_labels = False
@@ -457,21 +457,21 @@ class TextProfilingService:
         long_count = int((words_per_doc > 500).sum())
 
         length_buckets = [
-            ("0-5 mots", 0, 5),
-            ("6-10 mots", 6, 10),
-            ("11-15 mots", 11, 15),
-            ("16-20 mots", 16, 20),
-            ("21-25 mots", 21, 25),
-            ("26-30 mots", 26, 30),
-            ("31-40 mots", 31, 40),
-            ("41-50 mots", 41, 50),
-            ("51-75 mots", 51, 75),
-            ("76-100 mots", 76, 100),
-            ("101-150 mots", 101, 150),
-            ("151-200 mots", 151, 200),
-            ("201-300 mots", 201, 300),
-            ("301-500 mots", 301, 500),
-            ("500+ mots", 501, 999999),
+            ("0-5 words", 0, 5),
+            ("6-10 words", 6, 10),
+            ("11-15 words", 11, 15),
+            ("16-20 words", 16, 20),
+            ("21-25 words", 21, 25),
+            ("26-30 words", 26, 30),
+            ("31-40 words", 31, 40),
+            ("41-50 words", 41, 50),
+            ("51-75 words", 51, 75),
+            ("76-100 words", 76, 100),
+            ("101-150 words", 101, 150),
+            ("151-200 words", 151, 200),
+            ("201-300 words", 201, 300),
+            ("301-500 words", 301, 500),
+            ("500+ words", 501, 999999),
         ]
         bucket_counts = []
         for label, low, high in length_buckets:
@@ -496,16 +496,16 @@ class TextProfilingService:
         privacy_pct = max(10, 100 - round((pii_count / total_valid_docs) * 100 * 10))
 
         health_bars = [
-            {"label": "Complétude", "pct": completeness_pct, "color": "amber" if completeness_pct >= 70 else "red"},
-            {"label": "Unicité", "pct": uniqueness_pct, "color": "amber" if uniqueness_pct >= 70 else "red"},
-            {"label": "Encodage", "pct": encoding_pct, "color": "amber" if encoding_pct >= 70 else "red"},
-            {"label": "Confidentialité", "pct": privacy_pct, "color": "amber" if privacy_pct >= 70 else "red"},
+            {"label": "Completeness", "pct": completeness_pct, "color": "amber" if completeness_pct >= 70 else "red"},
+            {"label": "Uniqueness", "pct": uniqueness_pct, "color": "amber" if uniqueness_pct >= 70 else "red"},
+            {"label": "Encoding", "pct": encoding_pct, "color": "amber" if encoding_pct >= 70 else "red"},
+            {"label": "Privacy", "pct": privacy_pct, "color": "amber" if privacy_pct >= 70 else "red"},
         ]
 
         if has_labels:
             balance_pct = max(20, 100 - (imbalance_pct - 20) * 2) if imbalance_pct > 20 else 95
             health_bars.append({
-                "label": "Équilibre des étiquettes",
+                "label": "Label balance",
                 "pct": balance_pct,
                 "color": "amber" if balance_pct >= 70 else "red",
             })
@@ -522,13 +522,13 @@ class TextProfilingService:
         rank_idx = 1
 
         if pii_count > 0:
-            plural_txt = "textes" if pii_count > 1 else "texte"
+            plural_txt = "texts" if pii_count > 1 else "text"
             findings.append({
                 "rank": f"{rank_idx:02d}",
                 "severity": "HIGH",
-                "title": f"Données personnelles dans {pii_count:,} {plural_txt}",
-                "subtitle": "Numéros de téléphone ou adresses email détectés",
-                "action_label": "Masquer →",
+                "title": f"Personal data in {pii_count:,} {plural_txt}",
+                "subtitle": "Phone numbers or email addresses detected",
+                "action_label": "Mask →",
             })
             rank_idx += 1
 
@@ -536,52 +536,52 @@ class TextProfilingService:
             findings.append({
                 "rank": f"{rank_idx:02d}",
                 "severity": "HIGH",
-                "title": "Déséquilibre des étiquettes",
-                "subtitle": f'« {top_label_name} » représente {imbalance_pct} % de l\'ensemble des documents',
-                "action_label": "Voir les options →",
+                "title": "Label imbalance",
+                "subtitle": f'« {top_label_name} » accounts for {imbalance_pct}% of all documents',
+                "action_label": "View options →",
             })
             rank_idx += 1
 
         if exact_dup_excess > 0:
-            plural_dup = "doublons exacts" if exact_dup_excess > 1 else "doublon exact"
+            plural_dup = "exact duplicates" if exact_dup_excess > 1 else "exact duplicate"
             findings.append({
                 "rank": f"{rank_idx:02d}",
                 "severity": "MEDIUM",
                 "title": f"{exact_dup_excess:,} {plural_dup}",
-                "subtitle": f"Identifiés dans {len(exact_groups_list)} groupe{'s' if len(exact_groups_list) > 1 else ''} de documents identiques",
-                "action_label": "Supprimer →",
+                "subtitle": f"Identified in {len(exact_groups_list)} group{'s' if len(exact_groups_list) > 1 else ''} of identical documents",
+                "action_label": "Delete →",
             })
             rank_idx += 1
 
         if mojibake_count > 0:
-            plural_moj = "textes" if mojibake_count > 1 else "texte"
+            plural_moj = "texts" if mojibake_count > 1 else "text"
             findings.append({
                 "rank": f"{rank_idx:02d}",
                 "severity": "MEDIUM",
-                "title": f"{mojibake_count:,} {plural_moj} avec caractères corrompus",
-                "subtitle": "Problème d'encodage UTF-8 (ex : é affiché comme Ã©)",
-                "action_label": "Réparer →",
+                "title": f"{mojibake_count:,} {plural_moj} with corrupted characters",
+                "subtitle": "UTF-8 encoding issue (e.g. é displayed as Ã©)",
+                "action_label": "Repair →",
             })
             rank_idx += 1
 
         if empty_lines_ignored > 0:
-            plural_vides = "lignes vides" if empty_lines_ignored > 1 else "ligne vide"
+            plural_vides = "empty lines" if empty_lines_ignored > 1 else "empty line"
             findings.append({
                 "rank": f"{rank_idx:02d}",
                 "severity": "LOW",
-                "title": f"{empty_lines_ignored:,} {plural_vides} ignorée{'s' if empty_lines_ignored > 1 else ''}",
-                "subtitle": "Lignes vides ou d'espaces ignorées lors de l'import",
-                "action_label": "Nettoyer →",
+                "title": f"{empty_lines_ignored:,} {plural_vides} ignored",
+                "subtitle": "Blank lines or whitespace ignored during import",
+                "action_label": "Clean →",
             })
             rank_idx += 1
         elif empty_texts_count > 0:
-            plural_vides = "textes vides" if empty_texts_count > 1 else "texte vide"
+            plural_vides = "empty texts" if empty_texts_count > 1 else "empty text"
             findings.append({
                 "rank": f"{rank_idx:02d}",
                 "severity": "LOW",
                 "title": f"{empty_texts_count:,} {plural_vides}",
-                "subtitle": "Uniquement des espaces ou une signature",
-                "action_label": "Supprimer →",
+                "subtitle": "Whitespace or signature only",
+                "action_label": "Delete →",
             })
             rank_idx += 1
 
@@ -598,7 +598,7 @@ class TextProfilingService:
                     "prefix": txt[:start],
                     "marked": txt[start:end],
                     "suffix": txt[end:],
-                    "tag": "DONNÉES PERSONNELLES",
+                    "tag": "PERSONAL DATA",
                     "tag_color": "#f97316",
                     "meta": f"#{10000+i+1} · email",
                     "mark_style": "wavy-orange",
@@ -617,9 +617,9 @@ class TextProfilingService:
                         "prefix": txt[:start],
                         "marked": txt[start:end],
                         "suffix": txt[end:],
-                        "tag": "DONNÉES PERSONNELLES",
+                        "tag": "PERSONAL DATA",
                         "tag_color": "#f97316",
-                        "meta": f"#{10000+i+1} · téléphone",
+                        "meta": f"#{10000+i+1} · phone",
                         "mark_style": "wavy-orange",
                     })
                     break
@@ -634,7 +634,7 @@ class TextProfilingService:
                     "prefix": txt[:start],
                     "marked": txt[start:end],
                     "suffix": txt[end:],
-                    "tag": "ENCODAGE",
+                    "tag": "ENCODING",
                     "tag_color": "#f59e0b",
                     "meta": f"#{10000+i+1} · utf-8",
                     "mark_style": "wavy-amber",
@@ -647,7 +647,7 @@ class TextProfilingService:
                 "prefix": str(series_text.iloc[0]),
                 "marked": "",
                 "suffix": "",
-                "tag": "ÉTIQUETTE PROBABLEMENT INCORRECTE",
+                "tag": "PROBABLY INCORRECT LABEL",
                 "tag_color": "#60a5fa",
                 "meta": f"#10001 · {doc_langs[0]}",
                 "mark_style": "none",
@@ -657,12 +657,12 @@ class TextProfilingService:
             "dataset_id": str(dataset.id),
             "dataset_name": dataset.name,
             "version_hash": version.version_hash,
-            "breadcrumb": "DATASET · v1 BRUT · CLASSIFICATION DE TEXTES",
+            "breadcrumb": "DATASET · v1 RAW · TEXT CLASSIFICATION",
             "original_filename": dataset.name if "." in dataset.name else f"{dataset.name}.jsonl",
             "kpis": {
-                "documents": f"{total_rows:,}".replace(",", " "),
+                "documents": f"{total_rows:,}",
                 "languages": detected_languages_count,
-                "labels": labels_count if has_labels else "Aucune",
+                "labels": labels_count if has_labels else "None",
                 "size": size_str,
                 "empty_lines_ignored": empty_lines_ignored,
             },
@@ -679,15 +679,15 @@ class TextProfilingService:
             "length": {
                 "median": median_len,
                 "max_label": "500+",
-                "footnote_empty": f"{empty_lines_ignored or empty_texts_count} ligne{'s' if (empty_lines_ignored or empty_texts_count) > 1 else ''} vide{'s' if (empty_lines_ignored or empty_texts_count) > 1 else ''} ignorée{'s' if (empty_lines_ignored or empty_texts_count) > 1 else ''}",
-                "footnote_long": f"{long_count} plus long{'s' if long_count > 1 else ''} que la limite du modèle",
+                "footnote_empty": f"{empty_lines_ignored or empty_texts_count} empty line{'s' if (empty_lines_ignored or empty_texts_count) > 1 else ''} ignored",
+                "footnote_long": f"{long_count} longer than model limit",
                 "histogram": [h["height_pct"] for h in histogram_items],
                 "histogram_details": histogram_items,
             },
             "labels": {
                 "has_labels": has_labels,
                 "classes_count": labels_count,
-                "message": "" if has_labels else "Aucune étiquette dans ce fichier · Données non annotées",
+                "message": "" if has_labels else "No labels in this file · Unannotated data",
                 "bars": label_bars,
             },
             "duplicates": {
@@ -697,7 +697,7 @@ class TextProfilingService:
                 "near_count": near_dup_count,
                 "near_groups_count": len(near_groups_list),
                 "near_groups": near_groups_list[:10],
-                "normalization_rule": "Minuscules, suppression de la ponctuation, des accents et des espaces multiples",
+                "normalization_rule": "Lowercasing, removal of punctuation, accents, and multiple spaces",
             },
             "quotes": quotes,
         }
@@ -713,7 +713,7 @@ class TextProfilingService:
             clean_name = f"{clean_name}_{random.randint(100, 999)}"
 
         if not contents:
-            raise HTTPException(status_code=400, detail="Fichier vide")
+            raise HTTPException(status_code=400, detail="Empty file")
 
         raw_size_bytes = len(contents)
         raw_text = contents.decode("utf-8", errors="replace")
@@ -755,7 +755,7 @@ class TextProfilingService:
         parquet_bytes = buf.getvalue()
         metadata = parquet_service.extract_table_metadata(table)
 
-        dataset = Dataset(name=clean_name, description=f"Corpus texte importé : {filename}")
+        dataset = Dataset(name=clean_name, description=f"Imported text corpus: {filename}")
         db.add(dataset)
         db.flush()
 

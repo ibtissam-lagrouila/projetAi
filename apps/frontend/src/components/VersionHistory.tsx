@@ -18,10 +18,10 @@ export const VersionHistory: React.FC<VersionHistoryProps> = ({
     return (
       <div className="card" style={{ textAlign: 'center', padding: '3rem 1.5rem' }}>
         <p style={{ color: 'var(--text-muted)', marginBottom: '0.4rem' }}>
-          Aucune version enregistrée pour ce dataset.
+          No version recorded for this dataset.
         </p>
         <p style={{ fontSize: '0.8rem', color: 'var(--text-faint)' }}>
-          Uploadez un fichier CSV pour initialiser la première version immuable.
+          Upload a CSV file to initialize the first immutable version.
         </p>
       </div>
     );
@@ -31,10 +31,10 @@ export const VersionHistory: React.FC<VersionHistoryProps> = ({
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <h3 className="font-serif" style={{ fontSize: '1.25rem', fontWeight: 500 }}>
-          Historique des Versions & Lineage ({versions.length})
+          Version History & Lineage ({versions.length})
         </h3>
         <span className="font-mono" style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
-          Ordre antichronologique • Versions immuables
+          Ordre antichronologique • Immutable versions
         </span>
       </div>
 
@@ -78,29 +78,29 @@ export const VersionHistory: React.FC<VersionHistoryProps> = ({
                       <span className="font-mono" style={{ fontWeight: 600, fontSize: '0.85rem', color: 'var(--text-main)' }}>
                         {ver.version_hash.slice(0, 10)}...{ver.version_hash.slice(-6)}
                       </span>
-                      {isLatest && <span className="badge badge-amber font-mono">Dernier snapshot</span>}
+                      {isLatest && <span className="badge badge-amber font-mono">Latest snapshot</span>}
                       {isRoot ? (
-                        <span className="badge badge-neutral font-mono">Initiale (CSV)</span>
+                        <span className="badge badge-neutral font-mono">Initial (CSV)</span>
                       ) : (
-                        <span className="badge badge-neutral font-mono">Dérivée</span>
+                        <span className="badge badge-neutral font-mono">Derived</span>
                       )}
                     </div>
 
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem', fontSize: '0.75rem', color: 'var(--text-muted)', flexWrap: 'wrap' }}>
                       <span style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
                         <Clock size={12} />
-                        {new Date(ver.created_at).toLocaleString('fr-FR')}
+                        {new Date(ver.created_at).toLocaleString('en-US')}
                       </span>
                       <span style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
                         <HardDrive size={12} />
                         {(ver.size_bytes / 1024).toFixed(1)} KB
                       </span>
                       <span>
-                        <strong style={{ color: 'var(--text-main)' }}>{(ver.row_count ?? 0).toLocaleString()}</strong> lignes
+                        <strong style={{ color: 'var(--text-main)' }}>{(ver.row_count ?? 0).toLocaleString()}</strong> rows
                       </span>
                       {ver.transformation_produced && (
                         <span>
-                          Opération: <strong className="font-mono" style={{ color: 'var(--amber)' }}>{ver.transformation_produced.name}</strong>
+                          Operation: <strong className="font-mono" style={{ color: 'var(--amber)' }}>{ver.transformation_produced.name}</strong>
                         </span>
                       )}
                     </div>
@@ -120,7 +120,7 @@ export const VersionHistory: React.FC<VersionHistoryProps> = ({
                           overflowX: 'auto',
                         }}
                       >
-                        Paramètres : {JSON.stringify(ver.transformation_produced.parameters)}
+                        Parameters: {JSON.stringify(ver.transformation_produced.parameters)}
                       </div>
                     )}
                   </div>
@@ -131,20 +131,20 @@ export const VersionHistory: React.FC<VersionHistoryProps> = ({
                     className="btn btn-secondary"
                     style={{ fontSize: '0.74rem', padding: '0.35rem 0.65rem' }}
                     onClick={() => onInspect(ver.version_hash)}
-                    title="Inspecter le schéma et les lignes"
+                    title="Inspect schema and rows"
                   >
                     <Eye size={13} />
-                    Inspecter
+                    Inspect
                   </button>
 
                   <button
                     className="btn btn-secondary"
                     style={{ fontSize: '0.74rem', padding: '0.35rem 0.65rem' }}
                     onClick={() => onTransform(ver)}
-                    title="Créer une nouvelle version dérivée"
+                    title="Create a new derived version"
                   >
                     <Play size={13} />
-                    Transformer
+                    Transform
                   </button>
 
                   <a
@@ -152,7 +152,7 @@ export const VersionHistory: React.FC<VersionHistoryProps> = ({
                     className="btn btn-secondary"
                     style={{ fontSize: '0.74rem', padding: '0.35rem 0.55rem' }}
                     download
-                    title="Télécharger Parquet"
+                    title="Download Parquet"
                   >
                     <Download size={13} />
                   </a>

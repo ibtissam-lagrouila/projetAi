@@ -91,7 +91,7 @@ export const TextActiveLearningPage: React.FC = () => {
           setSelectedDatasetId(preferred.id);
         }
       } catch (err: any) {
-        setError('Erreur de chargement des datasets: ' + (err.message || 'inconnu'));
+        setError('Error loading datasets: ' + (err.message || 'unknown'));
       }
     }
     loadDatasets();
@@ -123,7 +123,7 @@ export const TextActiveLearningPage: React.FC = () => {
         setAutomationRules(autoMap);
       }
     } catch (err: any) {
-      setError("Erreur lors de la récupération des données d'active learning: " + (err.message || ''));
+      setError("Error retrieving active learning data: " + (err.message || ''));
     } finally {
       setLoading(false);
     }
@@ -170,7 +170,7 @@ export const TextActiveLearningPage: React.FC = () => {
   // Remove pick
   const handleRemovePick = (ticketId: string) => {
     setPicks((prev) => prev.filter((p) => p.ticket_id !== ticketId));
-    setNotification(`Ticket ${ticketId} retiré du round`);
+    setNotification(`Ticket ${ticketId} removed from round`);
     setTimeout(() => setNotification(null), 3000);
   };
 
@@ -181,7 +181,7 @@ export const TextActiveLearningPage: React.FC = () => {
       {
         ticket_id: `#60${Math.floor(100 + Math.random() * 899)}`,
         language: 'FR',
-        text: "Code OTP non reçu après demande de réinitialisation du mot de passe",
+        text: "OTP code not received after password reset request",
         why_picked: `New topic · cluster ${clusterId}`,
         strategy_key: 'new_topic',
         model_top_2: 'security 0.40 · account 0.35',
@@ -196,7 +196,7 @@ export const TextActiveLearningPage: React.FC = () => {
       },
     ];
     setPicks((prev) => [...newPicks, ...prev]);
-    setNotification(`30 tickets du cluster ${clusterId} ajoutés à la sélection du round`);
+    setNotification(`30 tickets from cluster ${clusterId} added to round selection`);
     setTimeout(() => setNotification(null), 4000);
   };
 
@@ -210,10 +210,10 @@ export const TextActiveLearningPage: React.FC = () => {
         skip_duplicates: skipDuplicates,
         queue_whole_ticket: queueWholeTicket,
       });
-      setNotification('Brouillon du Round 3 enregistré avec succès');
+      setNotification('Round 3 draft saved successfully');
       setTimeout(() => setNotification(null), 4000);
     } catch (err: any) {
-      setNotification('Erreur enregistrement brouillon: ' + err.message);
+      setNotification('Error saving draft: ' + err.message);
     }
   };
 
@@ -225,13 +225,13 @@ export const TextActiveLearningPage: React.FC = () => {
         count: roundBudget,
         target: 'unlabeled',
       });
-      setNotification(`${roundBudget} tickets envoyés avec succès dans la file 05 Labeling ! Redirection...`);
+      setNotification(`${roundBudget} tickets sent successfully to 05 Labeling queue! Redirecting...`);
       setTimeout(() => {
         setNotification(null);
         navigate('/labeling');
       }, 1500);
     } catch (err: any) {
-      setNotification('Erreur lors du transfert vers le labeling: ' + err.message);
+      setNotification('Error transferring to labeling: ' + err.message);
     }
   };
 
@@ -239,7 +239,7 @@ export const TextActiveLearningPage: React.FC = () => {
   const handleProposeLabelSubmit = () => {
     if (!newLabelInput.trim()) return;
     setShowNewLabelModal(false);
-    setNotification(`Nouvelle étiquette "${newLabelInput.trim()}" proposée pour le cluster ${data?.picks_section?.cluster_callout?.cluster_id || 23}. Sera versionnée au prochain round.`);
+    setNotification(`New label "${newLabelInput.trim()}" suggested for cluster ${data?.picks_section?.cluster_callout?.cluster_id || 23}. Will be versioned in next round.`);
     setNewLabelInput('');
     setTimeout(() => setNotification(null), 5000);
   };
@@ -249,7 +249,7 @@ export const TextActiveLearningPage: React.FC = () => {
       <div style={{ backgroundColor: C.bg, minHeight: '100vh', padding: '2.5rem', color: C.text }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', fontFamily: 'monospace' }}>
           <div style={{ width: 12, height: 12, borderRadius: '50%', backgroundColor: C.amber, animation: 'ping 1s infinite' }} />
-          Chargement de l'active learning texte...
+          Loading text active learning...
         </div>
       </div>
     );
@@ -340,7 +340,7 @@ export const TextActiveLearningPage: React.FC = () => {
         }}
       >
         <span style={{ fontSize: '0.72rem', letterSpacing: '0.08em', color: C.textMuted, fontFamily: 'monospace' }}>
-          JEU DE DONNÉES :
+          DATASET :
         </span>
         <select
           value={selectedDatasetId}
@@ -1150,7 +1150,7 @@ export const TextActiveLearningPage: React.FC = () => {
                       <button
                         type="button"
                         onClick={() => handleRemovePick(p.ticket_id)}
-                        title="Retirer ce ticket du round"
+                        title="Remove this ticket from round"
                         style={{
                           background: 'none',
                           border: 'none',
@@ -1194,7 +1194,7 @@ export const TextActiveLearningPage: React.FC = () => {
               {data?.picks_section?.cluster_callout?.title || 'NEW TOPIC? · CLUSTER 23 · 148 TICKETS'}
             </div>
             <div style={{ fontSize: '0.78rem', color: '#d1d5db', marginBottom: '0.2rem' }}>
-              Frequent words: <span style={{ fontFamily: 'monospace', color: '#ffffff' }}>{data?.picks_section?.cluster_callout?.frequent_words || 'code OTP · mise à jour · application · ma tdkhlch'}</span>
+              Frequent words: <span style={{ fontFamily: 'monospace', color: '#ffffff' }}>{data?.picks_section?.cluster_callout?.frequent_words || 'code OTP · update · application · ma tdkhlch'}</span>
             </div>
             <div style={{ fontSize: '0.68rem', color: C.textMuted }}>
               {data?.picks_section?.cluster_callout?.footnote || 'A new label creates a new version and needs a retrain.'}
@@ -1677,7 +1677,7 @@ export const TextActiveLearningPage: React.FC = () => {
               Propose a new label
             </h3>
             <p style={{ fontSize: '0.78rem', color: C.textMuted, marginBottom: '1.25rem' }}>
-              For Cluster {data?.picks_section?.cluster_callout?.cluster_id || 23} (Frequent words: code OTP, mise à jour).
+              For Cluster {data?.picks_section?.cluster_callout?.cluster_id || 23} (Frequent words: code OTP, update).
               Proposing a new label will register a new candidate version.
             </p>
             <input

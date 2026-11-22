@@ -3,28 +3,28 @@ from pydantic import BaseModel, Field
 
 
 class SplitConfig(BaseModel):
-    train_ratio: float = Field(0.70, ge=0.1, le=0.9, description="Ratio du train (ex: 0.70)")
-    val_ratio: float = Field(0.15, ge=0.05, le=0.45, description="Ratio de validation (ex: 0.15)")
-    test_ratio: float = Field(0.15, ge=0.05, le=0.45, description="Ratio de test (ex: 0.15)")
-    stratify_column: Optional[str] = Field(None, description="Colonne de stratification (défaut: target)")
-    group_by_column: Optional[str] = Field(None, description="Colonne de groupement (ex: customer_id)")
-    random_seed: int = Field(42, description="Graine aléatoire pour le découpage")
+    train_ratio: float = Field(0.70, ge=0.1, le=0.9, description="Train ratio (e.g. 0.70)")
+    val_ratio: float = Field(0.15, ge=0.05, le=0.45, description="Validation ratio (e.g. 0.15)")
+    test_ratio: float = Field(0.15, ge=0.05, le=0.45, description="Test ratio (e.g. 0.15)")
+    stratify_column: Optional[str] = Field(None, description="Stratification column (default: target)")
+    group_by_column: Optional[str] = Field(None, description="Grouping column (e.g. customer_id)")
+    random_seed: int = Field(42, description="Random seed for splitting")
 
 
 class TargetBalanceConfig(BaseModel):
-    mode: Literal["keep", "20", "30", "50"] = Field("30", description="Objectif de part de la classe rare dans le train")
-    custom_target_ratio: Optional[float] = Field(None, ge=0.01, le=0.50, description="Ratio personnalisé optionnel")
+    mode: Literal["keep", "20", "30", "50"] = Field("30", description="Target share of the rare class in train")
+    custom_target_ratio: Optional[float] = Field(None, ge=0.01, le=0.50, description="Optional custom ratio")
 
 
 class TechniquesConfig(BaseModel):
-    smote_nc_enabled: bool = Field(True, description="Activer SMOTE-NC pour la classe rare")
-    smote_k_neighbors: int = Field(5, ge=1, le=50, description="Nombre de voisins k pour SMOTE-NC")
-    undersample_enabled: bool = Field(True, description="Sous-échantillonner la classe majoritaire")
-    undersample_seed: int = Field(42, description="Graine pour le sous-échantillonnage")
-    light_noise_enabled: bool = Field(False, description="Ajouter un bruit léger sur les colonnes numériques générées")
-    noise_strength_pct: float = Field(2.0, ge=0.1, le=20.0, description="Force du bruit en % de l'écart-type")
-    class_weights_enabled: bool = Field(False, description="Calculer des poids de classes au lieu de créer des lignes")
-    class_weights_strategy: Optional[str] = Field("balanced", description="Stratégie pour les poids de classes")
+    smote_nc_enabled: bool = Field(True, description="Enable SMOTE-NC for the rare class")
+    smote_k_neighbors: int = Field(5, ge=1, le=50, description="Number of k neighbors for SMOTE-NC")
+    undersample_enabled: bool = Field(True, description="Undersample the majority class")
+    undersample_seed: int = Field(42, description="Seed for undersampling")
+    light_noise_enabled: bool = Field(False, description="Add light noise on generated numeric columns")
+    noise_strength_pct: float = Field(2.0, ge=0.1, le=20.0, description="Noise strength as % of std dev")
+    class_weights_enabled: bool = Field(False, description="Compute class weights instead of generating rows")
+    class_weights_strategy: Optional[str] = Field("balanced", description="Strategy for class weights")
 
 
 class GuardrailResult(BaseModel):
@@ -36,8 +36,8 @@ class GuardrailResult(BaseModel):
 
 
 class AugmentationPreviewRequest(BaseModel):
-    source_version_hash: str = Field(..., description="Hash de la version source (ex: v2)")
-    target_column: str = Field(..., description="Colonne cible du dataset")
+    source_version_hash: str = Field(..., description="Source version hash (e.g. v2)")
+    target_column: str = Field(..., description="Dataset target column")
     split_config: SplitConfig = Field(default_factory=SplitConfig)
     balance_config: TargetBalanceConfig = Field(default_factory=TargetBalanceConfig)
     techniques: TechniquesConfig = Field(default_factory=TechniquesConfig)
@@ -65,8 +65,8 @@ class AugmentationPreviewResponse(BaseModel):
 
 
 class AugmentationApplyRequest(BaseModel):
-    source_version_hash: str = Field(..., description="Hash de la version source (ex: v2)")
-    target_column: str = Field(..., description="Colonne cible du dataset")
+    source_version_hash: str = Field(..., description="Source version hash (e.g. v2)")
+    target_column: str = Field(..., description="Dataset target column")
     split_config: SplitConfig = Field(default_factory=SplitConfig)
     balance_config: TargetBalanceConfig = Field(default_factory=TargetBalanceConfig)
     techniques: TechniquesConfig = Field(default_factory=TechniquesConfig)
@@ -90,9 +90,9 @@ class AugmentationApplyResponse(BaseModel):
 
 
 class ComparisonMetricResult(BaseModel):
-    mean: float = Field(..., description="Moyenne sur les 5 graines (en %)")
-    std: float = Field(..., description="Écart-type sur les 5 graines (en %)")
-    seed_values: List[float] = Field(default_factory=list, description="Valeurs obtenues pour chaque graine")
+    mean: float = Field(..., description="Mean across 5 seeds (in %)")
+    std: float = Field(..., description="Standard deviation across 5 seeds (in %)")
+    seed_values: List[float] = Field(default_factory=list, description="Values obtained for each seed")
 
 
 class ModelComparisonMetrics(BaseModel):
@@ -103,12 +103,12 @@ class ModelComparisonMetrics(BaseModel):
 
 class AugmentationComparisonRequest(BaseModel):
     source_version_hash: str = Field(..., description="Hash de la version source")
-    target_column: str = Field(..., description="Colonne cible")
+    target_column: str = Field(..., description="Target column")
     split_config: SplitConfig = Field(default_factory=SplitConfig)
     balance_config: TargetBalanceConfig = Field(default_factory=TargetBalanceConfig)
     techniques: TechniquesConfig = Field(default_factory=TechniquesConfig)
-    model_type: str = Field(default="logistic_regression", description="Modèle utilisé (logistic_regression ou random_forest)")
-    seeds: List[int] = Field(default=[42, 43, 44, 45, 46], description="Liste des 5 graines aléatoires")
+    model_type: str = Field(default="logistic_regression", description="Model used (logistic_regression or random_forest)")
+    seeds: List[int] = Field(default=[42, 43, 44, 45, 46], description="List of 5 random seeds")
 
 
 class AugmentationComparisonResponse(BaseModel):

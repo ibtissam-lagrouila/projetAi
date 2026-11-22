@@ -46,7 +46,7 @@ class ImageExportApiService:
     def get_state(self, dataset_id: str, db: Session) -> Dict[str, Any]:
         dataset = self._find_dataset(dataset_id, db)
         if not dataset:
-            raise HTTPException(status_code=404, detail="Dataset introuvable")
+            raise HTTPException(status_code=404, detail="Dataset not found")
 
         versions = (
             db.query(DatasetVersion)
@@ -55,7 +55,7 @@ class ImageExportApiService:
             .all()
         )
         if not versions:
-            raise HTTPException(status_code=404, detail="Aucune version trouvée pour ce dataset")
+            raise HTTPException(status_code=404, detail="No version found for this dataset")
 
         name = dataset.name.lower()
         if "defect" in name or "product" in name:
@@ -672,7 +672,7 @@ class ImageExportApiService:
             "status": "success",
             "download_url": f"/api/v1/image-export/{dataset_id}/archive?version={version}&format={fmt}",
             "filename": f"defects_{version}_{fmt}.zip",
-            "message": f"Dataset {version} au format {fmt} préparé pour le téléchargement."
+            "message": f"Dataset {version} au format {fmt} ready for download."
         }
 
     def build_package(self, dataset_id: str, payload: Dict[str, Any], db: Session) -> Dict[str, Any]:
@@ -681,7 +681,7 @@ class ImageExportApiService:
             "status": "success",
             "package_id": f"pkg_{uuid.uuid4().hex[:8]}",
             "format": fmt,
-            "message": f"Package {fmt} compilé avec succès."
+            "message": f"Package {fmt} compiled successfully."
         }
 
     def start_shadow(self, dataset_id: str, payload: Dict[str, Any], db: Session) -> Dict[str, Any]:
@@ -689,7 +689,7 @@ class ImageExportApiService:
         return {
             "status": "success",
             "device": device,
-            "message": f"Mode shadow démarré avec succès sur {device}."
+            "message": f"Shadow mode started successfully on {device}."
         }
 
     def create_api_key(self, dataset_id: str, payload: Dict[str, Any], db: Session) -> Dict[str, Any]:
@@ -701,7 +701,7 @@ class ImageExportApiService:
             "key": new_key,
             "name": name,
             "scope": scope,
-            "message": f"Clé API '{name}' générée avec succès."
+            "message": f"API key '{name}' generated successfully."
         }
 
     def add_webhook(self, dataset_id: str, payload: Dict[str, Any], db: Session) -> Dict[str, Any]:
@@ -711,7 +711,7 @@ class ImageExportApiService:
             "status": "success",
             "url": url,
             "events": events,
-            "message": "Webhook configuré avec succès."
+            "message": "Webhook configured successfully."
         }
 
     def rollback_model(self, dataset_id: str, payload: Dict[str, Any], db: Session) -> Dict[str, Any]:
@@ -719,7 +719,7 @@ class ImageExportApiService:
         return {
             "status": "success",
             "target_version": target,
-            "message": f"Rollback vers la version {target} initié sur la flotte."
+            "message": f"Rollback to version {target} initiated on fleet."
         }
 
 

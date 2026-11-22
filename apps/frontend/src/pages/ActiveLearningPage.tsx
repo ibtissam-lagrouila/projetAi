@@ -79,7 +79,7 @@ export const ActiveLearningPage: React.FC = () => {
           setSelectedDatasetId(defaultDs.id);
         }
       })
-      .catch((err) => console.error('Erreur chargement datasets:', err))
+      .catch((err) => console.error('Error loading datasets:', err))
       .finally(() => setLoading(false));
   }, []);
 
@@ -102,7 +102,7 @@ export const ActiveLearningPage: React.FC = () => {
       setStopRuleFixes(res.stop_rule_fixes_pct);
       setStopRuleRecallGain(res.stop_rule_recall_gain_pts);
     } catch (err) {
-      console.error('Erreur chargement Active Learning:', err);
+      console.error('Error loading Active Learning:', err);
     }
   }, []);
 
@@ -147,7 +147,7 @@ export const ActiveLearningPage: React.FC = () => {
   // Handler to remove a pick
   const handleRemovePick = (customerId: string) => {
     setPicksList((prev) => prev.filter((p) => p.customer_id !== customerId));
-    showToast(`Ligne ${customerId} retirée. Le créneau est réattribué automatiquement.`, 'info');
+    showToast(`Row ${customerId} removed. Slot automatically reallocated.`, 'info');
   };
 
   // Handler to save draft
@@ -164,10 +164,10 @@ export const ActiveLearningPage: React.FC = () => {
           recall_gain_under_pts: stopRuleRecallGain,
         },
       });
-      showToast('Brouillon du cycle 2 enregistré avec succès !', 'success');
+      showToast('Round 2 draft saved successfully!', 'success');
     } catch (err) {
       console.error(err);
-      showToast("Erreur lors de l'enregistrement du brouillon", 'error');
+      showToast("Error saving draft", 'error');
     } finally {
       setIsSavingDraft(false);
     }
@@ -182,13 +182,13 @@ export const ActiveLearningPage: React.FC = () => {
         round_number: 2,
         target_split: 'train',
       });
-      showToast(`${res.rows_enqueued} lignes envoyées vers l'étape 05 Étiquetage ! Version ${res.new_version_label} préparée.`, 'success');
+      showToast(`${res.rows_enqueued} rows sent to step 05 Labeling! Version ${res.new_version_label} prepared.`, 'success');
       setTimeout(() => {
         navigate('/labeling');
       }, 1500);
     } catch (err) {
       console.error(err);
-      showToast("Échec de l'envoi vers l'étiquetage", 'error');
+      showToast("Failed to send to labeling", 'error');
     } finally {
       setIsSubmitting(false);
     }
@@ -197,7 +197,7 @@ export const ActiveLearningPage: React.FC = () => {
   if (loading || !state) {
     return (
       <div style={{ padding: '3rem', color: 'var(--text-muted)' }} className="font-mono">
-        Chargement du cycle d'apprentissage actif...
+        Loading active learning cycle...
       </div>
     );
   }
@@ -258,7 +258,7 @@ export const ActiveLearningPage: React.FC = () => {
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                 <History size={18} color="var(--amber)" />
                 <h3 className="font-serif" style={{ fontSize: '1.4rem', color: 'var(--text-main)', fontStyle: 'italic', margin: 0 }}>
-                  Historique des cycles d'apprentissage actif
+                  Active learning cycles history
                 </h3>
               </div>
               <button
@@ -301,15 +301,15 @@ export const ActiveLearningPage: React.FC = () => {
                   <div className="font-mono" style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
                     {r.status === 'done' && (
                       <>
-                        {r.checked_count} vérifiés · {r.fixed_count} corrigés · {r.hours} h · modèle {r.model_name} · gain rappel {r.recall_gain}
+                        {r.checked_count} checked · {r.fixed_count} corrected · {r.hours} h · model {r.model_name} · gain recall {r.recall_gain}
                       </>
                     )}
                     {r.status === 'draft' && (
                       <>
-                        {r.checked_count} lignes prévues · 5 stratégies de mix · temps estimé ≈ {r.hours} h
+                        {r.checked_count} planned rows · 5 mix strategies · estimated time ≈ {r.hours} h
                       </>
                     )}
-                    {r.status === 'upcoming' && <>Démarre lorsque les règles d'arrêt ou les alertes de dérive le déclenchent.</>}
+                    {r.status === 'upcoming' && <>Starts when stopping criteria or drift alerts trigger.</>}
                   </div>
                 </div>
               ))}
@@ -330,7 +330,7 @@ export const ActiveLearningPage: React.FC = () => {
                   cursor: 'pointer',
                 }}
               >
-                Fermer
+                Close
               </button>
             </div>
           </div>
@@ -474,7 +474,7 @@ export const ActiveLearningPage: React.FC = () => {
               POOL
             </div>
             <div className="font-mono" style={{ fontSize: '1.6rem', fontWeight: 600, color: 'var(--text-main)', margin: '0.3rem 0' }}>
-              {header.pool_size.toLocaleString('fr-FR')}
+              {header.pool_size.toLocaleString('en-US')}
             </div>
             <div className="font-mono" style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
               {header.pool_breakdown}
@@ -1315,7 +1315,7 @@ export const ActiveLearningPage: React.FC = () => {
                           cursor: 'pointer',
                           padding: '0.2rem',
                         }}
-                        title="Retirer cette ligne"
+                        title="Remove this row"
                       >
                         <X size={13} />
                       </button>

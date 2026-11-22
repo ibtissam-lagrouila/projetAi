@@ -6,7 +6,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 class TransformationBase(BaseModel):
     name: str = Field(..., description="Nom de la transformation (ex: CSV_INGESTION, FILTER_ROWS, SELECT_COLUMNS)")
-    parameters: Dict[str, Any] = Field(default_factory=dict, description="Paramètres déterministes de la transformation")
+    parameters: Dict[str, Any] = Field(default_factory=dict, description="Deterministic transformation parameters")
 
 
 class TransformationCreate(TransformationBase):
@@ -27,5 +27,5 @@ class TransformationRead(TransformationBase):
 
 class ApplyTransformationRequest(BaseModel):
     transformation_name: str = Field(..., description="Nom de la transformation")
-    parameters: Dict[str, Any] = Field(default_factory=dict, description="Paramètres d'application")
+    parameters: Dict[str, Any] = Field(default_factory=dict, description="Application parameters")
 

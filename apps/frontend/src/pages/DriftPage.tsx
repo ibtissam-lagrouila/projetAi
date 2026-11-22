@@ -50,7 +50,7 @@ export const DriftPage: React.FC = () => {
     setTimeout(() => setNotification(null), 4000);
   };
 
-  // TopBar listener for "Historique de dérive"
+  // TopBar listener for "Drift history"
   useEffect(() => {
     const handleHistoryEvent = () => setShowHistoryModal(true);
     window.addEventListener('datalift:open-drift-history', handleHistoryEvent);
@@ -72,7 +72,7 @@ export const DriftPage: React.FC = () => {
       })
       .catch((err) => {
         console.error('Error fetching datasets:', err);
-        showToast('Erreur lors du chargement des jeux de données.', 'error');
+        showToast('Error loading datasets.', 'error');
       });
 
     const onGlobalChange = (e: any) => {
@@ -99,7 +99,7 @@ export const DriftPage: React.FC = () => {
       })
       .catch((err) => {
         console.error('Error loading drift state:', err);
-        showToast('Erreur lors du calcul de la dérive.', 'error');
+        showToast('Error calculating drift.', 'error');
       })
       .finally(() => setLoading(false));
   };
@@ -136,10 +136,10 @@ export const DriftPage: React.FC = () => {
         email_alerts: emailAlertsChecked,
       });
       setState(res);
-      showToast('Seuils de surveillance enregistrés avec succès !', 'success');
+      showToast('Monitoring thresholds saved successfully!', 'success');
     } catch (err) {
       console.error('Error updating drift settings:', err);
-      showToast('Échec de la sauvegarde des paramètres.', 'error');
+      showToast('Failed to save settings.', 'error');
     } finally {
       setIsSavingSettings(false);
     }
@@ -155,7 +155,7 @@ export const DriftPage: React.FC = () => {
       loadDriftState(selectedDatasetId);
     } catch (err) {
       console.error('Error running check now:', err);
-      showToast('Erreur lors de l’exécution du check de dérive.', 'error');
+      showToast('Error executing drift check.', 'error');
     } finally {
       setIsRunningCheck(false);
     }
@@ -172,13 +172,13 @@ export const DriftPage: React.FC = () => {
     a.download = `datalift-drift-${state.header.dataset_name}.json`;
     a.click();
     URL.revokeObjectURL(url);
-    showToast('Rapport de dérive téléchargé.', 'info');
+    showToast('Drift report downloaded.', 'info');
   };
 
   // Action decision handlers
   const handleDecisionAction = (actionType: string) => {
     if (actionType === 'adopt_reference') {
-      showToast('La fenêtre active de 7 jours a été adoptée comme nouvelle référence !', 'success');
+      showToast('The active 7-day window has been adopted as the new baseline!', 'success');
     } else if (actionType === 'open_cleaning') {
       navigate('/cleaning');
     } else if (actionType === 'start_active_learning') {
@@ -193,7 +193,7 @@ export const DriftPage: React.FC = () => {
       <div style={{ padding: '3rem', textAlign: 'center', color: '#9ca3af', minHeight: '80vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
         <RefreshCw size={28} className="animate-spin" style={{ color: '#f59e0b', marginBottom: '1rem' }} />
         <p style={{ fontFamily: 'var(--font-mono, monospace)', fontSize: '0.9rem', letterSpacing: '0.05em' }}>
-          Calcul de la dérive des distributions (PSI, KS, Chi², Classifieur)...
+          Calculating distribution drift (PSI, KS, Chi², Classifieur)...
         </p>
       </div>
     );
@@ -202,7 +202,7 @@ export const DriftPage: React.FC = () => {
   if (!state) {
     return (
       <div style={{ padding: '3rem', textAlign: 'center', color: '#ef4444' }}>
-        Impossible de charger les métriques de dérive pour ce jeu de données.
+        Unable to load drift metrics for this dataset.
       </div>
     );
   }
@@ -1411,10 +1411,10 @@ export const DriftPage: React.FC = () => {
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
               <div>
                 <h3 style={{ fontFamily: 'var(--font-serif, Georgia, serif)', fontStyle: 'italic', fontSize: '1.5rem', fontWeight: 400, margin: 0, color: '#f3f4f6' }}>
-                  Historique des vérifications de dérive
+                  Drift check history
                 </h3>
                 <div style={{ fontFamily: 'var(--font-mono, monospace)', fontSize: '0.68rem', color: '#71717a', marginTop: '0.2rem' }}>
-                  JOURNAL DES RUNS QUOTIDIENS ET CALCULS IMMÉDIATS
+                  DAILY RUNS & IMMEDIATE CHECKS LOG
                 </div>
               </div>
               <button
@@ -1431,10 +1431,10 @@ export const DriftPage: React.FC = () => {
                 <thead>
                   <tr style={{ borderBottom: '1px solid #23252a', fontFamily: 'var(--font-mono, monospace)', fontSize: '0.65rem', color: '#71717a', textAlign: 'left' }}>
                     <th style={{ padding: '0.6rem 0.75rem' }}>DATE / HEURE</th>
-                    <th style={{ padding: '0.6rem 0.75rem' }}>MODÈLE</th>
-                    <th style={{ padding: '0.6rem 0.75rem' }}>FENÊTRE</th>
-                    <th style={{ padding: '0.6rem 0.75rem' }}>DÉRIVES DÉTECTÉES</th>
-                    <th style={{ padding: '0.6rem 0.75rem', textAlign: 'right' }}>RAPPEL ESTIMÉ</th>
+                    <th style={{ padding: '0.6rem 0.75rem' }}>MODEL</th>
+                    <th style={{ padding: '0.6rem 0.75rem' }}>WINDOW</th>
+                    <th style={{ padding: '0.6rem 0.75rem' }}>DRIFTS DETECTED</th>
+                    <th style={{ padding: '0.6rem 0.75rem', textAlign: 'right' }}>ESTIMATED RECALL</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -1456,7 +1456,7 @@ export const DriftPage: React.FC = () => {
                     <td style={{ padding: '0.6rem 0.75rem', fontFamily: 'var(--font-mono, monospace)' }}>2 Nov 06:00</td>
                     <td style={{ padding: '0.6rem 0.75rem' }}>{header.production_model_name}</td>
                     <td style={{ padding: '0.6rem 0.75rem' }}>7 jours</td>
-                    <td style={{ padding: '0.6rem 0.75rem', color: '#71717a' }}>Aucune</td>
+                    <td style={{ padding: '0.6rem 0.75rem', color: '#71717a' }}>None</td>
                     <td style={{ padding: '0.6rem 0.75rem', textAlign: 'right', color: '#22c55e', fontFamily: 'var(--font-mono, monospace)' }}>82%</td>
                   </tr>
                 </tbody>
@@ -1478,7 +1478,7 @@ export const DriftPage: React.FC = () => {
                   cursor: 'pointer',
                 }}
               >
-                Fermer
+                Close
               </button>
             </div>
           </div>
@@ -1517,10 +1517,10 @@ export const DriftPage: React.FC = () => {
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
               <div>
                 <h3 style={{ fontFamily: 'var(--font-serif, Georgia, serif)', fontStyle: 'italic', fontSize: '1.5rem', fontWeight: 400, margin: 0, color: '#f3f4f6' }}>
-                  Rapport du Classifieur Multivarié
+                  Multivariate Classifier Report
                 </h3>
                 <div style={{ fontFamily: 'var(--font-mono, monospace)', fontSize: '0.68rem', color: '#71717a', marginTop: '0.2rem' }}>
-                  DISCRIMINATION ENTRE DONNÉES ENTRAÎNEMENT ET PRODUCTION
+                  DISCRIMINATION BETWEEN TRAINING AND PRODUCTION DATA
                 </div>
               </div>
               <button
@@ -1536,12 +1536,12 @@ export const DriftPage: React.FC = () => {
               <div style={{ backgroundColor: '#18191c', padding: '0.75rem', borderRadius: '4px', textAlign: 'center' }}>
                 <div style={{ fontSize: '0.65rem', color: '#71717a', fontFamily: 'var(--font-mono, monospace)' }}>AUC-ROC</div>
                 <div style={{ fontSize: '1.4rem', color: '#f59e0b', fontWeight: 600, fontFamily: 'var(--font-mono, monospace)' }}>0.81</div>
-                <div style={{ fontSize: '0.65rem', color: '#ef4444' }}>Dérive détectée (&gt; 0.65)</div>
+                <div style={{ fontSize: '0.65rem', color: '#ef4444' }}>Drift detected (&gt; 0.65)</div>
               </div>
               <div style={{ backgroundColor: '#18191c', padding: '0.75rem', borderRadius: '4px', textAlign: 'center' }}>
                 <div style={{ fontSize: '0.65rem', color: '#71717a', fontFamily: 'var(--font-mono, monospace)' }}>PRECISION LIVE</div>
                 <div style={{ fontSize: '1.4rem', color: '#e5e7eb', fontWeight: 600, fontFamily: 'var(--font-mono, monospace)' }}>74%</div>
-                <div style={{ fontSize: '0.65rem', color: '#71717a' }}>Séparation nette</div>
+                <div style={{ fontSize: '0.65rem', color: '#71717a' }}>Clear separation</div>
               </div>
               <div style={{ backgroundColor: '#18191c', padding: '0.75rem', borderRadius: '4px', textAlign: 'center' }}>
                 <div style={{ fontSize: '0.65rem', color: '#71717a', fontFamily: 'var(--font-mono, monospace)' }}>SIGNALS DOMINANTS</div>
@@ -1552,7 +1552,7 @@ export const DriftPage: React.FC = () => {
 
             <div style={{ marginBottom: '1.25rem' }}>
               <div style={{ fontFamily: 'var(--font-mono, monospace)', fontSize: '0.7rem', color: '#a1a1aa', marginBottom: '0.5rem' }}>
-                Colonnes les plus contributives à la séparation:
+                Columns contributing most to separation:
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
                 <div>
@@ -1602,7 +1602,7 @@ export const DriftPage: React.FC = () => {
                   cursor: 'pointer',
                 }}
               >
-                Fermer
+                Close
               </button>
             </div>
           </div>

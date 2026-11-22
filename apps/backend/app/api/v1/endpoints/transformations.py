@@ -29,14 +29,14 @@ def apply_transformation(
     if not source_version:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Version source non trouvée.",
+            detail="Source version not found.",
         )
 
     source_path = Path(source_version.storage_path)
     if not source_path.exists():
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Fichier Parquet source introuvable sur le disque.",
+            detail="Source Parquet file not found on disk.",
         )
 
     start_time = time.time()
@@ -51,7 +51,7 @@ def apply_transformation(
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail=f"Erreur lors de l'exécution de la transformation: {str(e)}",
+            detail=f"Error executing transformation: {str(e)}",
         )
 
     data_hash = parquet_service.calculate_bytes_hash(new_parquet_bytes)
@@ -114,7 +114,7 @@ def get_transformation_detail(transformation_id: UUID, db: Session = Depends(get
     if not transformation:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Transformation non trouvée.",
+            detail="Transformation not found.",
         )
     return transformation
 

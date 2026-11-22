@@ -31,7 +31,7 @@ export const TransformationModal: React.FC<TransformationModalProps> = ({
 
     if (transformType === 'FILTER_QUERY') {
       if (!filterQuery.trim()) {
-        setError('Veuillez saisir une condition de filtre (ex: feature_a > 10).');
+        setError('Please enter a filter condition (e.g. feature_a > 10).');
         setLoading(false);
         return;
       }
@@ -39,7 +39,7 @@ export const TransformationModal: React.FC<TransformationModalProps> = ({
     } else if (transformType === 'SELECT_COLUMNS') {
       const cols = selectedColumns.split(',').map((c) => c.trim()).filter(Boolean);
       if (cols.length === 0) {
-        setError('Veuillez indiquer au moins une colonne à conserver.');
+        setError('Please indicate at least one column to keep.');
         setLoading(false);
         return;
       }
@@ -53,7 +53,7 @@ export const TransformationModal: React.FC<TransformationModalProps> = ({
       onSuccess();
       onClose();
     } catch (err: any) {
-      setError(err.response?.data?.detail || "Erreur lors de l'application de la transformation.");
+      setError(err.response?.data?.detail || "Error applying transformation.");
     } finally {
       setLoading(false);
     }
@@ -67,7 +67,7 @@ export const TransformationModal: React.FC<TransformationModalProps> = ({
             <GitFork size={18} color="var(--amber)" />
             <div>
               <h3 className="font-serif" style={{ fontSize: '1.2rem', fontWeight: 500 }}>
-                Appliquer une Transformation
+                Apply a Transformation
               </h3>
               <p className="font-mono" style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
                 Depuis version parente: {version.version_hash.slice(0, 12)}...
@@ -88,11 +88,11 @@ export const TransformationModal: React.FC<TransformationModalProps> = ({
           )}
 
           <div className="form-group">
-            <label>Type d'opération</label>
+            <label>Operation type</label>
             <select value={transformType} onChange={(e) => setTransformType(e.target.value)}>
-              <option value="FILTER_QUERY">Filtrer par expression (Pandas / Query)</option>
-              <option value="SELECT_COLUMNS">Sélectionner des colonnes spécifiques</option>
-              <option value="DROP_NULLS">Supprimer les lignes contenant des valeurs nulles</option>
+              <option value="FILTER_QUERY">Filter by expression (Pandas / Query)</option>
+              <option value="SELECT_COLUMNS">Select specific columns</option>
+              <option value="DROP_NULLS">Drop rows with null values</option>
             </select>
           </div>
 
@@ -113,7 +113,7 @@ export const TransformationModal: React.FC<TransformationModalProps> = ({
 
           {transformType === 'SELECT_COLUMNS' && (
             <div className="form-group">
-              <label>Colonnes à conserver (séparées par une virgule)</label>
+              <label>Columns to keep (comma-separated)</label>
               <input
                 type="text"
                 placeholder="col1, col2, label"
@@ -145,21 +145,21 @@ export const TransformationModal: React.FC<TransformationModalProps> = ({
 
           {transformType === 'DROP_NULLS' && (
             <p style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', marginBottom: '1.25rem' }}>
-              Toutes les lignes contenant au moins un champ vide / NaN seront filtrées.
+              All rows containing at least one empty / NaN field will be filtered.
             </p>
           )}
 
           <div style={{ backgroundColor: '#0d0d0f', padding: '0.85rem', borderRadius: 6, border: '1px solid var(--border)', marginBottom: '1.5rem', fontSize: '0.78rem', color: 'var(--text-secondary)' }}>
-            ℹ️ Cette opération générera un <strong>nouveau snapshot Parquet immuable</strong>. Un hash SHA-256 unique lui sera attribué. La version originale restera inchangée.
+            ℹ️ This operation will generate a <strong>new immutable Parquet snapshot</strong>. A unique SHA-256 hash will be assigned. The original version will remain unchanged.
           </div>
 
           <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.65rem' }}>
             <button type="button" className="btn btn-secondary" onClick={onClose} disabled={loading}>
-              Annuler
+              Cancel
             </button>
             <button type="submit" className="btn btn-primary" disabled={loading}>
               <Play size={13} />
-              {loading ? 'Calcul en cours...' : 'Exécuter & Créer la Version'}
+              {loading ? 'Calculating...' : 'Execute & Create Version'}
             </button>
           </div>
         </form>

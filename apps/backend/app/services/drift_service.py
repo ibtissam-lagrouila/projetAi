@@ -50,7 +50,7 @@ class DriftService:
         """Resolves dataset and its current version."""
         dataset = db.query(Dataset).filter(Dataset.id == dataset_id).first()
         if not dataset:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Jeu de données introuvable.")
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Dataset not found.")
 
         version = None
         if dataset.current_version_id:
@@ -66,7 +66,7 @@ class DriftService:
             )
 
         if not version:
-            raise HTTPException(status_code=404, detail="Aucune version trouvée.")
+            raise HTTPException(status_code=404, detail="No version found.")
 
         return dataset, version
 
@@ -96,7 +96,7 @@ class DriftService:
         # Load Parquet data
         file_path = Path(version.storage_path)
         if not file_path.exists():
-            raise HTTPException(status_code=404, detail="Fichier Parquet introuvable.")
+            raise HTTPException(status_code=404, detail="Parquet file not found.")
         df = pq.read_table(file_path).to_pandas()
 
         target_col, pos_label, neg_label, _ = labeling_service.detect_target_and_classes(df, version)
@@ -671,7 +671,7 @@ class DriftService:
 
         return RunDriftCheckResponse(
             success=True,
-            message=f"Vérification de dérive exécutée avec succès à {datetime.now(timezone.utc).strftime('%H:%M:%S')}. {state.header.drifting_columns_count} colonnes en dérive détectées.",
+            message=f"Drift check completed successfully at {datetime.now(timezone.utc).strftime('%H:%M:%S')}. {state.header.drifting_columns_count} drifting columns detected.",
             drifting_columns_count=state.header.drifting_columns_count,
             checked_at=datetime.now(timezone.utc).isoformat(),
         )

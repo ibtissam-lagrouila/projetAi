@@ -41,7 +41,7 @@ def list_versions_for_dataset(dataset_id: UUID, db: Session = Depends(get_db)):
     if not dataset:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Dataset non trouvé.",
+            detail="Dataset not found.",
         )
     return dataset.versions
 
@@ -57,7 +57,7 @@ def get_version_by_hash(
     if not version:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Version '{version_hash}' introuvable.",
+            detail=f"Version '{version_hash}' not found.",
         )
 
     storage_path = Path(version.storage_path)
@@ -124,7 +124,7 @@ def resolve_version_depth(version: DatasetVersion) -> int:
 @router.get("/{version_hash}/profile", response_model=Dict[str, Any])
 def get_version_profile(
     version_hash: str,
-    target_column: Optional[str] = Query(None, description="Colonne cible optionnelle"),
+    target_column: Optional[str] = Query(None, description="Optional target column"),
     db: Session = Depends(get_db),
 ):
     """Retrieves or computes the stored profiling metrics of an immutable version
@@ -134,14 +134,14 @@ def get_version_profile(
     if not version:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Version '{version_hash}' introuvable.",
+            detail=f"Version '{version_hash}' not found.",
         )
 
     file_path = Path(version.storage_path)
     if not file_path.exists():
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Fichier Parquet introuvable sur le disque.",
+            detail="Parquet file not found on disk.",
         )
 
     # Extract original source filename from transformation parameters or lineage
@@ -175,14 +175,14 @@ def update_version_target(
     if not version:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Version '{version_hash}' introuvable.",
+            detail=f"Version '{version_hash}' not found.",
         )
 
     file_path = Path(version.storage_path)
     if not file_path.exists():
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Fichier Parquet introuvable sur le disque.",
+            detail="Parquet file not found on disk.",
         )
 
     original_filename = resolve_original_filename(version)
@@ -203,24 +203,24 @@ def update_version_target(
 
 @router.get("/diff", response_model=Dict[str, Any])
 def compare_two_versions(
-    base_hash: str = Query(..., description="Hash de la version de référence (parent/before)"),
-    target_hash: str = Query(..., description="Hash de la version cible (child/after)"),
+    base_hash: str = Query(..., description="Hash of the reference version (parent/before)"),
+    target_hash: str = Query(..., description="Hash of the target version (child/after)"),
     db: Session = Depends(get_db),
 ):
     """Detects schema drift, row count deltas, and statistical shifts between two immutable versions."""
     version_base = db.query(DatasetVersion).filter(DatasetVersion.version_hash == base_hash).first()
     if not version_base:
-        raise HTTPException(status_code=404, detail=f"Version de base '{base_hash}' introuvable.")
+        raise HTTPException(status_code=404, detail=f"Version de base '{base_hash}' not found.")
 
     version_target = db.query(DatasetVersion).filter(DatasetVersion.version_hash == target_hash).first()
     if not version_target:
-        raise HTTPException(status_code=404, detail=f"Version cible '{target_hash}' introuvable.")
+        raise HTTPException(status_code=404, detail=f"Target version '{target_hash}' not found.")
 
     path_base = Path(version_base.storage_path)
     path_target = Path(version_target.storage_path)
 
     if not path_base.exists() or not path_target.exists():
-        raise HTTPException(status_code=404, detail="Un ou plusieurs fichiers Parquet sont introuvables sur le disque.")
+        raise HTTPException(status_code=404, detail="One or more Parquet files not found on disk.")
 
     diff_report = diff_service.compare_parquet_versions(path_base, path_target)
     diff_report["base_version_hash"] = base_hash
@@ -235,14 +235,14 @@ def download_parquet_file(version_hash: str, db: Session = Depends(get_db)):
     if not version:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Version '{version_hash}' introuvable.",
+            detail=f"Version '{version_hash}' not found.",
         )
 
     file_path = Path(version.storage_path)
     if not file_path.exists():
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Le fichier Parquet physique est introuvable sur le disque.",
+            detail="Physical Parquet file not found on disk.",
         )
 
     return FileResponse(
@@ -257,7 +257,7 @@ def get_dataset_lineage_via_versions(dataset_id: UUID, db: Session = Depends(get
     """Returns the DAG lineage graph for a dataset."""
     dataset = db.query(Dataset).filter(Dataset.id == dataset_id).first()
     if not dataset:
-        raise HTTPException(status_code=404, detail="Dataset non trouvé.")
+        raise HTTPException(status_code=404, detail="Dataset not found.")
     return versioning_service.get_lineage_graph(dataset, db)
 
 
@@ -266,7 +266,7 @@ def get_dataset_versioning_header_via_versions(dataset_id: UUID, db: Session = D
     """Returns top KPI header metrics for the versioning page."""
     dataset = db.query(Dataset).filter(Dataset.id == dataset_id).first()
     if not dataset:
-        raise HTTPException(status_code=404, detail="Dataset non trouvé.")
+        raise HTTPException(status_code=404, detail="Dataset not found.")
     return versioning_service.get_versioning_header(dataset, db)
 
 
@@ -275,11 +275,11 @@ def compare_versions_endpoint(payload: CompareRequest, db: Session = Depends(get
     """Compares two immutable versions with distribution shifts, row deltas, and test set check."""
     v_base = db.query(DatasetVersion).filter(DatasetVersion.version_hash == payload.base_version_hash).first()
     if not v_base:
-        raise HTTPException(status_code=404, detail=f"Version de base '{payload.base_version_hash}' introuvable.")
+        raise HTTPException(status_code=404, detail=f"Version de base '{payload.base_version_hash}' not found.")
 
     v_target = db.query(DatasetVersion).filter(DatasetVersion.version_hash == payload.target_version_hash).first()
     if not v_target:
-        raise HTTPException(status_code=404, detail=f"Version cible '{payload.target_version_hash}' introuvable.")
+        raise HTTPException(status_code=404, detail=f"Target version '{payload.target_version_hash}' not found.")
 
     return versioning_service.compare_versions(v_base, v_target, row_key=payload.row_key)
 
@@ -297,11 +297,11 @@ def get_row_diff_page_endpoint(
     """Returns paginated row diffs with filters (all, added, removed, modified)."""
     v_base = db.query(DatasetVersion).filter(DatasetVersion.version_hash == base_hash).first()
     if not v_base:
-        raise HTTPException(status_code=404, detail=f"Version de base '{base_hash}' introuvable.")
+        raise HTTPException(status_code=404, detail=f"Version de base '{base_hash}' not found.")
 
     v_target = db.query(DatasetVersion).filter(DatasetVersion.version_hash == target_hash).first()
     if not v_target:
-        raise HTTPException(status_code=404, detail=f"Version cible '{target_hash}' introuvable.")
+        raise HTTPException(status_code=404, detail=f"Target version '{target_hash}' not found.")
 
     return versioning_service.get_row_diff_page(
         base_version=v_base,
@@ -318,7 +318,7 @@ def add_tag_endpoint(version_hash: str, payload: TagCreate, db: Session = Depend
     """Attaches a tag (e.g. production, baseline, or custom) to an immutable version."""
     version = db.query(DatasetVersion).filter(DatasetVersion.version_hash == version_hash).first()
     if not version:
-        raise HTTPException(status_code=404, detail=f"Version '{version_hash}' introuvable.")
+        raise HTTPException(status_code=404, detail=f"Version '{version_hash}' not found.")
     return versioning_service.add_tag(version, payload.tag, db)
 
 
@@ -327,9 +327,9 @@ def remove_tag_endpoint(version_hash: str, tag: str, db: Session = Depends(get_d
     """Removes a tag from an immutable version."""
     version = db.query(DatasetVersion).filter(DatasetVersion.version_hash == version_hash).first()
     if not version:
-        raise HTTPException(status_code=404, detail=f"Version '{version_hash}' introuvable.")
+        raise HTTPException(status_code=404, detail=f"Version '{version_hash}' not found.")
     versioning_service.remove_tag(version, tag, db)
-    return {"success": True, "message": f"Tag '{tag}' supprimé de la version {version_hash[:8]}."}
+    return {"success": True, "message": f"Tag '{tag}' removed from version {version_hash[:8]}."}
 
 
 @router.post("/{version_hash}/restore")
@@ -337,11 +337,11 @@ def restore_version_endpoint(version_hash: str, db: Session = Depends(get_db)):
     """Restores version as current active version. Nothing is deleted."""
     version = db.query(DatasetVersion).filter(DatasetVersion.version_hash == version_hash).first()
     if not version:
-        raise HTTPException(status_code=404, detail=f"Version '{version_hash}' introuvable.")
+        raise HTTPException(status_code=404, detail=f"Version '{version_hash}' not found.")
     versioning_service.set_current_version(version.dataset, version, db)
     return {
         "success": True,
-        "message": f"Version {version_hash[:8]} restaurée comme version courante. Aucune donnée n'a été supprimée.",
+        "message": f"Version {version_hash[:8]} restored as current version. No data was deleted.",
         "current_version_hash": version_hash,
     }
 
@@ -351,8 +351,8 @@ def branch_from_version_endpoint(version_hash: str, payload: BranchCreate, db: S
     """Creates a draft branch from this version with a 30-day inactivity expiration."""
     version = db.query(DatasetVersion).filter(DatasetVersion.version_hash == version_hash).first()
     if not version:
-        raise HTTPException(status_code=404, detail=f"Version '{version_hash}' introuvable.")
-    return versioning_service.create_branch(version, payload.branch_name or "brouillon", payload.description, db)
+        raise HTTPException(status_code=404, detail=f"Version '{version_hash}' not found.")
+    return versioning_service.create_branch(version, payload.branch_name or "draft", payload.description, db)
 
 
 @router.delete("/{version_hash}")
@@ -360,7 +360,7 @@ def delete_version_endpoint(version_hash: str, db: Session = Depends(get_db)):
     """Safely deletes an immutable version if guardrails pass."""
     version = db.query(DatasetVersion).filter(DatasetVersion.version_hash == version_hash).first()
     if not version:
-        raise HTTPException(status_code=404, detail=f"Version '{version_hash}' introuvable.")
+        raise HTTPException(status_code=404, detail=f"Version '{version_hash}' not found.")
     return versioning_service.delete_version_guarded(version, db)
 
 
@@ -377,7 +377,7 @@ def query_view_endpoint(
     """Virtual view without duplicating data: filters on the fly and returns counts and sample rows."""
     version = db.query(DatasetVersion).filter(DatasetVersion.version_hash == version_hash).first()
     if not version:
-        raise HTTPException(status_code=404, detail=f"Version '{version_hash}' introuvable.")
+        raise HTTPException(status_code=404, detail=f"Version '{version_hash}' not found.")
     return versioning_service.query_view(
         version=version,
         split=split,
@@ -400,7 +400,7 @@ def download_view_endpoint(
     """Exports a filtered view on the fly without duplicating storage."""
     version = db.query(DatasetVersion).filter(DatasetVersion.version_hash == version_hash).first()
     if not version:
-        raise HTTPException(status_code=404, detail=f"Version '{version_hash}' introuvable.")
+        raise HTTPException(status_code=404, detail=f"Version '{version_hash}' not found.")
     data_bytes, filename, media_type = versioning_service.download_view(
         version=version,
         split=split,
@@ -424,7 +424,7 @@ async def replay_recipe_endpoint(
     """Replays the recorded recipe chain of this version on a newly uploaded CSV file."""
     version = db.query(DatasetVersion).filter(DatasetVersion.version_hash == version_hash).first()
     if not version:
-        raise HTTPException(status_code=404, detail=f"Version '{version_hash}' introuvable.")
+        raise HTTPException(status_code=404, detail=f"Version '{version_hash}' not found.")
 
     content = await file.read()
     return versioning_service.replay_recipe(
@@ -440,7 +440,7 @@ def get_version_guardrails_endpoint(version_hash: str, db: Session = Depends(get
     """Evaluates the 6 guardrails in real time against the selected version."""
     version = db.query(DatasetVersion).filter(DatasetVersion.version_hash == version_hash).first()
     if not version:
-        raise HTTPException(status_code=404, detail=f"Version '{version_hash}' introuvable.")
+        raise HTTPException(status_code=404, detail=f"Version '{version_hash}' not found.")
     return versioning_service.evaluate_guardrails(version, db)
 
 
@@ -449,6 +449,6 @@ def get_dataset_card_endpoint(version_hash: str, db: Session = Depends(get_db)):
     """Generates an exportable dataset card (Markdown + JSON) for this immutable version."""
     version = db.query(DatasetVersion).filter(DatasetVersion.version_hash == version_hash).first()
     if not version:
-        raise HTTPException(status_code=404, detail=f"Version '{version_hash}' introuvable.")
+        raise HTTPException(status_code=404, detail=f"Version '{version_hash}' not found.")
     return versioning_service.generate_dataset_card(version, db)
 

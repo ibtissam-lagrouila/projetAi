@@ -70,7 +70,7 @@ class ImageLabelingService:
             .all()
         )
         if not versions:
-            raise HTTPException(status_code=404, detail="Aucune version trouvée pour ce dataset")
+            raise HTTPException(status_code=404, detail="No version found for this dataset")
 
         name = dataset.name.lower()
         if "defect" in name or "product" in name:
@@ -464,7 +464,7 @@ class ImageLabelingService:
     def save_decision(self, dataset_id: str, payload: Dict[str, Any], db: Session) -> Dict[str, Any]:
         return {
             "status": "ok",
-            "message": "Annotations enregistrées pour l'image",
+            "message": "Annotations saved for image",
             "image_id": payload.get("image_id", "IMG_07734.JPG"),
             "boxes_count": len(payload.get("boxes", [])),
         }
@@ -472,7 +472,7 @@ class ImageLabelingService:
     def save_version(self, dataset_id: str, payload: Dict[str, Any], db: Session) -> Dict[str, Any]:
         return {
             "status": "ok",
-            "message": "Version annotée v4 créée avec succès avec journal d'audit",
+            "message": "Annotated version v4 created successfully with audit log",
             "version_name": payload.get("version_name", "v4"),
         }
 

@@ -169,7 +169,7 @@ class ImageProfilingService:
     def profile_dataset(self, dataset_id: str, db: Session, version_hash: Optional[str] = None) -> Dict[str, Any]:
         dataset = db.query(Dataset).filter(Dataset.id == dataset_id).first()
         if not dataset:
-            raise HTTPException(status_code=404, detail="Dataset non trouvé")
+            raise HTTPException(status_code=404, detail="Dataset not found")
 
         # Pick version
         if version_hash:
@@ -399,7 +399,7 @@ class ImageProfilingService:
             "classes": {
                 "total_count": classes_count,
                 "bars": class_bars,
-                "footnote": imbalance_footnote or f"{classes_count} classes détectées.",
+                "footnote": imbalance_footnote or f"{classes_count} classes detected.",
             },
             "sizes_and_boxes": {
                 "most_common_size": common_size,
@@ -519,7 +519,7 @@ class ImageProfilingService:
             clean_name = f"{clean_name}_{random.randint(100, 999)}"
 
         if not file_bytes:
-            raise HTTPException(status_code=400, detail="Fichier d'archive vide")
+            raise HTTPException(status_code=400, detail="Archive file is empty")
 
         records: List[Dict[str, Any]] = []
         detected_thumbs: Dict[str, str] = {}
@@ -566,7 +566,7 @@ class ImageProfilingService:
                             **metrics,
                         })
             except Exception as e:
-                raise HTTPException(status_code=400, detail=f"Erreur extraction ZIP: {str(e)}")
+                raise HTTPException(status_code=400, detail=f"ZIP extraction error: {str(e)}")
         else:
             # Single image file
             metrics = compute_image_metrics(file_bytes)
@@ -579,7 +579,7 @@ class ImageProfilingService:
             })
 
         if not records:
-            raise HTTPException(status_code=400, detail="Aucune image trouvée dans l'archive")
+            raise HTTPException(status_code=400, detail="No image found in the archive")
 
         if sample_images:
             final_thumbs = make_thumbnail_variants(sample_images[0], detected_thumbs)
@@ -594,7 +594,7 @@ class ImageProfilingService:
         metadata = parquet_service.extract_table_metadata(table) or {}
         metadata["thumbnails"] = final_thumbs
 
-        dataset = Dataset(name=clean_name, description=f"Dataset d'images importé : {filename}")
+        dataset = Dataset(name=clean_name, description=f"Imported image dataset: {filename}")
         db.add(dataset)
         db.flush()
 

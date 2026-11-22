@@ -232,7 +232,7 @@ export const TextLabelingPage: React.FC = () => {
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
           <span style={{ fontSize: '0.72rem', color: C.textMuted, fontFamily: 'monospace', letterSpacing: '0.1em' }}>
-            JEU DE DONNÉES :
+            DATASET :
           </span>
           <select
             value={selectedDatasetId}

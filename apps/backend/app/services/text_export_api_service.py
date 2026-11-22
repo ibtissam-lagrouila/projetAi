@@ -30,7 +30,7 @@ class TextExportApiService:
     def get_state(self, dataset_id: str, db: Session) -> Dict[str, Any]:
         dataset = self._find_dataset(dataset_id, db)
         if not dataset:
-            raise HTTPException(status_code=404, detail="Dataset introuvable")
+            raise HTTPException(status_code=404, detail="Dataset not found")
 
         versions = (
             db.query(DatasetVersion)
@@ -39,7 +39,7 @@ class TextExportApiService:
             .all()
         )
         if not versions:
-            raise HTTPException(status_code=404, detail="Aucune version trouvée pour ce dataset")
+            raise HTTPException(status_code=404, detail="No version found for this dataset")
 
         name = dataset.name.lower()
         if "ticket" in name or "support" in name:
@@ -840,14 +840,14 @@ class TextExportApiService:
 
     def update_settings(self, dataset_id: str, payload: Dict[str, Any], db: Session) -> Dict[str, Any]:
         logger.info(f"Updated text export settings for {dataset_id}: {payload}")
-        return {"status": "success", "message": "Paramètres d'export texte mis à jour."}
+        return {"status": "success", "message": "Text export settings updated."}
 
     def deploy_to_staging(self, dataset_id: str, db: Session) -> Dict[str, Any]:
         dataset = db.query(Dataset).filter(Dataset.id == dataset_id).first()
         name = dataset.name if dataset else "dataset"
         return {
             "success": True,
-            "message": f"Modèle texte pour {name} déployé sur l'environnement staging avec succès.",
+            "message": f"Text model for {name} deployed to staging environment successfully.",
             "endpoint_url": f"https://api.datalift.ai/v1/{name.replace('.', '_')}/predict",
             "model_name": f"{name.replace('.', '_')}-cls-v4"
         }
@@ -860,7 +860,7 @@ class TextExportApiService:
             "key": raw_key,
             "scope": scope,
             "status": "LIVE",
-            "message": "Clé API générée avec succès."
+            "message": "API key generated successfully."
         }
 
     def add_webhook(self, dataset_id: str, event_name: str, target_url: str, db: Session) -> Dict[str, Any]:
@@ -868,7 +868,7 @@ class TextExportApiService:
             "event": event_name,
             "url": target_url,
             "enabled": True,
-            "message": "Webhook configuré avec succès."
+            "message": "Webhook configured successfully."
         }
 
     def build_package(self, dataset_id: str, format_id: str, db: Session) -> Dict[str, Any]:
@@ -876,7 +876,7 @@ class TextExportApiService:
             "format": format_id,
             "status": "completed",
             "package_url": f"/downloads/packages/{dataset_id}_{format_id}.tar.gz",
-            "message": f"Package {format_id} généré avec succès."
+            "message": f"Package {format_id} generated successfully."
         }
 
 

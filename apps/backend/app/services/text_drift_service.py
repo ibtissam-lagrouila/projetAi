@@ -19,7 +19,7 @@ class TextDriftService:
     ) -> Dict[str, Any]:
         dataset = db.query(Dataset).filter(Dataset.id == dataset_id).first()
         if not dataset:
-            raise HTTPException(status_code=404, detail="Dataset introuvable")
+            raise HTTPException(status_code=404, detail="Dataset not found")
 
         versions = (
             db.query(DatasetVersion)
@@ -28,7 +28,7 @@ class TextDriftService:
             .all()
         )
         if not versions:
-            raise HTTPException(status_code=404, detail="Aucune version trouvée pour ce dataset")
+            raise HTTPException(status_code=404, detail="No version found for this dataset")
 
         name = dataset.name.lower()
         if "ticket" in name or "support" in name:
@@ -92,7 +92,7 @@ class TextDriftService:
                     "signal": "cluster 23 · new topic",
                     "kind": "embeddings",
                     "test": "Distance",
-                    "what_changed": "148 tickets about « code OTP · mise à jour » · far from every label",
+                    "what_changed": "148 tickets about « code OTP · update » · far from every label",
                     "weight": "high",
                     "distance": "[RESULT]",
                     "distance_val": "0.44",
@@ -179,7 +179,7 @@ class TextDriftService:
                 "labels": ["Billing", "Refund", "Deliver…", "Account", "Other", "cl. 23"],
                 "train_bars": [65, 72, 82, 42, 85, 0],
                 "live_bars": [68, 70, 80, 62, 88, 34],
-                "frequent_words": "code OTP, mise à jour, application, ma tdkhlch. The model spreads these tickets over account and other with low confidence. It may need its own label.",
+                "frequent_words": "OTP code, app update, application, login issue. The model spreads these tickets over account and other with low confidence. It may need its own label.",
                 "actions": {
                     "send_to_07": "Send cluster to 07",
                     "propose_label": "Propose a new label"
@@ -658,7 +658,7 @@ class TextDriftService:
     def save_settings(self, dataset_id: str, payload: Dict[str, Any], db: Session) -> Dict[str, Any]:
         return {
             "status": "success",
-            "message": "Paramètres de monitoring du drift enregistrés.",
+            "message": "Drift monitoring settings saved.",
             "dataset_id": dataset_id,
             "settings": payload
         }
@@ -666,7 +666,7 @@ class TextDriftService:
     def run_check(self, dataset_id: str, db: Session) -> Dict[str, Any]:
         return {
             "status": "success",
-            "message": "Vérification de dérive exécutée avec succès.",
+            "message": "Drift check completed successfully.",
             "dataset_id": dataset_id,
             "drift_score": 0.38,
             "status_label": "DRIFT DETECTED"
@@ -675,7 +675,7 @@ class TextDriftService:
     def adopt_reference(self, dataset_id: str, payload: Dict[str, Any], db: Session) -> Dict[str, Any]:
         return {
             "status": "success",
-            "message": "La fenêtre en direct a été adoptée comme nouvelle référence de drift.",
+            "message": "The live window has been adopted as the new drift reference.",
             "dataset_id": dataset_id
         }
 
@@ -684,7 +684,7 @@ class TextDriftService:
         count = payload.get("count", 148)
         return {
             "status": "success",
-            "message": f"{count} tickets du {cluster_id} ont été envoyés dans le pool 07 Active Learning.",
+            "message": f"{count} tickets from {cluster_id} sent to 07 Active Learning pool.",
             "cluster_id": cluster_id,
             "count": count,
             "dataset_id": dataset_id

@@ -92,14 +92,14 @@ export const VersioningPage: React.FC = () => {
 
   // Helper for type labels
   const getNodeTypeLabel = (node: LineageNode) => {
-    if (node.is_branch) return 'Branche';
+    if (node.is_branch) return 'Branch';
     if (node.operation_type === 'AUGMENTATION_PIPELINE' || node.recipe_summary.toLowerCase().includes('smote')) {
-      return 'Augmenté';
+      return 'Augmented';
     }
-    if (node.operation_type === 'CLEANING_PIPELINE' || node.recipe_summary.toLowerCase().includes('nettoyage')) {
-      return 'Nettoyé';
+    if (node.operation_type === 'CLEANING_PIPELINE' || node.recipe_summary.toLowerCase().includes('cleaning')) {
+      return 'Cleaned';
     }
-    return 'Brut';
+    return 'Raw';
   };
 
   // 1. Initial Load of Datasets
@@ -118,7 +118,7 @@ export const VersioningPage: React.FC = () => {
           }
         }
       } catch (err) {
-        console.error('Erreur chargement datasets:', err);
+        console.error('Error loading datasets:', err);
       }
     };
     fetchAllDatasets();
@@ -167,7 +167,7 @@ export const VersioningPage: React.FC = () => {
         setSelectedNodeId(null);
       }
     } catch (err) {
-      console.error('Erreur chargement lineage/header:', err);
+      console.error('Error loading lineage/header:', err);
       setCompareResult(null);
       setRowDiffPage(null);
     } finally {
@@ -192,7 +192,7 @@ export const VersioningPage: React.FC = () => {
     if (selectedNode) {
       api.getGuardrails(selectedNode.version_hash)
         .then((g) => setGuardrails(g))
-        .catch((err) => console.error('Erreur guardrails:', err));
+        .catch((err) => console.error('Error guardrails:', err));
 
       loadViewCounts(selectedNode.version_hash, activeViewFilter);
     }
@@ -210,7 +210,7 @@ export const VersioningPage: React.FC = () => {
       const res = await api.queryView(versionHash, queryParams);
       setViewInfo(res);
     } catch (err) {
-      console.error('Erreur query view:', err);
+      console.error('Error query view:', err);
     }
   };
 
@@ -232,7 +232,7 @@ export const VersioningPage: React.FC = () => {
       setDiffCurrentPage(1);
       loadRowDiff(baseHash, targetHash, diffFilter, 1, res.row_key_used || keyToUse || undefined);
     } catch (err) {
-      console.error('Erreur compare:', err);
+      console.error('Error compare:', err);
       setCompareResult(null);
       setRowDiffPage(null);
     } finally {
@@ -263,7 +263,7 @@ export const VersioningPage: React.FC = () => {
       setRowDiffPage(res);
       setDiffCurrentPage(page);
     } catch (err) {
-      console.error('Erreur row diff:', err);
+      console.error('Error row diff:', err);
       setRowDiffPage(null);
     } finally {
       setLoadingDiff(false);
@@ -281,10 +281,10 @@ export const VersioningPage: React.FC = () => {
   const handleRestore = async (node: LineageNode) => {
     try {
       await api.restoreVersion(node.version_hash);
-      setActionMessage({ text: `Version ${node.version_label} restaurée comme version courante.`, type: 'success' });
+      setActionMessage({ text: `Version ${node.version_label} restored as current version.`, type: 'success' });
       if (selectedDataset) loadDatasetData(selectedDataset.id);
     } catch (err: any) {
-      setActionMessage({ text: err.response?.data?.detail || 'Erreur lors de la restauration.', type: 'error' });
+      setActionMessage({ text: err.response?.data?.detail || 'Error during restoration.', type: 'error' });
     }
   };
 
@@ -295,10 +295,10 @@ export const VersioningPage: React.FC = () => {
       setIsBranchModalOpen(false);
       setBranchName('');
       setBranchDesc('');
-      setActionMessage({ text: `Branche ${branchName} créée avec succès.`, type: 'success' });
+      setActionMessage({ text: `Branch ${branchName} created successfully.`, type: 'success' });
       if (selectedDataset) loadDatasetData(selectedDataset.id);
     } catch (err: any) {
-      setActionMessage({ text: err.response?.data?.detail || 'Erreur lors de la création de branche.', type: 'error' });
+      setActionMessage({ text: err.response?.data?.detail || 'Error creating branch.', type: 'error' });
     }
   };
 
@@ -307,10 +307,10 @@ export const VersioningPage: React.FC = () => {
     try {
       await api.addVersionTag(selectedNode.version_hash, tag.trim().toLowerCase());
       setNewTagInput('');
-      setActionMessage({ text: `Étiquette '${tag}' ajoutée.`, type: 'success' });
+      setActionMessage({ text: `Tag '${tag}' added.`, type: 'success' });
       if (selectedDataset) loadDatasetData(selectedDataset.id);
     } catch (err: any) {
-      setActionMessage({ text: err.response?.data?.detail || "Erreur lors de l'ajout d'étiquette.", type: 'error' });
+      setActionMessage({ text: err.response?.data?.detail || "Error adding tag.", type: 'error' });
     }
   };
 
@@ -318,25 +318,25 @@ export const VersioningPage: React.FC = () => {
     if (!selectedNode) return;
     try {
       await api.removeVersionTag(selectedNode.version_hash, tag);
-      setActionMessage({ text: `Étiquette '${tag}' retirée.`, type: 'success' });
+      setActionMessage({ text: `Tag '${tag}' removed.`, type: 'success' });
       if (selectedDataset) loadDatasetData(selectedDataset.id);
     } catch (err: any) {
-      setActionMessage({ text: err.response?.data?.detail || "Erreur lors du retrait d'étiquette.", type: 'error' });
+      setActionMessage({ text: err.response?.data?.detail || "Error removing tag.", type: 'error' });
     }
   };
 
   const handleDeleteVersion = async (node: LineageNode) => {
-    if (!window.confirm(`Confirmez-vous la suppression de la version ${node.version_label} ?`)) {
+    if (!window.confirm(`Confirm deletion of version ${node.version_label} ?`)) {
       return;
     }
     try {
       await api.deleteVersion(node.version_hash);
-      setActionMessage({ text: `Version ${node.version_label} supprimée avec succès.`, type: 'success' });
+      setActionMessage({ text: `Version ${node.version_label} deleted successfully.`, type: 'success' });
       if (selectedDataset) loadDatasetData(selectedDataset.id);
     } catch (err: any) {
-      const msg = err.response?.data?.detail || 'Suppression refusée.';
+      const msg = err.response?.data?.detail || 'Deletion rejected.';
       setActionMessage({ text: msg, type: 'error' });
-      alert(`Suppression refusée : ${msg}`);
+      alert(`Deletion rejected: ${msg}`);
     }
   };
 
@@ -349,14 +349,14 @@ export const VersioningPage: React.FC = () => {
       setIsReplayModalOpen(false);
       setReplayFile(null);
       setActionMessage({
-        text: `Rejouer réussi ! ${res.created_versions.length} version(s) créée(s) automatiquement.`,
+        text: `Replay successful! ${res.created_versions.length} version(s) created automatically.`,
         type: 'success',
       });
       if (selectedDataset) loadDatasetData(selectedDataset.id);
     } catch (err: any) {
       setIsReplaying(false);
       setActionMessage({
-        text: err.response?.data?.detail || 'Erreur lors du rejeu de la recette.',
+        text: err.response?.data?.detail || 'Error replaying recipe.',
         type: 'error',
       });
     }
@@ -369,7 +369,7 @@ export const VersioningPage: React.FC = () => {
       setDatasetCard(card);
       setIsCardModalOpen(true);
     } catch (err: any) {
-      setActionMessage({ text: 'Impossible de générer la carte du dataset.', type: 'error' });
+      setActionMessage({ text: 'Unable to generate dataset card.', type: 'error' });
     }
   };
 
@@ -404,7 +404,7 @@ export const VersioningPage: React.FC = () => {
   const formatDate = (isoStr: string) => {
     try {
       const d = new Date(isoStr);
-      return d.toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' });
+      return d.toLocaleDateString('en-US', { day: '2-digit', month: 'short' });
     } catch {
       return isoStr;
     }
@@ -461,14 +461,14 @@ export const VersioningPage: React.FC = () => {
           gap: '0.6rem',
         }}
       >
-        <span>JEU DE DONNÉES</span>
+        <span>DATASET</span>
         <span>•</span>
         <span>{headerMetrics?.version_count ?? lineage?.nodes.length ?? 0} VERSIONS</span>
         <span>•</span>
         <span>{branchesCount} BRANCHE(S)</span>
         <span>•</span>
         <span style={{ color: headerMetrics?.test_set_hash ? '#22c55e' : 'var(--text-muted)' }}>
-          {headerMetrics?.test_set_hash ? 'JEU DE TEST VERROUILLÉ' : 'JEU DE TEST NON DÉFINI'}
+          {headerMetrics?.test_set_hash ? 'TEST SET LOCKED' : 'TEST SET NOT DEFINED'}
         </span>
       </div>
 
@@ -496,7 +496,7 @@ export const VersioningPage: React.FC = () => {
                 color: 'var(--text-main)',
               }}
             >
-              {selectedDataset?.name || 'Aucun jeu de données'}
+              {selectedDataset?.name || 'No dataset'}
             </h1>
 
             {/* Dataset switch dropdown */}
@@ -557,7 +557,7 @@ export const VersioningPage: React.FC = () => {
                 textTransform: 'uppercase',
               }}
             >
-              RÉFÉRENCE (BASELINE)
+              REFERENCE (BASELINE)
             </div>
           )}
           <div
@@ -605,30 +605,30 @@ export const VersioningPage: React.FC = () => {
             {headerMetrics?.version_count ?? lineage?.nodes.length ?? 0}
           </div>
           <div className="font-mono" style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-            {lineage?.nodes.map((n) => n.version_label).join(' • ') || 'Aucune version'}
+            {lineage?.nodes.map((n) => n.version_label).join(' • ') || 'No versions'}
           </div>
         </div>
 
         {/* STORED */}
         <div className="card" style={{ padding: '1.25rem 1.5rem' }}>
           <div className="font-mono" style={{ fontSize: '0.72rem', color: 'var(--text-muted)', letterSpacing: '0.08em', marginBottom: '0.5rem' }}>
-            STOCKÉ
+            STORED
           </div>
           <div className="font-serif" style={{ fontSize: '2.2rem', fontWeight: 500, lineHeight: 1.1, marginBottom: '0.35rem' }}>
             {headerMetrics?.total_stored_formatted || '0 Ko'}
           </div>
           <div className="font-mono" style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
-            {headerMetrics?.logical_size_formatted || '0 Ko'} logique • stockage réel
+            {headerMetrics?.logical_size_formatted || '0 Ko'} logical • actual storage
           </div>
         </div>
 
         {/* TEST SET HASH */}
         <div className="card" style={{ padding: '1.25rem 1.5rem' }}>
           <div className="font-mono" style={{ fontSize: '0.72rem', color: 'var(--text-muted)', letterSpacing: '0.08em', marginBottom: '0.5rem' }}>
-            HASH DU JEU DE TEST
+            TEST SET HASH
           </div>
           <div className="font-mono" style={{ fontSize: '1.8rem', fontWeight: 500, lineHeight: 1.1, marginBottom: '0.35rem', color: headerMetrics?.test_set_hash ? 'var(--text-main)' : 'var(--text-muted)' }}>
-            {headerMetrics?.test_set_hash ? `${headerMetrics.test_set_hash.slice(0, 8)}...` : 'Non défini'}
+            {headerMetrics?.test_set_hash ? `${headerMetrics.test_set_hash.slice(0, 8)}...` : 'Not defined'}
           </div>
           <div className="font-mono" style={{ fontSize: '0.75rem', color: headerMetrics?.test_set_hash ? '#22c55e' : 'var(--text-muted)' }}>
             {headerMetrics?.test_set_status || 'Pas de split test'}
@@ -638,13 +638,13 @@ export const VersioningPage: React.FC = () => {
         {/* USED BY */}
         <div className="card" style={{ padding: '1.25rem 1.5rem' }}>
           <div className="font-mono" style={{ fontSize: '0.72rem', color: 'var(--text-muted)', letterSpacing: '0.08em', marginBottom: '0.5rem' }}>
-            UTILISÉ PAR
+            USED BY
           </div>
           <div className="font-serif" style={{ fontSize: '2.2rem', fontWeight: 500, lineHeight: 1.1, marginBottom: '0.35rem', color: 'var(--text-muted)' }}>
-            0 modèle
+            0 models
           </div>
           <div className="font-mono" style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-            Sera alimenté par l'étape 06 Training
+            Will be populated by step 06 Training
           </div>
         </div>
       </div>
@@ -655,10 +655,10 @@ export const VersioningPage: React.FC = () => {
       <section style={{ marginBottom: '3.5rem' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '1.25rem' }}>
           <h2 className="font-serif" style={{ fontSize: '1.85rem', fontWeight: 400 }}>
-            1 • Lignage
+            1 • Lineage
           </h2>
           <span className="font-mono" style={{ fontSize: '0.72rem', color: 'var(--text-muted)', letterSpacing: '0.08em' }}>
-            CLIQUER SUR UNE VERSION POUR L'OUVRIR
+            CLICK A VERSION TO OPEN
           </span>
         </div>
 
@@ -679,15 +679,15 @@ export const VersioningPage: React.FC = () => {
               {loadingLineage ? (
                 <div style={{ width: '100%', textAlign: 'center', padding: '3rem', color: 'var(--text-muted)' }}>
                   <RefreshCw className="animate-spin" size={24} style={{ margin: '0 auto 0.75rem auto', color: 'var(--amber)' }} />
-                  <p className="font-mono" style={{ fontSize: '0.8rem' }}>Chargement du graphe de lignage...</p>
+                  <p className="font-mono" style={{ fontSize: '0.8rem' }}>Loading lineage graph...</p>
                 </div>
               ) : !lineage || lineage.nodes.length === 0 ? (
                 <div style={{ width: '100%', textAlign: 'center', padding: '3rem', color: 'var(--text-muted)' }}>
                   <Layers size={36} style={{ margin: '0 auto 0.75rem auto', opacity: 0.4 }} />
-                  <p>Aucune version trouvée pour ce jeu de données.</p>
+                  <p>No version found for this dataset.</p>
                   <button onClick={() => setIsUploadOpen(true)} className="btn btn-primary" style={{ marginTop: '1rem' }}>
                     <Upload size={14} />
-                    Uploader un premier fichier CSV
+                    Upload first CSV file
                   </button>
                 </div>
               ) : (
@@ -725,14 +725,14 @@ export const VersioningPage: React.FC = () => {
                             )}
                             {node.is_draft && (
                               <span className="badge font-mono" style={{ fontSize: '0.62rem', border: '1px solid #f97316', color: '#f97316', background: 'transparent' }}>
-                                BROUILLON
+                                DRAFT
                               </span>
                             )}
                           </div>
 
                           {/* Node Rows count & breakdown */}
                           <div className="font-serif" style={{ fontSize: '1.35rem', fontWeight: 500, marginBottom: '0.15rem' }}>
-                            {node.row_count.toLocaleString('fr-FR')} lignes
+                            {node.row_count.toLocaleString('en-US')} rows
                           </div>
                           {node.splits_breakdown && (
                             <div className="font-mono" style={{ fontSize: '0.68rem', color: 'var(--amber)', marginBottom: '0.35rem' }}>
@@ -743,7 +743,7 @@ export const VersioningPage: React.FC = () => {
                           {/* Node Subtitle */}
                           <div className="font-mono" style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
                             {node.is_draft && node.expires_at ? (
-                              <span style={{ color: '#f97316' }}>Exp. dans 30 jours</span>
+                              <span style={{ color: '#f97316' }}>Exp. in 30 days</span>
                             ) : (
                               <span>{formatDate(node.created_at)}</span>
                             )}
@@ -766,7 +766,7 @@ export const VersioningPage: React.FC = () => {
                                 backgroundColor: 'var(--bg-main)',
                               }}
                             >
-                              {edgeToNext?.label || 'ÉTAPE'}
+                              {edgeToNext?.label || 'STEP'}
                             </div>
                             <div style={{ width: '20px', height: '1px', backgroundColor: 'var(--border)' }} />
                           </div>
@@ -787,7 +787,7 @@ export const VersioningPage: React.FC = () => {
                     REJOUER
                   </div>
                   <p style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', lineHeight: 1.4, marginBottom: '0.85rem' }}>
-                    Nouveau fichier brut → mêmes recettes appliquées automatiquement, sans recliquer sur le Nettoyage.
+                    New raw file → same recipes applied automatically, without re-clicking Cleaning.
                   </p>
                 </div>
                 <button
@@ -797,7 +797,7 @@ export const VersioningPage: React.FC = () => {
                   style={{ fontSize: '0.72rem', width: '100%', justifyContent: 'center', padding: '0.4rem' }}
                 >
                   <Play size={12} />
-                  Rejouer la recette...
+                  Rejouer la recipe...
                 </button>
               </div>
 
@@ -808,7 +808,7 @@ export const VersioningPage: React.FC = () => {
                     BRANCHER
                   </div>
                   <p style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', lineHeight: 1.4, marginBottom: '0.85rem' }}>
-                    Tester un autre paramètre à côté de cette version ; les deux restent comparables sur le même test set.
+                    Test another parameter alongside this version; both remain comparable on the same test set.
                   </p>
                 </div>
                 <button
@@ -818,18 +818,18 @@ export const VersioningPage: React.FC = () => {
                   style={{ fontSize: '0.72rem', width: '100%', justifyContent: 'center', padding: '0.4rem' }}
                 >
                   <GitBranch size={12} />
-                  Créer une branche
+                  Create branch
                 </button>
               </div>
 
-              {/* RESTAURER */}
+              {/* RESTORE */}
               <div className="card" style={{ padding: '1.15rem 1.25rem', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
                 <div>
                   <div className="font-mono" style={{ fontSize: '0.72rem', color: 'var(--text-muted)', letterSpacing: '0.08em', marginBottom: '0.4rem' }}>
-                    RESTAURER
+                    RESTORE
                   </div>
                   <p style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', lineHeight: 1.4, marginBottom: '0.85rem' }}>
-                    Rendre une ancienne version courante. Rien n'est supprimé, l'historique complet reste intact.
+                    Make an older version current. Nothing is deleted, the complete history remains intact.
                   </p>
                 </div>
                 <button
@@ -839,7 +839,7 @@ export const VersioningPage: React.FC = () => {
                   style={{ fontSize: '0.72rem', width: '100%', justifyContent: 'center', padding: '0.4rem' }}
                 >
                   <RotateCcw size={12} />
-                  Définir comme courante
+                  Set as current
                 </button>
               </div>
             </div>
@@ -866,11 +866,11 @@ export const VersioningPage: React.FC = () => {
                   <div style={{ display: 'grid', gridTemplateColumns: '90px 1fr' }}>
                     <span className="font-mono" style={{ color: 'var(--text-muted)' }}>PARENT</span>
                     <span style={{ color: 'var(--text-main)' }}>
-                      {lineage?.nodes.find((n) => n.id === selectedNode.parent_version_id)?.version_label || 'Aucun (racine)'}
+                      {lineage?.nodes.find((n) => n.id === selectedNode.parent_version_id)?.version_label || 'None (root)'}
                     </span>
                   </div>
                   <div style={{ display: 'grid', gridTemplateColumns: '90px 1fr' }}>
-                    <span className="font-mono" style={{ color: 'var(--text-muted)' }}>RECETTE</span>
+                    <span className="font-mono" style={{ color: 'var(--text-muted)' }}>RECIPE</span>
                     <span style={{ color: 'var(--text-main)' }}>{selectedNode.recipe_summary}</span>
                   </div>
                   <div style={{ display: 'grid', gridTemplateColumns: '90px 1fr' }}>
@@ -882,11 +882,11 @@ export const VersioningPage: React.FC = () => {
                     <span className="font-mono" style={{ color: 'var(--text-main)' }}>{selectedNode.code_version}</span>
                   </div>
                   <div style={{ display: 'grid', gridTemplateColumns: '90px 1fr' }}>
-                    <span className="font-mono" style={{ color: 'var(--text-muted)' }}>DÉCOUPAGE</span>
-                    <span className="font-mono" style={{ color: 'var(--text-main)' }}>{selectedNode.splits || 'Non découpé'}</span>
+                    <span className="font-mono" style={{ color: 'var(--text-muted)' }}>SPLIT</span>
+                    <span className="font-mono" style={{ color: 'var(--text-main)' }}>{selectedNode.splits || 'Not split'}</span>
                   </div>
                   <div style={{ display: 'grid', gridTemplateColumns: '90px 1fr' }}>
-                    <span className="font-mono" style={{ color: 'var(--text-muted)' }}>CRÉÉ PAR</span>
+                    <span className="font-mono" style={{ color: 'var(--text-muted)' }}>CREATED BY</span>
                     <span style={{ color: 'var(--text-main)' }}>
                       {selectedNode.author} • {formatDate(selectedNode.created_at)}
                     </span>
@@ -913,7 +913,7 @@ export const VersioningPage: React.FC = () => {
                   <button
                     onClick={() => copyToClipboard(selectedNode.api_download_url || `http://localhost:8000/api/v1/versions/${selectedNode.version_hash}/download?format=parquet`, setCopiedCli)}
                     style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', flexShrink: 0 }}
-                    title="Copier l'adresse de l'API de téléchargement"
+                    title="Copy download API URL"
                   >
                     {copiedCli ? <Check size={14} color="#22c55e" /> : <Copy size={14} />}
                   </button>
@@ -927,21 +927,21 @@ export const VersioningPage: React.FC = () => {
                     className="btn btn-secondary font-mono"
                     style={{ fontSize: '0.72rem', padding: '0.45rem', justifyContent: 'center' }}
                   >
-                    Restaurer
+                    Restore
                   </button>
                   <button
                     onClick={() => setIsBranchModalOpen(true)}
                     className="btn btn-secondary font-mono"
                     style={{ fontSize: '0.72rem', padding: '0.45rem', justifyContent: 'center' }}
                   >
-                    Brancher...
+                    Branchr...
                   </button>
                   <button
                     onClick={() => setIsTagModalOpen(true)}
                     className="btn btn-secondary font-mono"
                     style={{ fontSize: '0.72rem', padding: '0.45rem', justifyContent: 'center' }}
                   >
-                    Étiqueter...
+                    Tag...
                   </button>
                 </div>
 
@@ -952,7 +952,7 @@ export const VersioningPage: React.FC = () => {
                     style={{ fontSize: '0.72rem', padding: '0.45rem', justifyContent: 'center', textDecoration: 'none' }}
                   >
                     <Download size={12} />
-                    Télécharger
+                    Download
                   </a>
                   <button
                     onClick={() => setInspectVersionHash(selectedNode.version_hash)}
@@ -960,7 +960,7 @@ export const VersioningPage: React.FC = () => {
                     style={{ fontSize: '0.72rem', padding: '0.45rem', justifyContent: 'center' }}
                   >
                     <Eye size={12} />
-                    Inspecter
+                    Inspect
                   </button>
                   <button
                     onClick={() => handleDeleteVersion(selectedNode)}
@@ -975,7 +975,7 @@ export const VersioningPage: React.FC = () => {
                     }}
                   >
                     <Trash2 size={12} />
-                    Supprimer
+                    Delete
                   </button>
                 </div>
 
@@ -985,7 +985,7 @@ export const VersioningPage: React.FC = () => {
               </>
             ) : (
               <div style={{ textAlign: 'center', padding: '2rem 1rem', color: 'var(--text-muted)' }}>
-                Sélectionnez une version dans le lignage pour inspecter ses paramètres.
+                Select a version in lineage to inspect its parameters.
               </div>
             )}
           </div>
@@ -1025,7 +1025,7 @@ export const VersioningPage: React.FC = () => {
                 ))}
               </select>
 
-              <span className="font-mono" style={{ color: 'var(--text-muted)' }}>À</span>
+              <span className="font-mono" style={{ color: 'var(--text-muted)' }}>TO</span>
               <select
                 value={compareTargetHash}
                 onChange={(e) => setCompareTargetHash(e.target.value)}
@@ -1046,7 +1046,7 @@ export const VersioningPage: React.FC = () => {
                 ))}
               </select>
 
-              <span className="font-mono" style={{ color: 'var(--text-muted)', marginLeft: '0.5rem' }}>CLÉ DE LIGNE</span>
+              <span className="font-mono" style={{ color: 'var(--text-muted)', marginLeft: '0.5rem' }}>ROW KEY</span>
               <select
                 value={selectedRowKey || compareResult?.row_key_used || 'none'}
                 onChange={(e) => {
@@ -1074,12 +1074,12 @@ export const VersioningPage: React.FC = () => {
                     {k}
                   </option>
                 ))}
-                <option value="none">Aucune (par empreinte)</option>
+                <option value="none">None (by fingerprint)</option>
               </select>
             </div>
           ) : (
             <div className="font-mono" style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-              1 seule version enregistrée
+              Only 1 version recorded
             </div>
           )}
         </div>
@@ -1087,7 +1087,7 @@ export const VersioningPage: React.FC = () => {
         {loadingCompare ? (
           <div className="card" style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-muted)' }}>
             <RefreshCw className="animate-spin" size={24} style={{ margin: '0 auto 0.75rem auto', color: 'var(--amber)' }} />
-            <p className="font-mono" style={{ fontSize: '0.8rem' }}>Calcul de la comparaison différentielle...</p>
+            <p className="font-mono" style={{ fontSize: '0.8rem' }}>Computing differential comparison...</p>
           </div>
         ) : compareResult ? (
           <>
@@ -1100,26 +1100,26 @@ export const VersioningPage: React.FC = () => {
                 marginBottom: '1.5rem',
               }}
             >
-              {/* AJOUTÉES */}
+              {/* ADDEDES */}
               <div className="card" style={{ padding: '1.25rem 1.5rem' }}>
                 <div className="font-mono" style={{ fontSize: '0.72rem', color: 'var(--text-muted)', letterSpacing: '0.08em', marginBottom: '0.5rem' }}>
-                  AJOUTÉES
+                  ADDEDES
                 </div>
                 <div className="font-serif" style={{ fontSize: '2.2rem', fontWeight: 500, lineHeight: 1.1, marginBottom: '0.35rem', color: '#22c55e' }}>
-                  +{compareResult.added_count.toLocaleString('fr-FR')}
+                  +{compareResult.added_count.toLocaleString('en-US')}
                 </div>
                 <div className="font-mono" style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
                   {compareResult.added_summary}
                 </div>
               </div>
 
-              {/* RETIRÉES */}
+              {/* DROPPED */}
               <div className="card" style={{ padding: '1.25rem 1.5rem' }}>
                 <div className="font-mono" style={{ fontSize: '0.72rem', color: 'var(--text-muted)', letterSpacing: '0.08em', marginBottom: '0.5rem' }}>
-                  RETIRÉES
+                  DROPPED
                 </div>
                 <div className="font-serif" style={{ fontSize: '2.2rem', fontWeight: 500, lineHeight: 1.1, marginBottom: '0.35rem', color: '#ef4444' }}>
-                  -{compareResult.removed_count.toLocaleString('fr-FR')}
+                  -{compareResult.removed_count.toLocaleString('en-US')}
                 </div>
                 <div className="font-mono" style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
                   {compareResult.removed_summary}
@@ -1129,13 +1129,13 @@ export const VersioningPage: React.FC = () => {
               {/* TARGET CLASS EVOLUTION */}
               <div className="card" style={{ padding: '1.25rem 1.5rem' }}>
                 <div className="font-mono" style={{ fontSize: '0.72rem', color: 'var(--text-muted)', letterSpacing: '0.08em', marginBottom: '0.5rem' }}>
-                  {compareResult.target_column ? `${compareResult.target_column.toUpperCase()} • ÉVOLUTION` : 'CIBLE'}
+                  {compareResult.target_column ? `${compareResult.target_column.toUpperCase()} • EVOLUTION` : 'CIBLE'}
                 </div>
                 <div className="font-serif" style={{ fontSize: '2.2rem', fontWeight: 500, lineHeight: 1.1, marginBottom: '0.35rem', color: 'var(--amber)' }}>
                   {compareResult.target_evolution || '—'}
                 </div>
                 <div className="font-mono" style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
-                  {compareResult.target_evolution_details || 'train split • val / test inchangés'}
+                  {compareResult.target_evolution_details || 'train split • val / test unchanged'}
                 </div>
               </div>
 
@@ -1154,7 +1154,7 @@ export const VersioningPage: React.FC = () => {
                     color: compareResult.test_set_status === 'identical' ? '#22c55e' : compareResult.test_set_status === 'not_applicable' ? 'var(--text-muted)' : '#ef4444',
                   }}
                 >
-                  {compareResult.test_set_status === 'identical' ? '✓ identique' : compareResult.test_set_status === 'not_applicable' ? '— non applicable' : '⚠️ modifié'}
+                  {compareResult.test_set_status === 'identical' ? '✓ identical' : compareResult.test_set_status === 'not_applicable' ? '— not applicable' : '⚠️ modified'}
                 </div>
                 <div className="font-mono" style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
                   {compareResult.test_set_message}
@@ -1177,7 +1177,7 @@ export const VersioningPage: React.FC = () => {
                 }}
               >
                 <span className="font-mono" style={{ fontSize: '0.72rem', color: '#38bdf8', letterSpacing: '0.08em', fontWeight: 600 }}>
-                  MODIFICATIONS CELLULES :
+                  CELL MODIFICATIONS:
                 </span>
                 <span className="font-mono" style={{ fontSize: '0.8rem', color: 'var(--text-main)' }}>
                   {compareResult.cells_modified_detail}
@@ -1191,7 +1191,7 @@ export const VersioningPage: React.FC = () => {
               <div className="card" style={{ padding: '1.5rem' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '1.25rem' }}>
                   <h3 className="font-serif" style={{ fontSize: '1.35rem', fontWeight: 400 }}>
-                    Décalage des distributions
+                    Distribution shift
                   </h3>
                   <span className="font-mono" style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>
                     {compareResult.distribution_shifts_title || `TRAIN • ${compareResult.base_version_label} → ${compareResult.target_version_label}`}
@@ -1202,17 +1202,17 @@ export const VersioningPage: React.FC = () => {
                   <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.8rem' }}>
                     <thead>
                       <tr style={{ borderBottom: '1px solid var(--border)', textAlign: 'left', color: 'var(--text-muted)' }}>
-                        <th className="font-mono" style={{ padding: '0.5rem 0.5rem 0.5rem 0', fontWeight: 500 }}>COLONNE</th>
+                        <th className="font-mono" style={{ padding: '0.5rem 0.5rem 0.5rem 0', fontWeight: 500 }}>COLUMN</th>
                         <th className="font-mono" style={{ padding: '0.5rem', fontWeight: 500 }}>{compareResult.base_version_label}</th>
                         <th className="font-mono" style={{ padding: '0.5rem', fontWeight: 500 }}>{compareResult.target_version_label}</th>
-                        <th className="font-mono" style={{ padding: '0.5rem 0 0.5rem 0.5rem', fontWeight: 500 }}>DÉCALAGE</th>
+                        <th className="font-mono" style={{ padding: '0.5rem 0 0.5rem 0.5rem', fontWeight: 500 }}>SHIFT</th>
                       </tr>
                     </thead>
                     <tbody>
                       {compareResult.distribution_shifts.length === 0 ? (
                         <tr>
                           <td colSpan={4} style={{ padding: '1.5rem 0', textAlign: 'center', color: 'var(--text-muted)' }}>
-                            Aucun décalage de distribution détecté.
+                            No distribution shift detected.
                           </td>
                         </tr>
                       ) : (
@@ -1268,7 +1268,7 @@ export const VersioningPage: React.FC = () => {
                 </div>
 
                 <p style={{ fontSize: '0.74rem', color: 'var(--text-muted)', lineHeight: 1.4 }}>
-                  Les décalages attendus proviennent de la recette (équilibre cible). Les décalages inattendus sont signalés avant d'étiqueter une version.
+                  Expected shifts stem from the recipe (target balance). Unexpected shifts are flagged before tagging a version.
                 </p>
               </div>
 
@@ -1276,7 +1276,7 @@ export const VersioningPage: React.FC = () => {
               <div className="card" style={{ padding: '1.5rem' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
                   <h3 className="font-serif" style={{ fontSize: '1.35rem', fontWeight: 400 }}>
-                    Différences de lignes (Row diff)
+                    Row differences (Row diff)
                   </h3>
 
                   {/* Filter tabs */}
@@ -1284,7 +1284,7 @@ export const VersioningPage: React.FC = () => {
                     {(['all', 'added', 'removed', 'modified'] as const).map((filter) => {
                       const count = rowDiffPage ? rowDiffPage.counts[filter] : 0;
                       const active = diffFilter === filter;
-                      const label = filter === 'all' ? 'Tout' : filter === 'added' ? 'Ajoutées' : filter === 'removed' ? 'Retirées' : 'Modifiées';
+                      const label = filter === 'all' ? 'All' : filter === 'added' ? 'Added' : filter === 'removed' ? 'Dropped' : 'Modified';
                       return (
                         <button
                           key={filter}
@@ -1310,13 +1310,13 @@ export const VersioningPage: React.FC = () => {
                 {loadingDiff ? (
                   <div style={{ textAlign: 'center', padding: '2.5rem', color: 'var(--text-muted)' }}>
                     <RefreshCw className="animate-spin" size={18} style={{ margin: '0 auto 0.5rem auto' }} />
-                    <span className="font-mono" style={{ fontSize: '0.75rem' }}>Chargement des lignes...</span>
+                    <span className="font-mono" style={{ fontSize: '0.75rem' }}>Loading rows...</span>
                   </div>
                 ) : !rowDiffPage || rowDiffPage.items.length === 0 ? (
                   <div style={{ textAlign: 'center', padding: '2.5rem', color: 'var(--text-muted)', fontSize: '0.82rem' }}>
                     {compareBaseHash === compareTargetHash
-                      ? `✓ Versions identiques (${compareResult.base_version_label} = ${compareResult.target_version_label}) : 0 différence.`
-                      : 'Aucune différence correspondant au filtre.'}
+                      ? `✓ Identical versions (${compareResult.base_version_label} = ${compareResult.target_version_label}): 0 differences.`
+                      : 'No difference matching filter.'}
                   </div>
                 ) : (
                   <>
@@ -1325,14 +1325,14 @@ export const VersioningPage: React.FC = () => {
                         <thead>
                           <tr style={{ borderBottom: '1px solid var(--border)', textAlign: 'left', color: 'var(--text-muted)' }}>
                             <th className="font-mono" style={{ padding: '0.45rem 0.5rem 0.45rem 0', fontWeight: 500 }}>MODIF</th>
-                            <th className="font-mono" style={{ padding: '0.45rem 0.5rem', fontWeight: 500 }}>LIGNE</th>
-                            <th className="font-mono" style={{ padding: '0.45rem 0 0.45rem 0.5rem', fontWeight: 500 }}>DÉTAIL</th>
+                            <th className="font-mono" style={{ padding: '0.45rem 0.5rem', fontWeight: 500 }}>ROW</th>
+                            <th className="font-mono" style={{ padding: '0.45rem 0 0.45rem 0.5rem', fontWeight: 500 }}>DETAIL</th>
                           </tr>
                         </thead>
                         <tbody>
                           {rowDiffPage.items.map((row, idx) => {
                             const changeColor = row.change === 'added' ? '#22c55e' : row.change === 'removed' ? '#ef4444' : '#38bdf8';
-                            const changePrefix = row.change === 'added' ? '+ ajoutée' : row.change === 'removed' ? '- retirée' : '~ modifiée';
+                            const changePrefix = row.change === 'added' ? '+ added' : row.change === 'removed' ? '- removed' : '~ modified';
 
                             return (
                               <tr key={idx} style={{ borderBottom: '1px solid var(--border-subtle)' }}>
@@ -1355,7 +1355,7 @@ export const VersioningPage: React.FC = () => {
                     {/* Pagination */}
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.75rem', color: 'var(--text-muted)' }}>
                       <span>
-                        Page {rowDiffPage.page} sur {Math.max(1, Math.ceil(rowDiffPage.total / rowDiffPage.page_size))} ({rowDiffPage.total} lignes)
+                        Page {rowDiffPage.page} of {Math.max(1, Math.ceil(rowDiffPage.total / rowDiffPage.page_size))} ({rowDiffPage.total} rows)
                       </span>
                       <div style={{ display: 'flex', gap: '0.4rem' }}>
                         <button
@@ -1364,7 +1364,7 @@ export const VersioningPage: React.FC = () => {
                           className="btn btn-secondary font-mono"
                           style={{ padding: '0.2rem 0.5rem', fontSize: '0.7rem' }}
                         >
-                          Précédent
+                          Previous
                         </button>
                         <button
                           disabled={diffCurrentPage * rowDiffPage.page_size >= rowDiffPage.total}
@@ -1372,7 +1372,7 @@ export const VersioningPage: React.FC = () => {
                           className="btn btn-secondary font-mono"
                           style={{ padding: '0.2rem 0.5rem', fontSize: '0.7rem' }}
                         >
-                          Suivant
+                          Next
                         </button>
                       </div>
                     </div>
@@ -1380,9 +1380,9 @@ export const VersioningPage: React.FC = () => {
                 )}
 
                 <p style={{ fontSize: '0.74rem', color: 'var(--text-muted)', lineHeight: 1.4, marginTop: '1rem' }}>
-                  Différences mot à mot calculées sur la clé de ligne{' '}
+                  Word-for-word differences computed on row key{' '}
                   <code className="font-mono" style={{ color: 'var(--amber)' }}>
-                    {compareResult.row_key_used || 'empreinte SHA-256'}
+                    {compareResult.row_key_used || 'SHA-256 fingerprint'}
                   </code>
                   .
                 </p>
@@ -1395,12 +1395,12 @@ export const VersioningPage: React.FC = () => {
               Une seule version disponible ({lineage.nodes[0]?.version_label || 'v1'} • brute)
             </p>
             <p className="font-mono" style={{ fontSize: '0.8rem', maxWidth: '540px', margin: '0 auto', color: 'var(--text-secondary)' }}>
-              La comparaison nécessite au moins deux versions. Créez une nouvelle version via le Nettoyage (Étape 02) ou l'Augmentation (Étape 03) pour observer les différences et décalages ici.
+              Comparison requires at least two versions. Create a new version via Cleaning (Step 02) or Augmentation (Step 03) to inspect differences and shifts here.
             </p>
           </div>
         ) : (
           <div className="card" style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-muted)' }}>
-            Sélectionnez deux versions ci-dessus pour lancer la comparaison différentielle.
+            Select two versions above to launch differential comparison.
           </div>
         )}
       </section>
@@ -1416,7 +1416,7 @@ export const VersioningPage: React.FC = () => {
               3 • Vues
             </h2>
             <span className="font-mono" style={{ fontSize: '0.68rem', color: 'var(--text-muted)', letterSpacing: '0.08em' }}>
-              SANS COPIE • SANS NOUVELLE VERSION
+              ZERO COPY • NO NEW VERSION
             </span>
           </div>
 
@@ -1424,7 +1424,7 @@ export const VersioningPage: React.FC = () => {
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', marginBottom: '1.25rem' }}>
             {[
               { id: 'all', label: `Tout • ${viewInfo?.counts.all ?? 0}` },
-              { id: 'real_only', label: `Réel seulement • ${viewInfo?.counts.real_only ?? 0}` },
+              { id: 'real_only', label: `Real only • ${viewInfo?.counts.real_only ?? 0}` },
               { id: 'smote', label: `origin = smote • ${viewInfo?.counts.synthetic ?? 0}` },
               { id: 'train', label: `Train • ${viewInfo?.counts.train ?? 0}` },
               { id: 'val', label: `Val • ${viewInfo?.counts.val ?? 0}` },
@@ -1456,7 +1456,7 @@ export const VersioningPage: React.FC = () => {
           </div>
 
           <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.85rem' }}>
-            Une vue peut être téléchargée ou interrogée via l'API comme une version :
+            A view can be downloaded or queried via API just like a version:
           </p>
 
           {/* API URL snippet box */}
@@ -1479,7 +1479,7 @@ export const VersioningPage: React.FC = () => {
             <button
               onClick={() => copyToClipboard(viewInfo?.api_url || '', setCopiedViewCli)}
               style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', flexShrink: 0 }}
-              title="Copier l'URL d'API de la vue"
+              title="Copy l'URL d'API de la vue"
             >
               {copiedViewCli ? <Check size={14} color="#22c55e" /> : <Copy size={14} />}
             </button>
@@ -1493,7 +1493,7 @@ export const VersioningPage: React.FC = () => {
               style={{ fontSize: '0.72rem', padding: '0.35rem 0.75rem', textDecoration: 'none' }}
             >
               <Download size={12} />
-              Télécharger CSV
+              Download CSV
             </a>
             <a
               href={selectedNode ? api.getViewDownloadUrl(selectedNode.version_hash, 'parquet', activeViewFilter === 'real_only' ? { origin: 'real' } : activeViewFilter === 'smote' ? { origin: 'smote' } : activeViewFilter === 'train' ? { split: 'train' } : activeViewFilter === 'val' ? { split: 'val' } : activeViewFilter === 'test' ? { split: 'test' } : undefined) : '#'}
@@ -1518,10 +1518,10 @@ export const VersioningPage: React.FC = () => {
         <div className="card" style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '1.25rem' }}>
             <h2 className="font-serif" style={{ fontSize: '1.65rem', fontWeight: 400 }}>
-              4 • Utilisé par
+              4 • Used by
             </h2>
             <span className="font-mono" style={{ fontSize: '0.68rem', color: 'var(--text-muted)', letterSpacing: '0.08em' }}>
-              LIÉ DEPUIS L'ÉTAPE 06 TRAINING
+              LINKED FROM STEP 06 TRAINING
             </span>
           </div>
 
@@ -1540,10 +1540,10 @@ export const VersioningPage: React.FC = () => {
           >
             <Sparkles size={28} style={{ color: 'var(--amber)', opacity: 0.5, marginBottom: '0.75rem' }} />
             <h4 className="font-serif" style={{ fontSize: '1.15rem', fontWeight: 500, marginBottom: '0.35rem' }}>
-              Aucun modèle lié
+              No linked model
             </h4>
             <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)', maxWidth: '300px' }}>
-              Ce registre sera automatiquement alimenté lors de l'entraînement de modèles dans l'Étape 06 Training.
+              This registry will be populated automatically during model training in Step 06 Training.
             </p>
           </div>
         </div>
@@ -1555,10 +1555,10 @@ export const VersioningPage: React.FC = () => {
       <section style={{ marginBottom: '3.5rem' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '1.25rem' }}>
           <h2 className="font-serif" style={{ fontSize: '1.85rem', fontWeight: 400 }}>
-            Garde-fous
+            Guardrails
           </h2>
           <span className="font-mono" style={{ fontSize: '0.72rem', color: 'var(--text-muted)', letterSpacing: '0.08em' }}>
-            VÉRIFIÉ AVANT CHAQUE ÉTIQUETAGE OU SUPPRESSION
+            VERIFIED BEFORE EACH TAGGING OR DELETION
           </span>
         </div>
 
@@ -1568,7 +1568,7 @@ export const VersioningPage: React.FC = () => {
             const isWarning = g.status === 'warning';
 
             const iconColor = isPassed ? '#22c55e' : isWarning ? '#f97316' : '#71717a';
-            const badgeLabel = isPassed ? 'Conforme' : isWarning ? 'Attention' : 'Non évalué';
+            const badgeLabel = isPassed ? 'Passed' : isWarning ? 'Attention' : 'Not evaluated';
 
             return (
               <div key={g.id} className="card" style={{ padding: '1.25rem 1.5rem' }}>
@@ -1629,10 +1629,10 @@ export const VersioningPage: React.FC = () => {
         {/* Left summary */}
         <div>
           <div className="font-mono" style={{ fontSize: '0.8rem', color: 'var(--text-main)', marginBottom: '0.2rem' }}>
-            {selectedNode?.version_label || 'v1'} • {selectedNode?.recipe_summary || 'Ingestion'} • {selectedNode?.splits || 'Non découpé'}
+            {selectedNode?.version_label || 'v1'} • {selectedNode?.recipe_summary || 'Ingestion'} • {selectedNode?.splits || 'Not split'}
           </div>
           <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)' }}>
-            Carte du dataset prête : sources, recettes, distributions, part synthétique.
+            Dataset card ready: sources, recipes, distributions, synthetic ratio.
           </div>
         </div>
 
@@ -1644,7 +1644,7 @@ export const VersioningPage: React.FC = () => {
             style={{ fontSize: '0.78rem', padding: '0.45rem 1rem' }}
           >
             <Tag size={13} />
-            Étiqueter en production
+            Tag as production
           </button>
           <button
             onClick={handleExportDatasetCard}
@@ -1652,14 +1652,14 @@ export const VersioningPage: React.FC = () => {
             style={{ fontSize: '0.78rem', padding: '0.45rem 1rem' }}
           >
             <FileText size={13} />
-            Exporter la carte du dataset
+            Export dataset card
           </button>
           <button
             onClick={() => navigate('/labeling')}
             className="btn btn-primary font-mono"
             style={{ fontSize: '0.78rem', padding: '0.45rem 1.15rem' }}
           >
-            <span>Continuer vers le labeling</span>
+            <span>Continue to labeling</span>
             <ChevronRight size={14} />
           </button>
         </div>
@@ -1677,7 +1677,7 @@ export const VersioningPage: React.FC = () => {
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
                 <GitBranch size={18} color="var(--amber)" />
                 <h3 className="font-serif" style={{ fontSize: '1.2rem', fontWeight: 500 }}>
-                  Brancher depuis {selectedNode?.version_label}
+                  Branch from {selectedNode?.version_label}
                 </h3>
               </div>
               <button onClick={() => setIsBranchModalOpen(false)} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}>
@@ -1686,11 +1686,11 @@ export const VersioningPage: React.FC = () => {
             </div>
             <div style={{ padding: '1.5rem' }}>
               <p style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', marginBottom: '1.25rem', lineHeight: 1.4 }}>
-                Crée une version brouillon liée à cette version pour tester une variation de paramètres sans impacter la branche principale.
+                Creates a draft version linked to this version to test parameter variations without affecting main branch.
               </p>
               <div style={{ marginBottom: '1rem' }}>
                 <label className="font-mono" style={{ display: 'block', fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '0.4rem' }}>
-                  NOM DE LA BRANCHE *
+                  BRANCH NAME *
                 </label>
                 <input
                   type="text"
@@ -1713,7 +1713,7 @@ export const VersioningPage: React.FC = () => {
                   DESCRIPTION
                 </label>
                 <textarea
-                  placeholder="ex: Test avec 50% de synthétique au lieu de 30%"
+                  placeholder="e.g. Test with 50% synthetic instead of 30%"
                   value={branchDesc}
                   onChange={(e) => setBranchDesc(e.target.value)}
                   rows={2}
@@ -1731,15 +1731,15 @@ export const VersioningPage: React.FC = () => {
               <div style={{ padding: '0.75rem', backgroundColor: 'var(--bg-main)', borderRadius: '4px', marginBottom: '1.5rem', display: 'flex', gap: '0.5rem' }}>
                 <Clock size={16} color="#f97316" style={{ flexShrink: 0, marginTop: '0.1rem' }} />
                 <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                  Cette version sera étiquetée <strong>brouillon</strong> avec une date d'expiration à 30 jours sans utilisation.
+                  This version will be tagged as <strong>draft</strong> with an expiration date after 30 days of inactivity.
                 </span>
               </div>
               <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem' }}>
                 <button onClick={() => setIsBranchModalOpen(false)} className="btn btn-secondary">
-                  Annuler
+                  Cancel
                 </button>
                 <button onClick={handleCreateBranch} disabled={!branchName.trim()} className="btn btn-primary">
-                  Créer la branche
+                  Create branch
                 </button>
               </div>
             </div>
@@ -1755,7 +1755,7 @@ export const VersioningPage: React.FC = () => {
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
                 <Play size={18} color="var(--amber)" />
                 <h3 className="font-serif" style={{ fontSize: '1.2rem', fontWeight: 500 }}>
-                  Rejouer la chaîne de recettes sur un nouveau fichier
+                  Replay recipe chain on a new file
                 </h3>
               </div>
               <button onClick={() => setIsReplayModalOpen(false)} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}>
@@ -1764,7 +1764,7 @@ export const VersioningPage: React.FC = () => {
             </div>
             <div style={{ padding: '1.5rem' }}>
               <p style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', marginBottom: '1.25rem', lineHeight: 1.4 }}>
-                Sélectionnez un nouveau fichier brut CSV. Le système réappliquera automatiquement l'intégralité des recettes enregistrées jusqu'à{' '}
+                Select a new raw CSV file. The system will automatically reapply all recipes saved up to{' '}
                 <strong>{selectedNode?.version_label}</strong> ({selectedNode?.recipe_summary}).
               </p>
 
@@ -1788,17 +1788,17 @@ export const VersioningPage: React.FC = () => {
                 <label htmlFor="replayFileInput" style={{ cursor: 'pointer' }}>
                   <Upload size={24} style={{ color: 'var(--amber)', margin: '0 auto 0.75rem auto' }} />
                   <div style={{ fontSize: '0.85rem', color: 'var(--text-main)', marginBottom: '0.25rem' }}>
-                    {replayFile ? replayFile.name : 'Choisir un fichier CSV brut'}
+                    {replayFile ? replayFile.name : 'Choose a raw CSV file'}
                   </div>
                   <div className="font-mono" style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
-                    {replayFile ? `${(replayFile.size / 1024).toFixed(1)} Ko` : 'Cliquez pour parcourir vos fichiers'}
+                    {replayFile ? `${(replayFile.size / 1024).toFixed(1)} KB` : 'Click to browse your files'}
                   </div>
                 </label>
               </div>
 
               <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem' }}>
                 <button onClick={() => setIsReplayModalOpen(false)} className="btn btn-secondary">
-                  Annuler
+                  Cancel
                 </button>
                 <button
                   onClick={handleReplayRecipe}
@@ -1808,7 +1808,7 @@ export const VersioningPage: React.FC = () => {
                   {isReplaying ? (
                     <>
                       <RefreshCw className="animate-spin" size={14} />
-                      Exécution du rejeu...
+                      Executing replay...
                     </>
                   ) : (
                     'Lancer le rejeu'
@@ -1828,7 +1828,7 @@ export const VersioningPage: React.FC = () => {
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
                 <Tag size={18} color="var(--amber)" />
                 <h3 className="font-serif" style={{ fontSize: '1.2rem', fontWeight: 500 }}>
-                  Étiquettes de {selectedNode?.version_label}
+                  Tags of {selectedNode?.version_label}
                 </h3>
               </div>
               <button onClick={() => setIsTagModalOpen(false)} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}>
@@ -1837,7 +1837,7 @@ export const VersioningPage: React.FC = () => {
             </div>
             <div style={{ padding: '1.5rem' }}>
               <p style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', marginBottom: '1.25rem' }}>
-                Les étiquettes sont mutables et permettent d'identifier les versions clés sans altérer les données immuables.
+                Tags are mutable and identify key versions without modifying immutable data.
               </p>
 
               {/* Quick tags */}
@@ -1869,7 +1869,7 @@ export const VersioningPage: React.FC = () => {
               <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1.5rem' }}>
                 <input
                   type="text"
-                  placeholder="Nouvelle étiquette personnalisée..."
+                  placeholder="New custom tag..."
                   value={newTagInput}
                   onChange={(e) => setNewTagInput(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && handleAddTag(newTagInput)}
@@ -1889,14 +1889,14 @@ export const VersioningPage: React.FC = () => {
                   className="btn btn-primary"
                   style={{ padding: '0.45rem 0.85rem' }}
                 >
-                  Ajouter
+                  Add
                 </button>
               </div>
 
               {/* Current tags list */}
               <div>
                 <label className="font-mono" style={{ display: 'block', fontSize: '0.72rem', color: 'var(--text-muted)', marginBottom: '0.5rem' }}>
-                  ÉTIQUETTES ACTUELLES
+                  CURRENT TAGS
                 </label>
                 {selectedNode?.tags && selectedNode.tags.length > 0 ? (
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem' }}>
@@ -1926,7 +1926,7 @@ export const VersioningPage: React.FC = () => {
                     ))}
                   </div>
                 ) : (
-                  <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>Aucune étiquette associée.</span>
+                  <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>No associated tags.</span>
                 )}
               </div>
             </div>
@@ -2015,7 +2015,7 @@ export const VersioningPage: React.FC = () => {
                 style={{ fontSize: '0.75rem' }}
               >
                 {copiedCard ? <Check size={14} color="#22c55e" /> : <Copy size={14} />}
-                Copier
+                Copy
               </button>
 
               <div style={{ display: 'flex', gap: '0.75rem' }}>
@@ -2025,7 +2025,7 @@ export const VersioningPage: React.FC = () => {
                   style={{ fontSize: '0.75rem' }}
                 >
                   <Download size={13} />
-                  Télécharger .md
+                  Download .md
                 </button>
                 <button
                   onClick={() =>
@@ -2039,7 +2039,7 @@ export const VersioningPage: React.FC = () => {
                   style={{ fontSize: '0.75rem' }}
                 >
                   <Download size={13} />
-                  Télécharger .json
+                  Download .json
                 </button>
               </div>
             </div>

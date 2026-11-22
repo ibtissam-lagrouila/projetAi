@@ -20,7 +20,7 @@ export class ErrorBoundary extends Component<Props, State> {
   }
 
   public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-    console.error('Erreur interceptée par ErrorBoundary:', error, errorInfo);
+    console.error('Error caught by ErrorBoundary:', error, errorInfo);
   }
 
   public render() {
@@ -28,13 +28,13 @@ export class ErrorBoundary extends Component<Props, State> {
       return (
         <div style={{ padding: '4rem 2rem', maxWidth: '640px', margin: '2rem auto', textAlign: 'center' }}>
           <div className="font-mono" style={{ fontSize: '0.75rem', color: '#fb7185', letterSpacing: '0.08em', marginBottom: '0.5rem' }}>
-            ERREUR D'AFFICHAGE
+            DISPLAY ERROR
           </div>
           <h2 className="font-serif" style={{ fontSize: '1.8rem', fontWeight: 500, marginBottom: '0.75rem', color: 'var(--text-main)' }}>
-            Une erreur inattendue est survenue
+            An unexpected error occurred
           </h2>
           <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', marginBottom: '1.5rem', lineHeight: 1.5 }}>
-            {this.state.error?.message || 'Erreur interne de rendu du composant.'}
+            {this.state.error?.message || 'Internal component rendering error.'}
           </p>
           <button
             type="button"

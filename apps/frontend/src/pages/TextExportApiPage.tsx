@@ -111,7 +111,7 @@ export const TextExportApiPage: React.FC = () => {
           setSelectedDatasetId(preferred.id);
         }
       } catch (err: any) {
-        setError('Erreur de chargement des jeux de données textuels: ' + (err.message || 'inconnu'));
+        setError('Error loading text datasets: ' + (err.message || 'unknown'));
       }
     }
     loadDatasets();
@@ -172,7 +172,7 @@ export const TextExportApiPage: React.FC = () => {
         setWebhookStates(whMap);
       }
     } catch (err: any) {
-      setError("Erreur lors du chargement des données d'export texte: " + (err.message || 'inconnu'));
+      setError("Error loading text export data: " + (err.message || 'unknown'));
     } finally {
       setLoading(false);
     }
@@ -185,17 +185,17 @@ export const TextExportApiPage: React.FC = () => {
   }, [selectedDatasetId, fetchData]);
 
   // Handlers
-  const handleCopy = (text: string, label: string = 'Texte') => {
+  const handleCopy = (text: string, label: string = 'Text') => {
     navigator.clipboard.writeText(text);
-    setNotification(`✓ ${label} copié dans le presse-papier.`);
+    setNotification(`✓ ${label} copied to clipboard.`);
     setTimeout(() => setNotification(null), 3000);
   };
 
   const handleDownloadDataset = () => {
     const filename = `${data?.dataset_name || 'tickets'}@${selectedVersion}.${selectedDataFormat}`;
-    setNotification(`✓ Préparation du téléchargement : ${filename}...`);
+    setNotification(`✓ Preparing download: ${filename}...`);
     setTimeout(() => {
-      setNotification(`✓ ${filename} téléchargé avec succès.`);
+      setNotification(`✓ ${filename} downloaded successfully.`);
       setTimeout(() => setNotification(null), 3000);
     }, 1200);
   };
@@ -204,10 +204,10 @@ export const TextExportApiPage: React.FC = () => {
     if (!selectedDatasetId) return;
     try {
       await api.buildTextPackage(selectedDatasetId, { format_id: selectedModelFormat });
-      setNotification(`✓ Package [${selectedModelFormat.toUpperCase()}] généré avec succès.`);
+      setNotification(`✓ Package [${selectedModelFormat.toUpperCase()}] generated successfully.`);
       setTimeout(() => setNotification(null), 3500);
     } catch (err: any) {
-      setError('Erreur lors de la génération du package: ' + (err.message || 'inconnu'));
+      setError('Error generating package: ' + (err.message || 'unknown'));
     }
   };
 
@@ -216,11 +216,11 @@ export const TextExportApiPage: React.FC = () => {
     try {
       const res = await api.deployTextToStaging(selectedDatasetId);
       setShowDeployModal(false);
-      setNotification(`✓ ${res.message || 'Déploiement en staging réussi.'}`);
+      setNotification(`✓ ${res.message || 'Staging deployment successful.'}`);
       setTimeout(() => setNotification(null), 4000);
       fetchData(selectedDatasetId);
     } catch (err: any) {
-      setError('Erreur lors du déploiement: ' + (err.message || 'inconnu'));
+      setError('Error during deployment: ' + (err.message || 'unknown'));
     }
   };
 
@@ -233,11 +233,11 @@ export const TextExportApiPage: React.FC = () => {
       });
       setShowApiKeyModal(false);
       setNewKeyName('');
-      setNotification(`✓ Clé créée: ${res.key} (enregistrée avec succès)`);
+      setNotification(`✓ Key created: ${res.key} (saved successfully)`);
       setTimeout(() => setNotification(null), 5000);
       fetchData(selectedDatasetId);
     } catch (err: any) {
-      setError('Erreur lors de la création de la clé: ' + (err.message || 'inconnu'));
+      setError('Error creating key: ' + (err.message || 'unknown'));
     }
   };
 
@@ -249,11 +249,11 @@ export const TextExportApiPage: React.FC = () => {
         url: newWebhookUrl,
       });
       setShowWebhookModal(false);
-      setNotification(`✓ Webhook [${newWebhookEvent}] enregistré avec succès.`);
+      setNotification(`✓ Webhook [${newWebhookEvent}] saved successfully.`);
       setTimeout(() => setNotification(null), 3500);
       fetchData(selectedDatasetId);
     } catch (err: any) {
-      setError("Erreur lors de l'enregistrement du webhook: " + (err.message || 'inconnu'));
+      setError("Error saving webhook: " + (err.message || 'unknown'));
     }
   };
 
@@ -332,7 +332,7 @@ export const TextExportApiPage: React.FC = () => {
         }}
       >
         <span style={{ fontSize: '0.75rem', fontFamily: 'monospace', color: C.textMuted, textTransform: 'uppercase' }}>
-          Jeu de données :
+          Dataset :
         </span>
         <select
           value={selectedDatasetId}
@@ -362,7 +362,7 @@ export const TextExportApiPage: React.FC = () => {
         </select>
         {loading && (
           <span style={{ fontSize: '0.72rem', fontFamily: 'monospace', color: C.amber }}>
-            Chargement des configurations d'export...
+            Loading export configurations...
           </span>
         )}
       </div>
@@ -1125,7 +1125,7 @@ export const TextExportApiPage: React.FC = () => {
               <button
                 type="button"
                 onClick={() => {
-                  setNotification('✓ Model card générée (Markdown format).');
+                  setNotification('✓ Model card generated (Markdown format).');
                   setTimeout(() => setNotification(null), 3000);
                 }}
                 style={{
@@ -1973,11 +1973,11 @@ export const TextExportApiPage: React.FC = () => {
                       type="button"
                       onClick={() => {
                         if (row.action_key === 'rollback') {
-                          setNotification('✓ Roll back vers v2 initié.');
+                          setNotification('✓ Rollback to v2 initiated.');
                         } else if (row.action_key === 'promote') {
                           setShowDeployModal(true);
                         } else if (row.action_key === 'restore') {
-                          setNotification('✓ Version v2 restaurée en staging.');
+                          setNotification('✓ Version v2 restored in staging.');
                         }
                         setTimeout(() => setNotification(null), 3500);
                       }}
@@ -2260,7 +2260,7 @@ export const TextExportApiPage: React.FC = () => {
                         onClick={() => {
                           setSelectedVersion(row.version);
                           setShowHistoryModal(false);
-                          setNotification(`✓ Version ${row.version} sélectionnée pour l'export.`);
+                          setNotification(`✓ Version ${row.version} selected for export.`);
                           setTimeout(() => setNotification(null), 3000);
                         }}
                         style={{

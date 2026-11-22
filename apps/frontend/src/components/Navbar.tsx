@@ -14,7 +14,7 @@ export const Navbar: React.FC = () => {
               <h1 style={{ fontSize: '1.25rem', fontWeight: 700, letterSpacing: '-0.02em' }}>Datalift</h1>
               <span className="badge badge-purple">AI Data Engine</span>
             </div>
-            <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Plateforme de versioning immuable de données</p>
+            <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Immutable data versioning platform</p>
           </div>
         </div>
 
@@ -29,7 +29,7 @@ export const Navbar: React.FC = () => {
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.8rem', color: 'var(--text-muted)' }}>
             <ShieldCheck size={16} color="#3b82f6" />
-            <span>Immuabilité garantie</span>
+            <span>Guaranteed immutability</span>
           </div>
         </div>
       </div>

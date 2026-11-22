@@ -104,7 +104,7 @@ export const TextProfilingPage: React.FC = () => {
         setLoading(false);
       }
     } catch (err) {
-      console.error('Erreur chargement datasets:', err);
+      console.error('Error loading datasets:', err);
       setLoading(false);
     }
   };
@@ -123,7 +123,7 @@ export const TextProfilingPage: React.FC = () => {
         setLoading(false);
       }
     } catch (err) {
-      console.error('Erreur chargement versions:', err);
+      console.error('Error loading versions:', err);
       setLoading(false);
     }
   };
@@ -134,8 +134,8 @@ export const TextProfilingPage: React.FC = () => {
       const data = await api.getTextProfile(datasetId, hash);
       setProfile(data);
     } catch (err) {
-      console.error('Erreur calcul profil texte:', err);
-      showNotif('Erreur lors du calcul du profil texte', false);
+      console.error('Error calculating text profile:', err);
+      showNotif('Error computing text profile', false);
     } finally {
       setLoading(false);
     }
@@ -156,7 +156,7 @@ export const TextProfilingPage: React.FC = () => {
       setUploading(true);
       const newProfile = await api.uploadTextFile(file);
       setProfile(newProfile);
-      showNotif(`Fichier « ${file.name} » importé et analysé avec succès !`, true);
+      showNotif(`File "${file.name}" imported and analyzed successfully!`, true);
       // Reload datasets list
       const freshDs = await api.getDatasets();
       setDatasets(freshDs);
@@ -164,7 +164,7 @@ export const TextProfilingPage: React.FC = () => {
       localStorage.setItem('datalift_selected_dataset_id', newProfile.dataset_id);
     } catch (err) {
       console.error('Upload failed:', err);
-      showNotif("Échec de l'import du fichier texte", false);
+      showNotif("Failed to upload text file", false);
     } finally {
       setUploading(false);
       if (fileInputRef.current) fileInputRef.current.value = '';
@@ -187,7 +187,7 @@ export const TextProfilingPage: React.FC = () => {
       >
         <RefreshCw className="animate-spin" size={30} style={{ color: C.amber }} />
         <span style={{ fontFamily: 'monospace', fontSize: 13, letterSpacing: 1.5 }}>
-          CHARGEMENT DU PROFIL TEXTUEL…
+          LOADING TEXT PROFILE…
         </span>
       </div>
     );
@@ -204,7 +204,7 @@ export const TextProfilingPage: React.FC = () => {
           style={{ display: 'none' }}
         />
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 32, paddingBottom: 16, borderBottom: `1px solid ${C.border}` }}>
-          <div style={{ fontFamily: 'monospace', fontSize: 11, color: C.muted }}>PROFILAGE DE TEXTE</div>
+          <div style={{ fontFamily: 'monospace', fontSize: 11, color: C.muted }}>TEXT PROFILING</div>
           <button
             onClick={() => fileInputRef.current?.click()}
             disabled={uploading}
@@ -223,7 +223,7 @@ export const TextProfilingPage: React.FC = () => {
             }}
           >
             <Upload size={14} />
-            <span>{uploading ? 'Importation…' : 'Importer un fichier texte (.jsonl, .csv, .txt)'}</span>
+            <span>{uploading ? 'Importation…' : 'Import a text file (.jsonl, .csv, .txt)'}</span>
           </button>
         </div>
 
@@ -241,10 +241,10 @@ export const TextProfilingPage: React.FC = () => {
         >
           <Upload size={36} style={{ color: C.amber, margin: '0 auto 16px' }} />
           <h3 style={{ fontFamily: 'Georgia, serif', fontStyle: 'italic', fontSize: 24, margin: '0 0 8px', color: C.text }}>
-            Importer un corpus de texte
+            Import a text corpus
           </h3>
           <p style={{ color: C.muted, fontSize: 13, maxWidth: 440, margin: '0 auto 20px' }}>
-            Glissez-déposez ou cliquez pour importer votre fichier .txt, .jsonl ou .csv et lancer le profilage NLP complet.
+            Drag and drop or click to upload your .txt, .jsonl, or .csv file to run profiling NLP complet.
           </p>
           <button
             style={{
@@ -258,7 +258,7 @@ export const TextProfilingPage: React.FC = () => {
               cursor: 'pointer',
             }}
           >
-            Parcourir les fichiers
+            Browse files
           </button>
         </div>
       </div>
@@ -372,11 +372,11 @@ export const TextProfilingPage: React.FC = () => {
             }}
           >
             <Upload size={14} />
-            <span>{uploading ? 'Importation…' : 'Importer un fichier texte (.jsonl, .csv, .txt)'}</span>
+            <span>{uploading ? 'Importation…' : 'Import a text file (.jsonl, .csv, .txt)'}</span>
           </button>
 
           <button
-            onClick={() => showNotif('Rapport de profilage textuel téléchargé')}
+            onClick={() => showNotif('Text profiling report downloaded')}
             style={{
               background: '#18191d',
               border: `1px solid ${C.border}`,
@@ -388,7 +388,7 @@ export const TextProfilingPage: React.FC = () => {
               cursor: 'pointer',
             }}
           >
-            Télécharger le rapport
+            Download report
           </button>
 
           <button
@@ -407,7 +407,7 @@ export const TextProfilingPage: React.FC = () => {
               gap: 6,
             }}
           >
-            <span>Passer au nettoyage</span>
+            <span>Continue to cleaning</span>
             <span>→</span>
           </button>
         </div>
@@ -458,7 +458,7 @@ export const TextProfilingPage: React.FC = () => {
 
               <div>
                 <div style={{ fontFamily: 'monospace', fontSize: 9, letterSpacing: 1.5, color: C.muted, marginBottom: 6 }}>
-                  ÉTIQUETTES
+                  LABELS
                 </div>
                 <div style={{ fontFamily: 'monospace', fontSize: 22, fontWeight: 700, color: C.text }}>
                   {profile.kpis.labels}
@@ -467,7 +467,7 @@ export const TextProfilingPage: React.FC = () => {
 
               <div>
                 <div style={{ fontFamily: 'monospace', fontSize: 9, letterSpacing: 1.5, color: C.muted, marginBottom: 6 }}>
-                  TAILLE
+                  SIZE
                 </div>
                 <div style={{ fontFamily: 'monospace', fontSize: 22, fontWeight: 700, color: C.text }}>
                   {profile.kpis.size}
@@ -492,7 +492,7 @@ export const TextProfilingPage: React.FC = () => {
                 {profile.health.score}
               </div>
               <div style={{ fontFamily: 'monospace', fontSize: 9, color: C.muted, letterSpacing: 1.5, marginTop: 4 }}>
-                SANTÉ / 100
+                HEALTH / 100
               </div>
             </div>
 
@@ -522,7 +522,7 @@ export const TextProfilingPage: React.FC = () => {
         </div>
       </div>
 
-      {/* ── SECTION: CE QUI REQUIERT VOTRE ATTENTION ──────────────────── */}
+      {/* ── SECTION: WHAT NEEDS YOUR ATTENTION ──────────────────── */}
       <div style={{ marginBottom: 48 }}>
         <div
           style={{
@@ -535,10 +535,10 @@ export const TextProfilingPage: React.FC = () => {
           }}
         >
           <h2 style={{ fontFamily: 'Georgia, serif', fontStyle: 'italic', fontSize: 26, fontWeight: 400, margin: 0 }}>
-            Ce qui requiert votre attention
+            What needs your attention
           </h2>
           <span style={{ fontFamily: 'monospace', fontSize: 10, letterSpacing: 2, color: C.muted }}>
-            {profile.findings.length} CONSTATS · PAR IMPACT
+            {profile.findings.length} FINDINGS · BY IMPACT
           </span>
         </div>
 
@@ -579,7 +579,7 @@ export const TextProfilingPage: React.FC = () => {
               {/* Action Button */}
               <div style={{ textAlign: 'right' }}>
                 <button
-                  onClick={() => showNotif(`Action exécutée : ${f.action_label}`)}
+                  onClick={() => showNotif(`Action executed: ${f.action_label}`)}
                   style={{
                     background: '#15161a',
                     border: `1px solid ${C.border}`,
@@ -599,7 +599,7 @@ export const TextProfilingPage: React.FC = () => {
         </div>
       </div>
 
-      {/* ── 3-COLUMN VISUAL SECTION: LANGUES · LONGUEUR · ÉTIQUETTES ──── */}
+      {/* ── 3-COLUMN VISUAL SECTION: LANGUES · LONGUEUR · LABELS ──── */}
       <div
         style={{
           display: 'grid',
@@ -625,7 +625,7 @@ export const TextProfilingPage: React.FC = () => {
               Langues
             </h3>
             <span style={{ fontFamily: 'monospace', fontSize: 10, letterSpacing: 1.5, color: C.muted }}>
-              {profile.languages.detected_count} DÉTECTÉES
+              {profile.languages.detected_count} DETECTED
             </span>
           </div>
 
@@ -685,7 +685,7 @@ export const TextProfilingPage: React.FC = () => {
               Longueur
             </h3>
             <span style={{ fontFamily: 'monospace', fontSize: 10, letterSpacing: 1.5, color: C.muted }}>
-              MOTS PAR TEXTE
+              WORDS PER TEXT
             </span>
           </div>
 
@@ -722,7 +722,7 @@ export const TextProfilingPage: React.FC = () => {
                     cursor: 'pointer',
                     transition: 'background 0.15s',
                   }}
-                  title={`${item.label} : ${item.count} textes (${item.pct} %)`}
+                  title={`${item.label} : ${item.count} texts (${item.pct} %)`}
                 />
               );
             })}
@@ -731,18 +731,18 @@ export const TextProfilingPage: React.FC = () => {
           {/* X-axis labels */}
           <div style={{ display: 'flex', justifyContent: 'space-between', fontFamily: 'monospace', fontSize: 10, color: C.muted, marginBottom: 8 }}>
             <span>0</span>
-            <span>MÉDIANE {profile.length.median}</span>
+            <span>MEDIAN {profile.length.median}</span>
             <span>{profile.length.max_label}</span>
           </div>
 
           {/* Hovered class info */}
           {hoveredBucket ? (
             <div style={{ fontSize: 11, color: C.amber, fontFamily: 'monospace', marginBottom: 8 }}>
-              ↳ {hoveredBucket.label} : {hoveredBucket.count} textes ({hoveredBucket.pct} %)
+              ↳ {hoveredBucket.label} : {hoveredBucket.count} texts ({hoveredBucket.pct} %)
             </div>
           ) : (
             <div style={{ fontSize: 10, color: C.muted, fontFamily: 'monospace', marginBottom: 8 }}>
-              Survolez une barre pour voir le libellé exact
+              Hover over a bar to view exact label
             </div>
           )}
 
@@ -753,7 +753,7 @@ export const TextProfilingPage: React.FC = () => {
           </div>
         </div>
 
-        {/* Column 3: Étiquettes */}
+        {/* Column 3: Labels */}
         <div>
           <div
             style={{
@@ -766,10 +766,10 @@ export const TextProfilingPage: React.FC = () => {
             }}
           >
             <h3 style={{ fontFamily: 'Georgia, serif', fontStyle: 'italic', fontSize: 24, fontWeight: 400, margin: 0 }}>
-              Étiquettes
+              Labels
             </h3>
             <span style={{ fontFamily: 'monospace', fontSize: 10, letterSpacing: 1.5, color: C.muted }}>
-              {profile.labels.has_labels ? `${profile.labels.classes_count} CLASSES` : 'AUCUNE ÉTIQUETTE'}
+              {profile.labels.has_labels ? `${profile.labels.classes_count} CLASSES` : 'NO LABELS'}
             </span>
           </div>
 
@@ -814,17 +814,17 @@ export const TextProfilingPage: React.FC = () => {
               }}
             >
               <div style={{ fontFamily: 'Georgia, serif', fontStyle: 'italic', fontSize: 15, color: C.textMuted, marginBottom: 6 }}>
-                Aucune étiquette
+                No labels
               </div>
               <div style={{ fontSize: 11, color: C.muted, lineHeight: 1.4 }}>
-                Ce corpus ne contient pas de colonne d'annotation cible (apprentissage non supervisé ou données brutes).
+                This corpus does not contain a target annotation column (unsupervised learning or raw data).
               </div>
             </div>
           )}
         </div>
       </div>
 
-      {/* ── SECTION: DOUBLONS & RÈGLE DE NORMALISATION (Conditionnelle / Intégrée) ── */}
+      {/* ── SECTION: DUPLICATES & NORMALIZATION RULE (Conditional / Integrated) ── */}
       {profile.duplicates && (
         <div
           style={{
@@ -838,10 +838,10 @@ export const TextProfilingPage: React.FC = () => {
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
             <div>
               <h3 style={{ fontFamily: 'Georgia, serif', fontStyle: 'italic', fontSize: 20, margin: '0 0 4px', color: C.text }}>
-                Analyse des doublons et quasi-doublons
+                Analysis of duplicates and near-duplicates
               </h3>
               <div style={{ fontSize: 12, color: C.muted }}>
-                <span style={{ color: C.amber, fontWeight: 500 }}>Règle de normalisation : </span>
+                <span style={{ color: C.amber, fontWeight: 500 }}>Normalization rule: </span>
                 {profile.duplicates.normalization_rule}
               </div>
             </div>
@@ -849,11 +849,11 @@ export const TextProfilingPage: React.FC = () => {
             <div style={{ display: 'flex', gap: 20, fontFamily: 'monospace', fontSize: 12 }}>
               <div style={{ background: '#18191d', padding: '6px 14px', borderRadius: 4, border: `1px solid ${C.border}` }}>
                 <span style={{ color: C.red, fontWeight: 700 }}>{profile.duplicates.exact_count}</span>{' '}
-                <span style={{ color: C.muted }}>doublons exacts ({profile.duplicates.exact_groups_count} groupes)</span>
+                <span style={{ color: C.muted }}>duplicates exacts ({profile.duplicates.exact_groups_count} groupes)</span>
               </div>
               <div style={{ background: '#18191d', padding: '6px 14px', borderRadius: 4, border: `1px solid ${C.border}` }}>
                 <span style={{ color: C.amber, fontWeight: 700 }}>{profile.duplicates.near_count}</span>{' '}
-                <span style={{ color: C.muted }}>quasi-doublons ({profile.duplicates.near_groups_count} groupes)</span>
+                <span style={{ color: C.muted }}>quasi-duplicates ({profile.duplicates.near_groups_count} groupes)</span>
               </div>
             </div>
           </div>
@@ -863,7 +863,7 @@ export const TextProfilingPage: React.FC = () => {
             {/* Exact duplicates */}
             <div style={{ background: '#0e0f11', padding: 14, borderRadius: 4, border: `1px solid #1c1d22` }}>
               <div style={{ fontFamily: 'monospace', fontSize: 11, letterSpacing: 1, color: C.amber, marginBottom: 10 }}>
-                DOUBLONS EXACTS ({profile.duplicates.exact_groups_count} GROUPES)
+                EXACT DUPLICATES ({profile.duplicates.exact_groups_count} GROUPS)
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8, maxHeight: 180, overflowY: 'auto' }}>
                 {profile.duplicates.exact_groups.map((g, i) => (
@@ -878,7 +878,7 @@ export const TextProfilingPage: React.FC = () => {
             {/* Near duplicates */}
             <div style={{ background: '#0e0f11', padding: 14, borderRadius: 4, border: `1px solid #1c1d22` }}>
               <div style={{ fontFamily: 'monospace', fontSize: 11, letterSpacing: 1, color: C.blue, marginBottom: 10 }}>
-                QUASI-DOUBLONS ({profile.duplicates.near_groups_count} GROUPES DÉTECTÉS)
+                NEAR-DUPLICATES ({profile.duplicates.near_groups_count} GROUPS DETECTED)
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8, maxHeight: 180, overflowY: 'auto' }}>
                 {profile.duplicates.near_groups.map((g, i) => (
@@ -895,7 +895,7 @@ export const TextProfilingPage: React.FC = () => {
         </div>
       )}
 
-      {/* ── SECTION: EXTRAITS DU CORPUS · PROBLÈMES SIGNALÉS IN SITU ──── */}
+      {/* ── SECTION: EXTRAITS DU CORPUS · ISSUES FLAGGED IN SITU ──── */}
       <div>
         <div
           style={{
@@ -911,7 +911,7 @@ export const TextProfilingPage: React.FC = () => {
             Extraits du corpus
           </h2>
           <span style={{ fontFamily: 'monospace', fontSize: 10, letterSpacing: 2, color: C.muted }}>
-            PROBLÈMES SIGNALÉS IN SITU
+            ISSUES FLAGGED IN SITU
           </span>
         </div>
 

@@ -54,7 +54,7 @@ class ImageTrainingService:
             .all()
         )
         if not versions:
-            raise HTTPException(status_code=404, detail="Aucune version trouvée pour ce dataset")
+            raise HTTPException(status_code=404, detail="No version found for this dataset")
 
         name = dataset.name.lower()
         if "defect" in name or "product" in name:
@@ -509,14 +509,14 @@ class ImageTrainingService:
     def start_run(self, dataset_id: str, payload: Dict[str, Any], db: Session) -> Dict[str, Any]:
         return {
             "status": "ok",
-            "message": "Entraînement YOLO lancé sur le cluster GPU",
+            "message": "YOLO training launched on GPU cluster",
             "run_id": f"yolo-run-{int(db.query(Dataset).filter(Dataset.id == dataset_id).count()) + 101}",
         }
 
     def start_shadow_mode(self, dataset_id: str, payload: Dict[str, Any], db: Session) -> Dict[str, Any]:
         return {
             "status": "ok",
-            "message": "Shadow mode activé sur les mini PC de la ligne",
+            "message": "Shadow mode enabled on line mini PCs",
             "device": payload.get("device", "Line 2 mini PC"),
         }
 

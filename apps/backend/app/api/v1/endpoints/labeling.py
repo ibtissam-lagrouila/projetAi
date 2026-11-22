@@ -20,12 +20,11 @@ router = APIRouter()
 @router.get("/{dataset_id}/status", response_model=LabelingStatusResponse)
 def get_labeling_status(
     dataset_id: str,
-    target_column: Optional[str] = Query(None, description="Colonne cible sélectionnée"),
-    threshold: float = Query(0.90, ge=0.5, le=0.99, description="Seuil de confiance du modèle"),
+    target_column: Optional[str] = Query(None, description="Selected target column"),
+    threshold: float = Query(0.90, ge=0.5, le=0.99, description="Model confidence threshold"),
     db: Session = Depends(get_db),
 ):
-    """Retourne la synthèse globale de labellisation : compteurs des files d'attente,
-    score de confiance des labels, cible active et métriques d'en-tête.
+    """Returns the global labeling summary: queue counters, label confidence score, active target, and header metrics.
     """
     return labeling_service.get_labeling_status(
         dataset_id=dataset_id,
@@ -38,14 +37,13 @@ def get_labeling_status(
 @router.get("/{dataset_id}/candidate", response_model=QueueItemResponse)
 def get_queue_candidate(
     dataset_id: str,
-    queue: str = Query("suspected_errors", description="Identifiant de la file d'attente"),
-    index: int = Query(0, ge=0, description="Index de l'élément dans la file"),
-    target_column: Optional[str] = Query(None, description="Colonne cible"),
-    threshold: float = Query(0.90, ge=0.5, le=0.99, description="Seuil de certitude"),
+    queue: str = Query("suspected_errors", description="Queue identifier"),
+    index: int = Query(0, ge=0, description="Index of item in queue"),
+    target_column: Optional[str] = Query(None, description="Target column"),
+    threshold: float = Query(0.90, ge=0.5, le=0.99, description="Certainty threshold"),
     db: Session = Depends(get_db),
 ):
-    """Retourne le candidat de la file d'attente spécifiée avec l'ensemble de ses
-    caractéristiques, surbrillances sémantiques, historique et plus proches voisins.
+    """Returns the candidate from the specified queue with all its features, semantic highlights, history, and nearest neighbors.
     """
     return labeling_service.get_candidate_for_queue(
         dataset_id=dataset_id,
@@ -63,8 +61,7 @@ def apply_label_decision(
     req: DecisionRequest,
     db: Session = Depends(get_db),
 ):
-    """Enregistre une décision humaine (Conserver, Changer, Pas encore connu, Incertain)
-    avec traçabilité et motif obligatoire.
+    """Records a human decision (Keep, Change, Unknown, Uncertain) with full traceability and mandatory reason.
     """
     change = labeling_service.apply_decision(
         dataset_id=dataset_id,
@@ -78,7 +75,7 @@ def apply_label_decision(
     )
     return {
         "success": True,
-        "message": f"Décision '{req.decision}' enregistrée pour la ligne {req.customer_id}.",
+        "message": f"Decision '{req.decision}' recorded for row {req.customer_id}.",
         "change_id": str(change.id),
         "new_label": change.new_label,
     }
@@ -90,7 +87,7 @@ def apply_bulk_fix(
     req: BulkFixRequest,
     db: Session = Depends(get_db),
 ):
-    """Applique une correction en masse à un groupe de lignes correspondant à un motif métier."""
+    """Applies a bulk correction to a group of rows matching a business pattern."""
     count = labeling_service.apply_bulk_fix(
         dataset_id=dataset_id,
         row_indices=req.row_indices,
@@ -101,7 +98,7 @@ def apply_bulk_fix(
     )
     return {
         "success": True,
-        "message": f"{count} lignes corrigées en masse avec succès.",
+        "message": f"{count} rows corrected in bulk successfully.",
         "modified_count": count,
     }
 
@@ -111,8 +108,7 @@ def get_checks_and_guardrails(
     dataset_id: str,
     db: Session = Depends(get_db),
 ):
-    """Retourne la liste des contrôles automatiques exécutés, le journal des modifications du jour,
-    et le statut de validation des garde-fous.
+    """Returns the list of automated checks run, the change log for today, and the guardrail validation status.
     """
     return labeling_service.get_checks_and_guardrails(dataset_id=dataset_id, db=db)
 
@@ -123,8 +119,7 @@ def save_labeling_version(
     req: SaveVersionRequest,
     db: Session = Depends(get_db),
 ):
-    """Génère et enregistre une nouvelle version immuable (ex: v4) avec les labels corrigés,
-    le journal des modifications attaché et la conservation du lignage.
+    """Generates and saves a new immutable version (e.g. v4) with the corrected labels, attached change log, and lineage preservation.
     """
     return labeling_service.save_labeling_version(
         dataset_id=dataset_id,

@@ -177,7 +177,7 @@ class VersioningService:
                 if "CLEANING" in t.name:
                     op_type = "CLEAN"
                     ops = t.parameters.get("operations", [])
-                    op_summary = f"{len(ops)} étapes" if ops else "Nettoyé"
+                    op_summary = f"{len(ops)} steps" if ops else "Cleaned"
                 elif "AUGMENTATION" in t.name:
                     op_type = "AUGMENTED"
                     techs = t.parameters.get("techniques", {})
@@ -187,7 +187,7 @@ class VersioningService:
                         active_techs = [k for k, val in techs.items() if isinstance(val, dict) and val.get("enabled")]
                     else:
                         active_techs = []
-                    op_summary = f"{len(active_techs)} techn." if active_techs else "Augmenté"
+                    op_summary = f"{len(active_techs)} tech." if active_techs else "Augmented"
                     seed = t.parameters.get("split_config", {}).get("random_seed")
 
                     group_by = t.parameters.get("split_config", {}).get("group_by")
@@ -197,13 +197,13 @@ class VersioningService:
                     test_r = int(ratios.get("test_ratio", 0.15) * 100)
                     splits = f"{train_r} / {val_r} / {test_r}"
                     if group_by:
-                        splits += f" · par {group_by}"
+                        splits += f" · by {group_by}"
                 elif "BRANCH" in t.name:
                     op_type = "BRANCH"
                     op_summary = f"Branche '{v.branch_name}'"
                 elif "INGESTION" in t.name:
                     op_type = "RAW"
-                    op_summary = "Données brutes"
+                    op_summary = "Raw data"
 
             # Check profile health score if computed
             health_score = None
@@ -246,9 +246,9 @@ class VersioningService:
             if is_branch or v.branch_name or v.is_draft:
                 type_label = "branche"
             elif op_type == "AUGMENTED":
-                type_label = "augmentée"
+                type_label = "augmented"
             elif op_type == "CLEAN":
-                type_label = "nettoyée"
+                type_label = "cleaned"
 
             api_url = f"http://localhost:8000/api/v1/versions/{v.version_hash}/download?format=parquet"
 
@@ -311,14 +311,14 @@ class VersioningService:
                                         cell_diffs += int(d.sum())
                                         diff_cols.add(c)
                                 if cell_diffs == 0:
-                                    edge_label = "NETTOYAGE : 0 CELLULE MODIFIÉE (SANS EFFET)"
+                                    edge_label = "CLEANING : 0 CELLS MODIFIED (NO EFFECT)"
                                 else:
-                                    edge_label = f"NETTOYAGE : {cell_diffs} CELLULES MODIFIÉES ({', '.join(diff_cols).upper()})"
+                                    edge_label = f"CLEANING: {cell_diffs} CELLS MODIFIED ({', '.join(diff_cols).upper()})"
                             else:
                                 diff_r = len(p_df) - len(c_df)
-                                edge_label = f"NETTOYAGE : -{diff_r} LIGNES"
+                                edge_label = f"CLEANING: -{diff_r} ROWS"
                         else:
-                            edge_label = f"NETTOYAGE : {op_summary.upper()}"
+                            edge_label = f"CLEANING: {op_summary.upper()}"
                     elif op_type == "AUGMENTED":
                         active_names = [tech.replace('_', ' ') for tech in active_techs] if 'active_techs' in locals() and active_techs else []
                         if active_names:
@@ -349,7 +349,7 @@ class VersioningService:
         if version.dataset_id != dataset.id:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="La version spécifiée n'appartient pas à ce dataset.",
+                detail="Specified version does not belong to this dataset.",
             )
         dataset.current_version_id = version.id
         db.add(dataset)
@@ -362,7 +362,7 @@ class VersioningService:
         if version.dataset_id != dataset.id:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="La version spécifiée n'appartient pas à ce dataset.",
+                detail="Specified version does not belong to this dataset.",
             )
         # Remove baseline tag from previous versions
         for v in dataset.versions:
@@ -386,7 +386,7 @@ class VersioningService:
         """Adds a tag to an immutable version."""
         clean_tag = tag_name.strip().lower()
         if not clean_tag:
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Le tag ne peut être vide.")
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Tag cannot be empty.")
 
         existing = (
             db.query(DatasetVersionTag)
@@ -411,7 +411,7 @@ class VersioningService:
             .first()
         )
         if not existing:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Tag '{clean_tag}' introuvable.")
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Tag '{clean_tag}' not found.")
 
         # If removing baseline tag, clear baseline_version_id if it pointed to this version
         if clean_tag == "baseline" and version.dataset.baseline_version_id == version.id:
@@ -431,17 +431,17 @@ class VersioningService:
         """Creates a draft branch from parent version with 30-day inactivity expiration."""
         source_path = Path(parent_version.storage_path)
         if not source_path.exists():
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Fichier source Parquet introuvable.")
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Source Parquet file not found.")
 
         # Read source data
         df = pq.read_table(source_path).to_pandas()
         data_hash = hashlib.sha256(df.to_json(orient="records").encode("utf-8")).hexdigest()
 
-        branch_clean = (branch_name or "brouillon").strip().lower().replace(" ", "-")
+        branch_clean = (branch_name or "draft").strip().lower().replace(" ", "-")
         params = {
             "parent_hash": parent_version.version_hash,
             "branch_name": branch_clean,
-            "description": description or f"Branche dérivée de {parent_version.version_hash[:8]}",
+            "description": description or f"Branch derived from {parent_version.version_hash[:8]}",
         }
 
         # Deterministic draft version hash
@@ -517,7 +517,7 @@ class VersioningService:
         if child_count > 0:
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT,
-                detail=f"Suppression refusée : cette version possède {child_count} version(s) enfant(s) dans le lignage. Supprimez les branches dérivées d'abord.",
+                detail=f"Deletion rejected: this version has {child_count} child version(s) in the lineage. Delete derived branches first.",
             )
 
         # 2. Production tag check
@@ -525,7 +525,7 @@ class VersioningService:
         if is_prod:
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT,
-                detail="Suppression refusée : la version est étiquetée 'production'. Retirez cette étiquette avant de supprimer.",
+                detail="Deletion rejected: version is tagged as 'production'. Remove this tag before deleting.",
             )
 
         # 3. Baseline check
@@ -534,7 +534,7 @@ class VersioningService:
         if is_baseline:
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT,
-                detail="Suppression refusée : cette version est définie comme référence (baseline). Définissez une autre référence d'abord.",
+                detail="Deletion rejected: this version is set as the baseline reference. Set another reference first.",
             )
 
         # If current version, reassign current_version_id to parent
@@ -566,7 +566,7 @@ class VersioningService:
 
         return {
             "success": True,
-            "message": f"Version {version.version_hash[:8]} supprimée avec succès.",
+            "message": f"Version {version.version_hash[:8]} deleted successfully.",
             "deleted_hash": version.version_hash,
         }
 
@@ -587,7 +587,7 @@ class VersioningService:
         path_b = Path(target_version.storage_path)
 
         if not path_a.exists() or not path_b.exists():
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Fichiers Parquet introuvables.")
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Parquet files not found.")
 
         df_a = pq.read_table(path_a).to_pandas()
         df_b = pq.read_table(path_b).to_pandas()
@@ -618,8 +618,8 @@ class VersioningService:
         added_count = 0
         removed_count = 0
         modified_count = 0
-        added_summary = "lignes"
-        removed_summary = "lignes"
+        added_summary = "rows"
+        removed_summary = "rows"
         cells_modified_count = 0
         cells_modified_detail = None
 
@@ -627,10 +627,10 @@ class VersioningService:
             added_count = 0
             removed_count = 0
             modified_count = 0
-            added_summary = "0 ligne"
-            removed_summary = "0 ligne"
+            added_summary = "0 rows"
+            removed_summary = "0 rows"
             cells_modified_count = 0
-            cells_modified_detail = "0 cellule modifiée (même version)"
+            cells_modified_detail = "0 cells modified (same version)"
         elif detected_key:
             from collections import defaultdict
             rows_a_by_key = defaultdict(list)
@@ -670,10 +670,10 @@ class VersioningService:
                         modified_count += 1
 
             if cells_modified_count == 0:
-                cells_modified_detail = "0 cellule modifiée (deuxième passe identique)"
+                cells_modified_detail = "0 cells modified (identical second pass)"
             else:
-                details_parts = [f"{cnt} sur '{col}'" for col, cnt in diff_col_counts.items()]
-                cells_modified_detail = f"{cells_modified_count} cellules modifiées ({', '.join(details_parts)})"
+                details_parts = [f"{cnt} on '{col}'" for col, cnt in diff_col_counts.items()]
+                cells_modified_detail = f"{cells_modified_count} cells modified ({', '.join(details_parts)})"
         else:
             # Row content hashing (no key)
             common_cols = [c for c in df_a.columns if c in df_b.columns and c not in tech_cols]
@@ -696,32 +696,32 @@ class VersioningService:
 
         # Summaries
         if base_version.version_hash == target_version.version_hash:
-            added_summary = "0 ligne"
-            removed_summary = "0 ligne"
+            added_summary = "0 rows"
+            removed_summary = "0 rows"
         elif "origin" in df_b.columns and "smote" in df_b["origin"].values:
             smote_count = (df_b["origin"] == "smote").sum()
-            added_summary = f"lignes · origine = smote (+{smote_count})"
+            added_summary = f"rows · origin = smote (+{smote_count})"
         elif "is_synthetic" in df_b.columns:
             synth_count = (df_b["is_synthetic"] == True).sum()  # noqa: E712
-            added_summary = f"lignes · {synth_count} synthétiques"
+            added_summary = f"rows · {synth_count} synthetic"
         elif added_count > 0:
-            added_summary = f"lignes ajoutées (+{added_count})"
+            added_summary = f"rows added (+{added_count})"
         else:
-            added_summary = "0 ligne ajoutée"
+            added_summary = "0 rows added"
 
         if base_version.version_hash == target_version.version_hash:
-            removed_summary = "0 ligne"
+            removed_summary = "0 rows"
         elif "split" in df_a.columns and "split" in df_b.columns:
             train_a = (df_a["split"] == "train").sum()
             train_b = (df_b["split"] == "train").sum()
             if train_b < train_a:
-                removed_summary = f"lignes · sous-échantillonnées, train seul (-{train_a - train_b})"
+                removed_summary = f"rows · undersampled, train only (-{train_a - train_b})"
             else:
-                removed_summary = "lignes retirées"
+                removed_summary = "rows removed"
         elif removed_count > 0:
-            removed_summary = f"lignes retirées (-{removed_count})"
+            removed_summary = f"rows removed (-{removed_count})"
         else:
-            removed_summary = "0 ligne retirée"
+            removed_summary = "0 rows removed"
 
         # 3. Target Distribution Evolution
         target_col = None
@@ -730,7 +730,7 @@ class VersioningService:
 
         if base_version.version_hash == target_version.version_hash:
             target_evolution = "Identique"
-            target_evolution_details = f"Même version ({base_label})"
+            target_evolution_details = f"Same version ({base_label})"
         else:
             t_b = target_version.transformation_produced
             if t_b and t_b.parameters and t_b.parameters.get("target_column"):
@@ -761,10 +761,10 @@ class VersioningService:
             if target_col and target_col in df_a.columns and target_col in df_b.columns:
                 if "split" in df_b.columns and (df_b["split"] == "train").sum() > 0:
                     eval_b = df_b[df_b["split"] == "train"]
-                    scope_text = "sur split=train"
+                    scope_text = "on split=train"
                 else:
                     eval_b = df_b
-                    scope_text = "sur ensemble du dataset"
+                    scope_text = "on entire dataset"
 
                 if "split" in df_a.columns and (df_a["split"] == "train").sum() > 0:
                     eval_a = df_a[df_a["split"] == "train"]
@@ -786,17 +786,17 @@ class VersioningService:
                     pct_a = vc_a.get(pos_val, 0.0) * 100
                     pct_b = vc_b.get(pos_val, 0.0) * 100
                     target_evolution = f"{pct_a:.1f} % → {pct_b:.0f} %".replace(".", ",")
-                    target_evolution_details = f"Sur '{target_col}' = {pos_val} ({scope_text})"
+                    target_evolution_details = f"On '{target_col}' = {pos_val} ({scope_text})"
 
         # 4. Test Set Integrity
         test_set_status = "not_applicable"
-        test_set_message = "Non applicable (aucune colonne de split définie)"
+        test_set_message = "Not applicable (no split column defined)"
         test_set_rows = None
 
         if base_version.version_hash == target_version.version_hash:
             if "split" in df_b.columns and (df_b["split"] == "test").sum() > 0:
                 test_set_status = "identical"
-                test_set_message = f"✓ Identique ({(df_b['split'] == 'test').sum()} lignes · même version)"
+                test_set_message = f"✓ Identical ({(df_b['split'] == 'test').sum()} rows · same version)"
                 test_set_rows = (df_b["split"] == "test").sum()
         elif "split" in df_a.columns and "split" in df_b.columns:
             test_a = df_a[df_a["split"] == "test"]
@@ -805,10 +805,10 @@ class VersioningService:
 
             if len(test_a) == 0 and len(test_b) == 0:
                 test_set_status = "not_applicable"
-                test_set_message = "Aucune ligne avec split='test' trouvée"
+                test_set_message = "No rows with split='test' found"
             elif len(test_a) != len(test_b):
                 test_set_status = "modified"
-                test_set_message = f"⚠️ Modifié ({len(test_a)} -> {len(test_b)} lignes)"
+                test_set_message = f"⚠️ Modified ({len(test_a)} -> {len(test_b)} rows)"
             else:
                 cols_to_compare = [c for c in test_a.columns if c in test_b.columns and c not in tech_cols]
                 ta_sorted = test_a[cols_to_compare].sort_values(by=cols_to_compare).reset_index(drop=True)
@@ -823,14 +823,14 @@ class VersioningService:
                         break
                 if not diff:
                     test_set_status = "identical"
-                    key_note = f" · par clé '{detected_key}'" if detected_key else ""
-                    test_set_message = f"✓ Identique ({len(test_b)} lignes{key_note})"
+                    key_note = f" · by key '{detected_key}'" if detected_key else ""
+                    test_set_message = f"✓ Identical ({len(test_b)} rows{key_note})"
                 else:
                     test_set_status = "modified"
-                    test_set_message = f"⚠️ Modifié (certaines valeurs diffèrent)"
+                    test_set_message = f"⚠️ Modified (some values differ)"
         elif "split" in df_b.columns and (df_b["split"] == "test").sum() > 0:
             test_set_status = "not_applicable"
-            test_set_message = "Version source sans partition de test"
+            test_set_message = "Source version has no test split"
             test_set_rows = (df_b["split"] == "test").sum()
 
         # 5. Distribution Shift per Column
@@ -850,21 +850,21 @@ class VersioningService:
         base_op = "brute"
         if base_version.transformation_produced:
             if "CLEANING" in base_version.transformation_produced.name:
-                base_op = "nettoyée"
+                base_op = "cleaned"
             elif "AUGMENTATION" in base_version.transformation_produced.name:
-                base_op = "augmentée"
+                base_op = "augmented"
         target_op = "brute"
         if target_version.transformation_produced:
             if "CLEANING" in target_version.transformation_produced.name:
-                target_op = "nettoyée"
+                target_op = "cleaned"
             elif "AUGMENTATION" in target_version.transformation_produced.name:
-                target_op = "augmentée"
+                target_op = "augmented"
 
         has_train_split = ("split" in df_b.columns and (df_b["split"] == "train").sum() > 0)
         prefix = "TRAIN • " if has_train_split else ""
         distribution_shifts_title = f"{prefix}{base_label} ({base_op}) → {target_label} ({target_op})"
         if base_version.version_hash == target_version.version_hash:
-            distribution_shifts_title = f"{base_label} ({base_op}) → {target_label} ({target_op}) (Même version)"
+            distribution_shifts_title = f"{base_label} ({base_op}) → {target_label} ({target_op}) (Same version)"
             common_cols = []
 
         # Evaluate distributions on train split if present
@@ -929,8 +929,8 @@ class VersioningService:
                     val_a_display = f"{p_a}% {top_cat}"
                     val_b_display = f"{p_b}% {top_cat}"
                 else:
-                    val_a_display = f"{eval_df_a[col].nunique()} valeurs"
-                    val_b_display = f"{eval_df_b[col].nunique()} valeurs"
+                    val_a_display = f"{eval_df_a[col].nunique()} values"
+                    val_b_display = f"{eval_df_b[col].nunique()} values"
 
             # Threshold classification
             if shift_score >= 0.25:
@@ -970,22 +970,22 @@ class VersioningService:
 
             if col == target_col:
                 is_expected = True
-                explanation = "Attendu par la recette d'augmentation (équilibrage cible)"
+                explanation = "Expected from augmentation recipe (target balance)"
             elif col_cleaned:
                 is_expected = True
-                explanation = "Attendu par la recette de nettoyage"
+                explanation = "Expected from the cleaning recipe"
             elif is_num and is_noise_en:
                 is_expected = True
-                explanation = "Bruit gaussien léger sur valeurs numériques"
+                explanation = "Slight Gaussian noise on numerical features"
             elif is_smote_cat:
                 is_expected = True
-                explanation = "Synthèse SMOTE-NC catégorielle"
+                explanation = "Categorical SMOTE-NC synthesis"
             elif level in ["LOW", "NONE"]:
                 is_expected = True
-                explanation = "Décalage statistique mineur attendu"
+                explanation = "Minor expected statistical shift"
             else:
                 is_expected = False
-                explanation = "Décalage inattendu non expliqué par la recette"
+                explanation = "Unexpected shift unexplained by recipe"
                 unexpected_count += 1
 
             shifts.append(
@@ -1001,7 +1001,7 @@ class VersioningService:
                 )
             )
 
-        summary_note = "Les décalages attendus proviennent de la recette (équilibre de la cible ou nettoyage). Les décalages inattendus sont signalés avant la mise en production."
+        summary_note = "Expected shifts come from the recipe (target balancing or cleaning). Unexpected shifts are flagged before production."
         if cells_modified_detail:
             summary_note += f" • {cells_modified_detail}"
 
@@ -1107,7 +1107,7 @@ class VersioningService:
                             for col_name in common_cols[:3]:
                                 if col_name in rb and pd.notna(rb[col_name]):
                                     detail_parts.append(f"{col_name} {rb[col_name]}")
-                        detail = " · ".join(detail_parts) if detail_parts else "Ligne ajoutée"
+                        detail = " · ".join(detail_parts) if detail_parts else "Row added"
 
                         all_items.append(
                             RowDiffItem(
@@ -1126,7 +1126,7 @@ class VersioningService:
                         if "split" in df_a.columns and "split" in df_b.columns:
                             detail_parts.append("undersampled")
                         else:
-                            detail_parts.append("retirée")
+                            detail_parts.append("removed")
                         for col_name in ["churned", "churn", "target", "label", "souscrit", "decision"]:
                             if col_name in ra and pd.notna(ra[col_name]):
                                 detail_parts.append(f"{col_name} {ra[col_name]}")
@@ -1194,8 +1194,8 @@ class VersioningService:
                         all_items.append(
                             RowDiffItem(
                                 change="added",
-                                row_id=f"Ligne {idx}",
-                                detail="Ligne ajoutée (par empreinte)",
+                                row_id=f"Row {idx}",
+                                detail="Row added (by fingerprint)",
                                 values=rb.to_dict(),
                             )
                         )
@@ -1204,8 +1204,8 @@ class VersioningService:
                         all_items.append(
                             RowDiffItem(
                                 change="removed",
-                                row_id=f"Ligne {idx}",
-                                detail="Ligne retirée (par empreinte)",
+                                row_id=f"Row {idx}",
+                                detail="Row removed (by fingerprint)",
                                 values=ra.to_dict(),
                             )
                         )
@@ -1251,7 +1251,7 @@ class VersioningService:
         """Virtual view without duplicating data: filters on the fly and returns counts."""
         file_path = Path(version.storage_path)
         if not file_path.exists():
-            raise HTTPException(status_code=404, detail="Fichier Parquet introuvable.")
+            raise HTTPException(status_code=404, detail="Parquet file not found.")
 
         df = pq.read_table(file_path).to_pandas()
 
@@ -1327,7 +1327,7 @@ class VersioningService:
         """Exports a filtered view on the fly without duplicating storage in CSV, Parquet, or JSONL."""
         file_path = Path(version.storage_path)
         if not file_path.exists():
-            raise HTTPException(status_code=404, detail="Fichier Parquet introuvable.")
+            raise HTTPException(status_code=404, detail="Parquet file not found.")
 
         df = pq.read_table(file_path).to_pandas()
 
@@ -1378,20 +1378,20 @@ class VersioningService:
             guardrails.append(
                 GuardrailItem(
                     id="immutable_versions",
-                    name="Versions immuables",
+                    name="Immutable versions",
                     status="passed",
-                    message="Toutes les versions sont immuables",
-                    detail="Toute modification crée une nouvelle version immuable (intégrité SHA-256 respectée).",
+                    message="All versions are immutable",
+                    detail="Every modification creates a new immutable version (SHA-256 integrity preserved).",
                 )
             )
         else:
             guardrails.append(
                 GuardrailItem(
                     id="immutable_versions",
-                    name="Versions immuables",
+                    name="Immutable versions",
                     status="failed",
-                    message="Fichier physique introuvable",
-                    detail="L'artefact de stockage est absent du disque.",
+                    message="Physical file not found",
+                    detail="Storage artifact is missing from disk.",
                 )
             )
 
@@ -1435,30 +1435,30 @@ class VersioningService:
                             guardrails.append(
                                 GuardrailItem(
                                     id="test_set_hash",
-                                    name="Jeu de test inchangé",
+                                    name="Test set unchanged",
                                     status="passed",
-                                    message="✓ Jeu de test 100% inchangé",
-                                    detail=f"{len(c_test)} lignes de test strictement identiques à la version source (comparaison par clé '{key}').",
+                                    message="✓ Test set 100% unchanged",
+                                    detail=f"{len(c_test)} test rows strictly identical to the source version (comparison by key '{key}').",
                                 )
                             )
                         else:
                             guardrails.append(
                                 GuardrailItem(
                                     id="test_set_hash",
-                                    name="Jeu de test inchangé",
+                                    name="Test set unchanged",
                                     status="failed",
-                                    message="⚠️ Jeu de test modifié",
-                                    detail="Certaines valeurs de test diffèrent de la version source.",
+                                    message="⚠️ Test set modified",
+                                    detail="Some test values differ from source version.",
                                 )
                             )
                     else:
                         guardrails.append(
                             GuardrailItem(
                                 id="test_set_hash",
-                                name="Jeu de test inchangé",
+                                name="Test set unchanged",
                                 status="failed",
-                                message="⚠️ Jeu de test altéré",
-                                detail=f"Les identifiants de test diffèrent ({len(set_c)} vs {len(set_p)} dans la source).",
+                                message="⚠️ Test set altered",
+                                detail=f"Test identifiers differ ({len(set_c)} vs {len(set_p)} in source).",
                             )
                         )
                 else:
@@ -1468,40 +1468,40 @@ class VersioningService:
                         guardrails.append(
                             GuardrailItem(
                                 id="test_set_hash",
-                                name="Jeu de test inchangé",
+                                name="Test set unchanged",
                                 status="passed",
-                                message="✓ Jeu de test 100% inchangé",
-                                detail=f"{len(c_test)} lignes de test strictement identiques à la version source.",
+                                message="✓ Test set 100% unchanged",
+                                detail=f"{len(c_test)} test rows strictly identical to the source version.",
                             )
                         )
                     else:
                         guardrails.append(
                             GuardrailItem(
                                 id="test_set_hash",
-                                name="Jeu de test inchangé",
+                                name="Test set unchanged",
                                 status="failed",
-                                message="⚠️ Jeu de test modifié",
-                                detail="Le jeu de test diffère de la version source.",
+                                message="⚠️ Test set modified",
+                                detail="Test set differs from source version.",
                             )
                         )
             else:
                 guardrails.append(
                     GuardrailItem(
                         id="test_set_hash",
-                        name="Jeu de test inchangé",
+                        name="Test set unchanged",
                         status="not_evaluated",
-                        message="Non évalué",
-                        detail="La version source ne comporte pas de split test pour comparer.",
+                        message="Not evaluated",
+                        detail="Source version does not contain a test split to compare.",
                     )
                 )
         else:
             guardrails.append(
                 GuardrailItem(
                     id="test_set_hash",
-                    name="Jeu de test inchangé",
+                    name="Test set unchanged",
                     status="not_evaluated",
-                    message="Non évalué",
-                    detail="Aucun jeu de test défini ou pas de version source parente.",
+                    message="Not evaluated",
+                    detail="No test set defined or no parent source version.",
                 )
             )
 
@@ -1513,20 +1513,20 @@ class VersioningService:
             guardrails.append(
                 GuardrailItem(
                     id="protected_versions",
-                    name="Versions protégées",
+                    name="Protected versions",
                     status="passed",
-                    message="Version protégée de la suppression",
-                    detail=f"Cette version porte le statut {prot_label} et ne peut pas être supprimée.",
+                    message="Version protected from deletion",
+                    detail=f"This version holds {prot_label} status and cannot be deleted.",
                 )
             )
         else:
             guardrails.append(
                 GuardrailItem(
                     id="protected_versions",
-                    name="Versions protégées",
+                    name="Protected versions",
                     status="passed",
-                    message="Suppression contrôlée",
-                    detail="Version standard (suppression autorisée si aucune version dérivée n'existe).",
+                    message="Controlled deletion",
+                    detail="Standard version (deletion allowed if no derived version exists).",
                 )
             )
 
@@ -1534,10 +1534,10 @@ class VersioningService:
         guardrails.append(
             GuardrailItem(
                 id="personal_data_clear",
-                name="Pas de données personnelles en clair",
+                name="No plaintext personal data",
                 status="not_evaluated",
-                message="Non évalué",
-                detail="Le contrôle PII / RGPD n'a pas été configuré pour ce jeu de données.",
+                message="Not evaluated",
+                detail="PII / GDPR check not configured for this dataset.",
             )
         )
 
@@ -1551,40 +1551,40 @@ class VersioningService:
                     guardrails.append(
                         GuardrailItem(
                             id="every_row_traceable",
-                            name="Traçabilité de chaque ligne",
+                            name="Traceability of each row",
                             status="passed",
-                            message="Traçabilité complète des lignes",
-                            detail=f"100% des {len(synth_rows)} lignes synthétiques portent origin et parent_ids.",
+                            message="Complete row traceability",
+                            detail=f"100% of {len(synth_rows)} synthetic rows carry origin and parent_ids.",
                         )
                     )
                 else:
                     guardrails.append(
                         GuardrailItem(
                             id="every_row_traceable",
-                            name="Traçabilité de chaque ligne",
+                            name="Traceability of each row",
                             status="warning",
-                            message="Traçabilité partielle",
-                            detail="Certaines lignes synthétiques ne disposent pas d'origine ou de parent_ids.",
+                            message="Partial traceability",
+                            detail="Some synthetic rows lack origin or parent_ids.",
                         )
                     )
             else:
                 guardrails.append(
                     GuardrailItem(
                         id="every_row_traceable",
-                        name="Traçabilité de chaque ligne",
+                        name="Traceability of each row",
                         status="passed",
-                        message="Traçabilité des données réelles",
-                        detail="100% de données d'origine réelles.",
+                        message="Real data traceability",
+                        detail="100% real origin data.",
                     )
                 )
         else:
             guardrails.append(
                 GuardrailItem(
                     id="every_row_traceable",
-                    name="Traçabilité de chaque ligne",
+                    name="Traceability of each row",
                     status="passed",
-                    message="Traçabilité des données",
-                    detail="Version composée uniquement de données réelles d'ingestion.",
+                    message="Data traceability",
+                    detail="Version composed solely of real ingestion data.",
                 )
             )
 
@@ -1600,19 +1600,19 @@ class VersioningService:
             guardrails.append(
                 GuardrailItem(
                     id="draft_expiration",
-                    name="Brouillons non étiquetés",
+                    name="Untagged drafts",
                     status="warning",
-                    message=f"{version.branch_name or 'Brouillon'} actif",
-                    detail=f"Suppression automatique après 30 jours sans utilisation ({max(days_left, 0)} jours restants).",
+                    message=f"{version.branch_name or 'Draft'} active",
+                    detail=f"Automatic deletion after 30 days without activity ({max(days_left, 0)} days remaining).",
                 )
             )
         else:
             guardrails.append(
                 GuardrailItem(
                     id="draft_expiration",
-                    name="Brouillons non étiquetés",
+                    name="Untagged drafts",
                     status="passed",
-                    message="Brouillon : sans objet",
+                    message="Draft: not applicable",
                     detail="Cette version est permanente et immuable (non temporaire).",
                 )
             )
@@ -1675,37 +1675,37 @@ class VersioningService:
             f"# Dataset Card: {dataset.name} ({version_label})",
             "",
             f"**Version Hash (SHA-256):** `{version.version_hash}`  ",
-            f"**Créé le :** {version.created_at.strftime('%Y-%m-%d %H:%M:%S UTC')}  ",
+            f"**Created on:** {version.created_at.strftime('%Y-%m-%d %H:%M:%S UTC')}  ",
             f"**Auteur :** —  ",
             f"**Version de la plateforme :** datalift 0.9.3  ",
             "",
-            "## 1. Métriques globales",
-            f"- **Nombre total de lignes :** {version.row_count:,}",
-            f"- **Taille physique stockée :** {format_bytes(version.size_bytes)}",
-            f"- **Part synthétique :** {synth_pct}% ({synth_count:,} lignes générées)",
-            f"- **Nombre de colonnes :** {len(df.columns)}",
+            "## 1. Global Metrics",
+            f"- **Total row count:** {version.row_count:,}",
+            f"- **Physical stored size:** {format_bytes(version.size_bytes)}",
+            f"- **Synthetic share:** {synth_pct}% ({synth_count:,} generated rows)",
+            f"- **Column count:** {len(df.columns)}",
             "",
-            "## 2. Historique et Recettes du Lignage",
+            "## 2. Lineage History & Recipes",
         ]
 
         for r in recipes_history:
             md_lines.append(f"### {r['version']} — {r['operation']}")
             md_lines.append(f"- **Date :** {r['created_at']}")
             if r["parameters"]:
-                md_lines.append(f"- **Paramètres :** `{json.dumps(r['parameters'])}`")
+                md_lines.append(f"- **Parameters:** `{json.dumps(r['parameters'])}`")
             md_lines.append("")
 
-        md_lines.append("## 3. Colonnes")
-        md_lines.append("| Colonne | Type | Valeurs manquantes |")
+        md_lines.append("## 3. Columns")
+        md_lines.append("| Column | Type | Missing values |")
         md_lines.append("| :--- | :--- | :--- |")
         for c in cols_info:
             md_lines.append(f"| {c['name']} | `{c['dtype']}` | {c['null_count']} |")
 
         md_lines.append("")
-        md_lines.append("## 4. Intégrité et Sécurité")
-        md_lines.append("- **Immuabilité :** Conforme (stockage Parquet en lecture seule).")
-        md_lines.append("- **Traçabilité :** `origin` et `parent_ids` rattachés à chaque ligne synthétique.")
-        md_lines.append("- **Données personnelles en clair :** Non évalué (scan PII non exécuté).")
+        md_lines.append("## 4. Integrity and Security")
+        md_lines.append("- **Immutability:** Passed (read-only Parquet storage).")
+        md_lines.append("- **Traceability:** `origin` and `parent_ids` attached to every synthetic row.")
+        md_lines.append("- **Plaintext personal data:** Not evaluated (PII scan not executed).")
 
         card_md = "\n".join(md_lines)
 
@@ -1780,13 +1780,13 @@ class VersioningService:
                                 b_test = b_df[b_df["split"] == "test"]
                                 b_hash = hashlib.sha256(b_test.to_json(orient="records").encode("utf-8")).hexdigest()[:8]
                                 if b_hash == test_hash:
-                                    test_status = f"Identique dans {self.get_version_label(baseline_v)} → {self.get_version_label(current_v)}"
+                                    test_status = f"Identical in {self.get_version_label(baseline_v)} → {self.get_version_label(current_v)}"
                                 else:
-                                    test_status = "Modifié"
+                                    test_status = "Modified"
                             else:
-                                test_status = "Verrouillé 100% réel"
+                                test_status = "Locked 100% real"
                         else:
-                            test_status = "Verrouillé 100% réel"
+                            test_status = "Locked 100% real"
 
         return VersioningHeaderMetrics(
             version_count=version_count,
@@ -1798,7 +1798,7 @@ class VersioningService:
             test_set_hash=test_hash,
             test_set_status=test_status,
             used_by_models_count=0,
-            used_by_label="Aucun modèle lié",
+            used_by_label="No linked model",
             current_version_hash=current_v.version_hash if current_v else None,
             current_version_label=self.get_version_label(current_v) if current_v else None,
             baseline_version_hash=baseline_v.version_hash if baseline_v else None,
@@ -1835,7 +1835,7 @@ class VersioningService:
             raise HTTPException(status_code=400, detail=f"Erreur de lecture CSV : {str(e)}")
 
         if df_raw.empty:
-            raise HTTPException(status_code=400, detail="Le fichier CSV uploadé est vide.")
+            raise HTTPException(status_code=400, detail="Uploaded CSV file is empty.")
 
         # Save initial raw version
         raw_hash = lineage_service.generate_version_hash(
@@ -1896,14 +1896,14 @@ class VersioningService:
                 if target_col and target_col not in curr_df.columns:
                     raise HTTPException(
                         status_code=400,
-                        detail=f"Étape 'Nettoyage' non applicable : la colonne cible requise '{target_col}' est absente du nouveau fichier.",
+                        detail=f"Step 'Cleaning' not applicable: required target column '{target_col}' missing from new file.",
                     )
                 for op in normalized_ops:
                     col = op.get("column")
                     if col and col not in curr_df.columns:
                         raise HTTPException(
                             status_code=400,
-                            detail=f"Étape 'Nettoyage' non applicable : la colonne requise '{col}' est absente du nouveau fichier.",
+                            detail=f"Step 'Cleaning' not applicable: required column '{col}' missing from new file.",
                         )
 
 
@@ -1918,13 +1918,13 @@ class VersioningService:
                     current_source_version = clean_result["new_version"]
                     created_versions.append(current_source_version)
                 except ValueError as ve:
-                    if "Aucune donnée modifiée" in str(ve):
+                    if "No data modified" in str(ve):
                         # The new file already satisfies the clean state for this step (no-op)
                         pass
                     else:
                         raise HTTPException(
                             status_code=400,
-                            detail=f"Étape 'Nettoyage' non applicable : {str(ve)}",
+                            detail=f"Step 'Cleaning' not applicable: {str(ve)}",
                         )
 
 
@@ -1939,7 +1939,7 @@ class VersioningService:
                 if not target_col or target_col not in curr_df.columns:
                     raise HTTPException(
                         status_code=400,
-                        detail=f"Étape 'Augmentation' non applicable : la colonne cible '{target_col}' est absente du nouveau fichier.",
+                        detail=f"Step 'Augmentation' not applicable: target column '{target_col}' missing from new file.",
                     )
 
                 # Check minority count
@@ -1947,7 +1947,7 @@ class VersioningService:
                 if len(vc) < 2 or vc.min() < 3:
                     raise HTTPException(
                         status_code=400,
-                        detail=f"Étape 'Augmentation' non applicable : la classe rare de '{target_col}' comporte moins de 3 exemples ({vc.min() if len(vc) >= 1 else 0} trouvés).",
+                        detail=f"Step 'Augmentation' not applicable: rare class of '{target_col}' has fewer than 3 examples ({vc.min() if len(vc) >= 1 else 0} found).",
                     )
 
                 ratios = split_dict.get("ratios_target", {"train": 0.7, "val": 0.15, "test": 0.15})
@@ -2017,7 +2017,7 @@ class VersioningService:
         db.commit()
         return {
             "success": True,
-            "message": f"Recette rejouée avec succès sur {new_filename} : {len(created_versions)} versions créées.",
+            "message": f"Recipe replayed successfully on {new_filename}: {len(created_versions)} versions created.",
             "created_versions": [self.get_version_label(v) for v in created_versions],
             "final_version_hash": current_source_version.version_hash,
         }

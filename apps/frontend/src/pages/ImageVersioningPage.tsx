@@ -83,7 +83,7 @@ export const ImageVersioningPage: React.FC = () => {
         setSelectedDatasetId(preferred.id);
       }
     } catch (err: any) {
-      setError('Erreur lors du chargement des datasets: ' + (err.message || 'inconnue'));
+      setError('Error loading datasets: ' + (err.message || 'unknown'));
     }
   }, [selectedDatasetId]);
 
@@ -103,7 +103,7 @@ export const ImageVersioningPage: React.FC = () => {
       setCompareTo(res.compare.selected_to || 'v2 · clean');
       setActiveViewId(res.views[0]?.id || 'all');
     } catch (err: any) {
-      setError('Erreur lors du chargement du versioning image: ' + (err.message || 'inconnue'));
+      setError('Error loading image versioning: ' + (err.message || 'unknown'));
     } finally {
       setLoading(false);
     }
@@ -138,7 +138,7 @@ export const ImageVersioningPage: React.FC = () => {
       a.download = `dataset_card_${data.dataset_name.replace(/[^a-zA-Z0-9_-]/g, '_')}.json`;
       a.click();
       URL.revokeObjectURL(url);
-      showNotif('Dataset card image exportée avec succès !');
+      showNotif('Dataset card image exported successfully !');
     };
 
     window.addEventListener('datalift:export-image-dataset-card', handleExport);
@@ -195,9 +195,9 @@ export const ImageVersioningPage: React.FC = () => {
     if (!selectedDatasetId || !data) return;
     try {
       await api.tagImageVersionProduction(selectedDatasetId, activeVersionId);
-      showNotif(`Version ${activeVersionId} marquée comme PRODUCTION.`, true);
+      showNotif(`Version ${activeVersionId} tagged as PRODUCTION.`, true);
     } catch (err: any) {
-      showNotif('Erreur lors du marquage: ' + (err.message || 'inconnue'), false);
+      showNotif('Error tagging version: ' + (err.message || 'unknown'), false);
     }
   };
 
@@ -206,10 +206,10 @@ export const ImageVersioningPage: React.FC = () => {
     if (!selectedDatasetId || !data) return;
     try {
       await api.restoreImageVersion(selectedDatasetId, versionId);
-      showNotif(`Version ${versionId} restaurée comme baseline active.`, true);
+      showNotif(`Version ${versionId} restored as active baseline.`, true);
       fetchData(selectedDatasetId);
     } catch (err: any) {
-      showNotif('Erreur lors de la restauration: ' + (err.message || 'inconnue'), false);
+      showNotif('Error restoring version: ' + (err.message || 'unknown'), false);
     }
   };
 
@@ -218,7 +218,7 @@ export const ImageVersioningPage: React.FC = () => {
       <div style={{ backgroundColor: C.bg, minHeight: '100vh', padding: '3rem', color: C.text }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', color: C.amber }}>
           <RefreshCw className="animate-spin" size={20} />
-          <span style={{ fontFamily: 'monospace', fontSize: '0.9rem' }}>Chargement du versioning image...</span>
+          <span style={{ fontFamily: 'monospace', fontSize: '0.9rem' }}>Loading image versioning...</span>
         </div>
       </div>
     );
@@ -236,7 +236,7 @@ export const ImageVersioningPage: React.FC = () => {
           className="btn btn-secondary font-mono"
           style={{ fontSize: '0.8rem' }}
         >
-          Réessayer
+          Retry
         </button>
       </div>
     );
@@ -287,7 +287,7 @@ export const ImageVersioningPage: React.FC = () => {
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
           <span style={{ fontSize: '0.7rem', color: C.textMuted, fontFamily: 'monospace', letterSpacing: '0.1em' }}>
-            JEU DE DONNÉES :
+            DATASET :
           </span>
           <select
             value={selectedDatasetId}
@@ -682,7 +682,7 @@ export const ImageVersioningPage: React.FC = () => {
                     cursor: 'pointer',
                     padding: 0,
                   }}
-                  title="Copier la commande"
+                  title="Copy la commande"
                 >
                   {copiedCli ? <Check size={14} /> : <Copy size={14} />}
                 </button>
@@ -708,7 +708,7 @@ export const ImageVersioningPage: React.FC = () => {
                 </button>
                 <button
                   type="button"
-                  onClick={() => showNotif(`Nouvelle branche créée à partir de ${activeVersionId}.`)}
+                  onClick={() => showNotif(`New branch created from ${activeVersionId}.`)}
                   style={{
                     backgroundColor: 'transparent',
                     border: `1px solid ${C.borderLight}`,
@@ -743,7 +743,7 @@ export const ImageVersioningPage: React.FC = () => {
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 <button
                   type="button"
-                  onClick={() => showNotif('Téléchargement du dataset initié.')}
+                  onClick={() => showNotif('Dataset download initiated.')}
                   style={{
                     backgroundColor: 'transparent',
                     border: `1px solid ${C.borderLight}`,
@@ -1179,7 +1179,7 @@ export const ImageVersioningPage: React.FC = () => {
             })}
             <button
               type="button"
-              onClick={() => showNotif('Ajout de filtre de vue personnalisé.')}
+              onClick={() => showNotif('Custom view filter addition.')}
               style={{
                 backgroundColor: 'transparent',
                 color: C.muted,

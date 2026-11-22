@@ -30,7 +30,7 @@ class TextActiveLearningService:
             .all()
         )
         if not versions:
-            raise HTTPException(status_code=404, detail="Aucune version trouvée pour ce dataset")
+            raise HTTPException(status_code=404, detail="No version found for this dataset")
 
         name = dataset.name.lower()
         if "ticket" in name or "support" in name:
@@ -59,7 +59,7 @@ class TextActiveLearningService:
             {
                 "ticket_id": "#60388",
                 "language": "FR",
-                "text": "Le code OTP n'arrive jamais depuis la mise à jour de l'application",
+                "text": "OTP code never arrives since the app update",
                 "why_picked": "New topic · cluster 23",
                 "strategy_key": "new_topic",
                 "model_top_2": "account 0.31 · technical 0.29",
@@ -91,7 +91,7 @@ class TextActiveLearningService:
             {
                 "ticket_id": "#60955",
                 "language": "FR",
-                "text": "Merci pour la livraison rapide, rien à signaler",
+                "text": "Thanks for the quick delivery, nothing to report",
                 "why_picked": "Random control",
                 "strategy_key": "random",
                 "model_top_2": "other 0.83 · delivery 0.12",
@@ -179,7 +179,7 @@ class TextActiveLearningService:
                     "cluster_id": 23,
                     "tickets_count": 148,
                     "title": "NEW TOPIC? · CLUSTER 23 · 148 TICKETS",
-                    "frequent_words": "code OTP · mise à jour · application · ma tdkhlch",
+                    "frequent_words": "OTP code · app update · application · login issue",
                     "footnote": "A new label creates a new version and needs a retrain.",
                 },
                 "picks": filtered_picks,
@@ -259,9 +259,9 @@ class TextActiveLearningService:
         total_rows = latest_version.row_count or 100
         classes = ["positive", "neutral", "negative"]
         sample_texts = [
-            "Le service client a répondu rapidement à ma demande concernant la commande.",
-            "Impossible d'accéder à mon compte après plusieurs tentatives aujourd'hui.",
-            "Produit reçu en bon état mais avec deux jours de retard sur la date prévue.",
+            "Customer service responded quickly to my inquiry regarding the order.",
+            "Unable to access my account after several attempts today.",
+            "Product received in good condition but two days later than scheduled.",
         ]
 
         storage_path = getattr(latest_version, "storage_path", None)
@@ -476,14 +476,14 @@ class TextActiveLearningService:
     def save_draft(self, dataset_id: str, payload: Dict[str, Any], db: Session) -> Dict[str, Any]:
         return {
             "status": "ok",
-            "message": "Configuration du round d'active learning enregistrée comme brouillon",
+            "message": "Active learning round configuration saved as draft",
             "budget": payload.get("budget", 600),
         }
 
     def send_to_labeling(self, dataset_id: str, payload: Dict[str, Any], db: Session) -> Dict[str, Any]:
         return {
             "status": "ok",
-            "message": f"{payload.get('count', 600)} éléments envoyés avec succès dans la file 05 Labeling",
+            "message": f"{payload.get('count', 600)} items sent successfully to queue 05 Labeling",
             "target_queue": "unlabeled",
             "count": payload.get("count", 600),
         }

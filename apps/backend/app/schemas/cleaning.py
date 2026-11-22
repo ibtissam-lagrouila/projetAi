@@ -12,15 +12,15 @@ CleaningOperationType = Literal[
 
 
 class CleaningOperationSchema(BaseModel):
-    type: CleaningOperationType = Field(..., description="Type de l'opération de nettoyage")
-    column: Optional[str] = Field(None, description="Colonne cible de l'opération")
-    parameters: Dict[str, Any] = Field(default_factory=dict, description="Paramètres spécifiques de l'opération")
+    type: CleaningOperationType = Field(..., description="Cleaning operation type")
+    column: Optional[str] = Field(None, description="Target column of operation")
+    parameters: Dict[str, Any] = Field(default_factory=dict, description="Operation-specific parameters")
 
 
 class CleaningPreviewRequest(BaseModel):
     source_version_hash: str = Field(..., description="Hash de la version source")
-    operations: List[CleaningOperationSchema] = Field(..., description="Liste ordonnée d'opérations à prévisualiser")
-    target_column: Optional[str] = Field(None, description="Colonne cible du dataset (pour vérification d'impact)")
+    operations: List[CleaningOperationSchema] = Field(..., description="Ordered list of operations to apply")
+    target_column: Optional[str] = Field(None, description="Dataset target column (for impact validation)")
 
 
 class CleaningPreviewResponse(BaseModel):
@@ -44,9 +44,9 @@ class CleaningPreviewResponse(BaseModel):
 
 class CleaningApplyRequest(BaseModel):
     source_version_hash: str = Field(..., description="Hash de la version source")
-    operations: List[CleaningOperationSchema] = Field(..., description="Liste d'opérations de nettoyage")
-    target_column: Optional[str] = Field(None, description="Colonne cible du dataset")
-    confirm_target_modification: bool = Field(False, description="Confirmation explicite si la cible est modifiée")
+    operations: List[CleaningOperationSchema] = Field(..., description="List of cleaning operations")
+    target_column: Optional[str] = Field(None, description="Dataset target column")
+    confirm_target_modification: bool = Field(False, description="Explicit confirmation if target is modified")
 
 
 class CleaningApplyResponse(BaseModel):

@@ -90,7 +90,7 @@ export const TextAugmentationPage: React.FC = () => {
       }
     } catch (err: any) {
       console.error(err);
-      setError('Erreur lors du chargement des jeux de données texte');
+      setError('Error loading text datasets');
     }
   }, []);
 
@@ -127,7 +127,7 @@ export const TextAugmentationPage: React.FC = () => {
       }
     } catch (err: any) {
       console.error(err);
-      setError("Erreur lors de la récupération de la recette d'augmentation texte.");
+      setError("Error loading text augmentation recipe.");
     } finally {
       setLoading(false);
     }
@@ -273,7 +273,7 @@ export const TextAugmentationPage: React.FC = () => {
       };
     }
     const isTickets = recipe?.display_title.includes('ticket');
-    const unit = isTickets ? 'tickets' : 'textes';
+    const unit = isTickets ? 'tickets' : 'texts';
     const count1 = Math.round(totalGenerated * 0.40);
     const count2 = Math.round(totalGenerated * 0.30);
     const count3 = totalGenerated - count1 - count2;
@@ -296,9 +296,9 @@ export const TextAugmentationPage: React.FC = () => {
         techniques: Object.keys(techToggles).filter(k => techToggles[k]),
       });
       setComparison(res);
-      showNotif(`Comparaison terminée ! Amélioration Macro F1 de ${res.delta || '+0.09'}.`, true);
+      showNotif(`Comparison completed! Macro F1 improvement of ${res.delta || '+0.09'}.`, true);
     } catch (err: any) {
-      showNotif('Erreur lors de la comparaison: ' + (err.message || 'inconnue'), false);
+      showNotif('Error comparing: ' + (err.message || 'unknown'), false);
     } finally {
       setComparing(false);
     }
@@ -315,9 +315,9 @@ export const TextAugmentationPage: React.FC = () => {
         techniques: Object.keys(techToggles).filter(k => techToggles[k]),
       });
       setRecipe(res);
-      showNotif('Version v3 générée avec succès ! Recette attachée pour reproductibilité.', true);
+      showNotif('Version v3 generated successfully ! Recipe attached for reproducibility.', true);
     } catch (err: any) {
-      showNotif('Erreur enregistrement v3: ' + (err.message || 'inconnue'), false);
+      showNotif('Error saving v3: ' + (err.message || 'unknown'), false);
     } finally {
       setSaving(false);
     }
@@ -332,14 +332,14 @@ export const TextAugmentationPage: React.FC = () => {
     a.download = `text_augmentation_recipe_${recipe.display_title.replace(/[\/\\?%*:|"<>]/g, '_') || 'text'}.json`;
     a.click();
     URL.revokeObjectURL(url);
-    showNotif("Recette d'augmentation texte exportée au format JSON.");
+    showNotif("Text augmentation recipe exported as JSON.");
   };
 
   if (loading && !recipe) {
     return (
       <div style={{ padding: 48, textAlign: 'center', color: C.muted, fontFamily: 'monospace' }}>
         <RefreshCw size={24} className="animate-spin" style={{ margin: '0 auto 16px', display: 'block', color: C.amber }} />
-        Chargement de la recette d'augmentation texte...
+        Loading text augmentation recipe...
       </div>
     );
   }
@@ -411,7 +411,7 @@ export const TextAugmentationPage: React.FC = () => {
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
           <span style={{ fontSize: 11, fontFamily: 'monospace', color: C.muted, textTransform: 'uppercase', letterSpacing: 0.8 }}>
-            Jeu de données :
+            Dataset :
           </span>
           <select
             value={selectedDatasetId}
@@ -1083,7 +1083,7 @@ export const TextAugmentationPage: React.FC = () => {
         <div style={{ marginTop: 14 }}>
           <button
             type="button"
-            onClick={() => showNotif("Module d'étape personnalisée Python (prêt pour extension).", true)}
+            onClick={() => showNotif("Python custom step module (ready for extension).", true)}
             style={{
               background: 'none',
               border: 'none',
@@ -1171,7 +1171,7 @@ export const TextAugmentationPage: React.FC = () => {
                 direction: currentPreview?.original_card.text.match(/[\u0600-\u06FF]/) ? 'rtl' : 'ltr',
               }}
             >
-              {currentPreview?.original_card.text || 'Texte original'}
+              {currentPreview?.original_card.text || 'Original text'}
             </div>
 
             {/* Variants Rows */}
@@ -1406,7 +1406,7 @@ export const TextAugmentationPage: React.FC = () => {
             type="button"
             onClick={() => {
               navigate('/training');
-              showNotif("Recette d'augmentation prête pour l'étape Training.");
+              showNotif("Augmentation recipe ready for Training step.");
             }}
             style={{
               background: 'transparent',

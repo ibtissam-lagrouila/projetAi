@@ -23,22 +23,21 @@ def preview_augmentation(
     payload: AugmentationPreviewRequest,
     db: Session = Depends(get_db),
 ):
-    """Simule l'étape 03 Augmentation sans persister de fichier ni modifier la base de données.
-    Vérifie les contraintes, calcule les splits, génère les données synthétiques,
-    applique l'équilibrage et valide les guardrails.
+    """Simulates step 03 Augmentation without persisting any file or modifying the database.
+    Checks constraints, computes splits, generates synthetic data, applies balancing, and validates guardrails.
     """
     version = db.query(DatasetVersion).filter(DatasetVersion.version_hash == payload.source_version_hash).first()
     if not version:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Version source '{payload.source_version_hash}' introuvable.",
+            detail=f"Source version '{payload.source_version_hash}' not found.",
         )
 
     file_path = Path(version.storage_path)
     if not file_path.exists():
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Fichier Parquet source introuvable sur le disque.",
+            detail="Source Parquet file not found on disk.",
         )
 
     try:
@@ -55,7 +54,7 @@ def preview_augmentation(
     except Exception as exc:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Erreur lors de la prévisualisation de l'augmentation: {str(exc)}",
+            detail=f"Error previewing augmentation: {str(exc)}",
         )
 
 
@@ -64,25 +63,20 @@ def apply_augmentation(
     payload: AugmentationApplyRequest,
     db: Session = Depends(get_db),
 ):
-    """Applique l'augmentation de données côté serveur :
-    - Exécute le découpage stratifié (avec group_by optionnel).
-    - Génère les lignes SMOTE-NC déterministes et/ou sous-échantillonne la majorité.
-    - Valide rigoureusement l'ensemble des 6 guardrails.
-    - Écrit le Parquet atomiquement et crée la nouvelle DatasetVersion immuable (v3) + Transformation.
-    - Calcule et stocke le profil de la nouvelle version.
+    """Applies data augmentation server-side: stratified split, SMOTE-NC rows generation, guardrail validation, atomic Parquet write, and new immutable DatasetVersion creation.
     """
     version = db.query(DatasetVersion).filter(DatasetVersion.version_hash == payload.source_version_hash).first()
     if not version:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Version source '{payload.source_version_hash}' introuvable.",
+            detail=f"Source version '{payload.source_version_hash}' not found.",
         )
 
     file_path = Path(version.storage_path)
     if not file_path.exists():
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Fichier Parquet source introuvable sur le disque.",
+            detail="Source Parquet file not found on disk.",
         )
 
     try:
@@ -99,7 +93,7 @@ def apply_augmentation(
     except Exception as exc:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Erreur lors de l'application de l'augmentation: {str(exc)}",
+            detail=f"Error applying augmentation: {str(exc)}",
         )
 
     new_version = res["new_version"]
@@ -131,22 +125,20 @@ def compare_augmentation(
     payload: AugmentationComparisonRequest,
     db: Session = Depends(get_db),
 ):
-    """Phase 3 - Entraîne et compare un modèle sur v2 (train réel uniquement) vs v3 (train augmenté)
-    évalué sur le même jeu de test réel. Répète l'expérience sur 5 graines pour fournir
-    moyennes et écarts-types pour le Rappel, la Précision et le score F1 sur la classe rare.
+    """Phase 3 - Trains and compares a model on v2 (real train only) vs v3 (augmented train) evaluated on the same real test set. Repeats over 5 seeds to provide mean and std for Recall, Precision and F1 on the rare class.
     """
     version = db.query(DatasetVersion).filter(DatasetVersion.version_hash == payload.source_version_hash).first()
     if not version:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Version source '{payload.source_version_hash}' introuvable.",
+            detail=f"Source version '{payload.source_version_hash}' not found.",
         )
 
     file_path = Path(version.storage_path)
     if not file_path.exists():
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Fichier Parquet source introuvable sur le disque.",
+            detail="Source Parquet file not found on disk.",
         )
 
     try:
@@ -172,7 +164,7 @@ def compare_augmentation(
     except Exception as exc:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Erreur lors de la comparaison des modèles: {str(exc)}",
+            detail=f"Error comparing models: {str(exc)}",
         )
 
 

@@ -1,0 +1,23 @@
+CleaningPage.tsx:319 [inconnu] -> parameters: { strategy: 'constant', fill_value: 'Inconnu' },
+CleaningPage.tsx:654 [initialisation] -> <p className="font-mono" style={{ fontSize: '0.85rem' }}>Initialisation de l’atelier de cleaning...</p>
+CleaningPage.tsx:722 [version source :] -> <span className="font-mono" style={{ color: 'var(--text-muted)' }}>VERSION SOURCE :</span>
+CleaningPage.tsx:775 [au lieu de] -> au lieu de {rowsBefore.toLocaleString('en-US')}
+CleaningPage.tsx:801 [de la table] -> {cellsChangedPct}% de la table
+CleaningPage.tsx:805 [sortie] -> {/* Metric 4: SORTIE */}
+CleaningPage.tsx:808 [sortie] -> SORTIE
+CleaningPage.tsx:932 [conserver] -> <span className="recipe-control-label">CONSERVER</span>
+CleaningPage.tsx:952 [in progress d'] -> <span>{activePreviewStep === '01' ? "In progress d'preview" : 'Preview →'}</span>
+CleaningPage.tsx:997 [cellules] -> {totalMissingCells.toLocaleString('en-US')} cellules
+CleaningPage.tsx:1005 [in progress d'] -> <span>{activePreviewStep === '02' ? "In progress d'preview" : 'Preview →'}</span>
+CleaningPage.tsx:1050 [cellules] -> {(safeRowsCount + Object.values(selectedUncertainMatches).filter(Boolean).length * 8).toLocaleString('en-US')} cellules
+CleaningPage.tsx:1058 [in progress d'] -> <span>{activePreviewStep === '03' ? "In progress d'preview" : 'Preview →'}</span>
+CleaningPage.tsx:1098 [conserver] -> <option value="keep">Conserver</option>
+CleaningPage.tsx:1103 [cellules] -> {totalOutliersCount.toLocaleString('en-US')} cellules
+CleaningPage.tsx:1111 [in progress d'] -> <span>{activePreviewStep === '04' ? "In progress d'preview" : 'Preview →'}</span>
+CleaningPage.tsx:1122 [plus tard] -> <span className="badge-later">PLUS TARD</span>
+CleaningPage.tsx:1136 [prise en charge] -> <span className="recipe-control-label">PRISE EN CHARGE</span>
+CleaningPage.tsx:1489 [recette_nettoyage] -> download={`recette_nettoyage_${originalFileName}.json`}
+TextCleaningPage.tsx:170 [inconnu] -> showNotif('Error during dry run: ' + (err.message || 'inconnue'), false);
+TextCleaningPage.tsx:189 [inconnu] -> showNotif('Error application: ' + (err.message || 'inconnue'), false);
+ImageCleaningPage.tsx:168 [inconnu] -> showNotif('Error during dry run: ' + (err.message || 'inconnue'), false);
+ImageCleaningPage.tsx:187 [inconnu] -> showNotif('Error application: ' + (err.message || 'inconnue'), false);

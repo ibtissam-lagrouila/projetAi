@@ -23,7 +23,7 @@ export const DataPreviewModal: React.FC<DataPreviewModalProps> = ({ versionHash,
         setLoading(false);
       })
       .catch(() => {
-        setError("Impossible de charger les données du fichier Parquet.");
+        setError("Unable to load Parquet file data.");
         setLoading(false);
       });
   }, [versionHash]);
@@ -38,7 +38,7 @@ export const DataPreviewModal: React.FC<DataPreviewModalProps> = ({ versionHash,
             <Database size={18} color="var(--amber)" />
             <div>
               <h3 className="font-serif" style={{ fontSize: '1.2rem', fontWeight: 500 }}>
-                Inspection du Fichier Parquet
+                Parquet File Inspection
               </h3>
               <p className="font-mono" style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
                 Hash: {versionHash}
@@ -53,7 +53,7 @@ export const DataPreviewModal: React.FC<DataPreviewModalProps> = ({ versionHash,
               download
             >
               <Download size={13} />
-              Télécharger .parquet
+              Download .parquet
             </a>
             <button onClick={onClose} style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}>
               <X size={18} />
@@ -62,7 +62,7 @@ export const DataPreviewModal: React.FC<DataPreviewModalProps> = ({ versionHash,
         </div>
 
         <div style={{ padding: '1.5rem' }}>
-          {loading && <p className="font-mono" style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>Chargement des métadonnées du fichier Parquet...</p>}
+          {loading && <p className="font-mono" style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>Loading Parquet file metadata...</p>}
           {error && <p style={{ color: '#fca5a5', fontSize: '0.85rem' }}>{error}</p>}
 
           {version && (
@@ -70,15 +70,15 @@ export const DataPreviewModal: React.FC<DataPreviewModalProps> = ({ versionHash,
               {/* Stats badges */}
               <div style={{ display: 'flex', gap: '1rem', marginBottom: '1.5rem', flexWrap: 'wrap' }}>
                 <div className="card" style={{ flex: 1, minWidth: '140px', padding: '0.85rem 1rem' }}>
-                  <span className="font-mono" style={{ fontSize: '0.68rem', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Lignes</span>
-                  <p className="font-mono" style={{ fontSize: '1.25rem', fontWeight: 600, marginTop: 2 }}>{(version.row_count ?? 0).toLocaleString()}</p>
+                  <span className="font-mono" style={{ fontSize: '0.68rem', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Rows</span>
+                  <p className="font-mono" style={{ fontSize: '1.25rem', fontWeight: 600, marginTop: 2 }}>{(version.row_count ?? 0).toLocaleString('en-US')}</p>
                 </div>
                 <div className="card" style={{ flex: 1, minWidth: '140px', padding: '0.85rem 1rem' }}>
-                  <span className="font-mono" style={{ fontSize: '0.68rem', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Colonnes</span>
+                  <span className="font-mono" style={{ fontSize: '0.68rem', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Columns</span>
                   <p className="font-mono" style={{ fontSize: '1.25rem', fontWeight: 600, marginTop: 2 }}>{version.schema_metadata?.num_columns ?? 0}</p>
                 </div>
                 <div className="card" style={{ flex: 1, minWidth: '140px', padding: '0.85rem 1rem' }}>
-                  <span className="font-mono" style={{ fontSize: '0.68rem', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Poids Parquet</span>
+                  <span className="font-mono" style={{ fontSize: '0.68rem', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Parquet Size</span>
                   <p className="font-mono" style={{ fontSize: '1.25rem', fontWeight: 600, marginTop: 2 }}>{(version.size_bytes / 1024).toFixed(1)} KB</p>
                 </div>
               </div>
@@ -86,15 +86,15 @@ export const DataPreviewModal: React.FC<DataPreviewModalProps> = ({ versionHash,
               {/* Schema Columns Table */}
               <h4 className="font-serif" style={{ fontSize: '1.05rem', fontWeight: 500, marginBottom: '0.65rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
                 <Layers size={15} color="var(--amber)" />
-                Schéma détecté (PyArrow)
+                Detected Schema (PyArrow)
               </h4>
               <div className="table-container" style={{ marginBottom: '1.5rem', maxHeight: '180px', overflowY: 'auto' }}>
                 <table>
                   <thead>
                     <tr>
-                      <th className="font-mono">COLONNE</th>
+                      <th className="font-mono">COLUMN</th>
                       <th className="font-mono">TYPE</th>
-                      <th className="font-mono">VALEURS NULLES</th>
+                      <th className="font-mono">NULL VALUES</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -112,7 +112,7 @@ export const DataPreviewModal: React.FC<DataPreviewModalProps> = ({ versionHash,
               {/* Sample Rows */}
               <h4 className="font-serif" style={{ fontSize: '1.05rem', fontWeight: 500, marginBottom: '0.65rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
                 <FileSpreadsheet size={15} color="var(--amber)" />
-                Aperçu des premières lignes
+                First rows preview
               </h4>
               {version.sample_rows && version.sample_rows.length > 0 ? (
                 <div className="table-container" style={{ maxHeight: '240px', overflowY: 'auto' }}>
@@ -138,7 +138,7 @@ export const DataPreviewModal: React.FC<DataPreviewModalProps> = ({ versionHash,
                   </table>
                 </div>
               ) : (
-                <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)' }}>Aucune ligne échantillon disponible.</p>
+                <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)' }}>No sample rows available.</p>
               )}
             </div>
           )}

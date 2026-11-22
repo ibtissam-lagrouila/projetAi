@@ -79,7 +79,7 @@ export const ImageCleaningPage: React.FC = () => {
       }
     } catch (err: any) {
       console.error(err);
-      setError('Erreur lors du chargement des jeux de données image');
+      setError('Error loading image datasets');
     }
   }, []);
 
@@ -105,7 +105,7 @@ export const ImageCleaningPage: React.FC = () => {
       }
     } catch (err: any) {
       console.error(err);
-      setError('Erreur lors de la récupération de la recette de nettoyage image.');
+      setError('Error loading image cleaning recipe.');
     } finally {
       setLoading(false);
     }
@@ -163,9 +163,9 @@ export const ImageCleaningPage: React.FC = () => {
         enabled_steps: enabledList,
         parameters: stepParams,
       });
-      showNotif(res.message || 'Dry run terminé avec succès sur 500 images.', true);
+      showNotif(res.message || 'Dry run completed successfully on 500 images.', true);
     } catch (err: any) {
-      showNotif('Erreur lors du dry run: ' + (err.message || 'inconnue'), false);
+      showNotif('Error during dry run: ' + (err.message || 'unknown'), false);
     } finally {
       setDryRunning(false);
     }
@@ -182,9 +182,9 @@ export const ImageCleaningPage: React.FC = () => {
         parameters: stepParams,
       });
       setRecipe(res);
-      showNotif(`Recette appliquée ! Version ${res.kpis.output || 'v2'} générée avec succès.`, true);
+      showNotif(`Recipe applied! Version ${res.kpis.output || 'v2'} generated successfully.`, true);
     } catch (err: any) {
-      showNotif('Erreur application: ' + (err.message || 'inconnue'), false);
+      showNotif('Error applying: ' + (err.message || 'unknown'), false);
     } finally {
       setApplying(false);
     }
@@ -199,14 +199,14 @@ export const ImageCleaningPage: React.FC = () => {
     a.download = `recipe_${recipe.display_title.replace(/[\/\\?%*:|"<>]/g, '_') || 'image'}.json`;
     a.click();
     URL.revokeObjectURL(url);
-    showNotif('Recette de nettoyage image exportée au format JSON.');
+    showNotif('Image cleaning recipe exported as JSON.');
   };
 
   if (loading && !recipe) {
     return (
       <div style={{ padding: 48, textAlign: 'center', color: C.muted, fontFamily: 'monospace' }}>
         <RefreshCw size={24} className="animate-spin" style={{ margin: '0 auto 16px', display: 'block', color: C.amber }} />
-        Chargement de la recette de nettoyage d'images...
+        Loading image cleaning recipe...
       </div>
     );
   }
@@ -272,7 +272,7 @@ export const ImageCleaningPage: React.FC = () => {
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
           <span style={{ fontSize: 11, fontFamily: 'monospace', color: C.muted, textTransform: 'uppercase', letterSpacing: 0.8 }}>
-            Jeu de données :
+            Dataset :
           </span>
           <select
             value={selectedDatasetId}
@@ -585,7 +585,7 @@ export const ImageCleaningPage: React.FC = () => {
         <div style={{ marginTop: 14 }}>
           <button
             type="button"
-            onClick={() => showNotif("Module d'étape manuelle image : crop, grayscale, drop a class, filter by camera (prêt pour extension).", true)}
+            onClick={() => showNotif("Manual image step module: crop, grayscale, drop a class, filter by camera (ready for extension).", true)}
             style={{
               background: 'none',
               border: 'none',

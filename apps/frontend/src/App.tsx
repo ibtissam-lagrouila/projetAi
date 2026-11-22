@@ -75,7 +75,7 @@ const TopBar: React.FC<{ modality: 'tabular' | 'text' | 'image'; onModalityChang
             transition: 'all 0.15s',
           }}
         >
-          Tabulaire
+          Tabular
         </button>
         <button
           type="button"
@@ -91,7 +91,7 @@ const TopBar: React.FC<{ modality: 'tabular' | 'text' | 'image'; onModalityChang
             transition: 'all 0.15s',
           }}
         >
-          Texte
+          Text
         </button>
         <button
           type="button"
@@ -159,7 +159,7 @@ const TopBar: React.FC<{ modality: 'tabular' | 'text' | 'image'; onModalityChang
               style={{ fontSize: '0.75rem', padding: '0.45rem 0.95rem' }}
               onClick={() => window.dispatchEvent(new CustomEvent('datalift:export-recipe'))}
             >
-              Exporter la recette
+              Export recipe
             </button>
             <button
               type="button"
@@ -167,7 +167,7 @@ const TopBar: React.FC<{ modality: 'tabular' | 'text' | 'image'; onModalityChang
               style={{ fontSize: '0.78rem', padding: '0.45rem 1rem' }}
               onClick={() => navigate('/augmentation')}
             >
-              <span>Continuer vers l'augmentation</span>
+              <span>Continue to augmentation</span>
               <ArrowRight size={14} />
             </button>
           </>
@@ -217,7 +217,7 @@ const TopBar: React.FC<{ modality: 'tabular' | 'text' | 'image'; onModalityChang
               style={{ fontSize: '0.75rem', padding: '0.45rem 0.95rem' }}
               onClick={() => window.dispatchEvent(new CustomEvent('datalift:export-augmentation-recipe'))}
             >
-              Exporter la recette
+              Export recipe
             </button>
             <button
               type="button"
@@ -225,7 +225,7 @@ const TopBar: React.FC<{ modality: 'tabular' | 'text' | 'image'; onModalityChang
               style={{ fontSize: '0.78rem', padding: '0.45rem 1rem' }}
               onClick={() => navigate('/versioning')}
             >
-              <span>Continuer vers le versioning</span>
+              <span>Continue to versioning</span>
               <ArrowRight size={14} />
             </button>
           </>
@@ -275,7 +275,7 @@ const TopBar: React.FC<{ modality: 'tabular' | 'text' | 'image'; onModalityChang
               style={{ fontSize: '0.75rem', padding: '0.45rem 0.95rem' }}
               onClick={() => window.dispatchEvent(new CustomEvent('datalift:export-dataset-card'))}
             >
-              Exporter la carte du dataset
+              Export dataset card
             </button>
             <button
               type="button"
@@ -283,7 +283,7 @@ const TopBar: React.FC<{ modality: 'tabular' | 'text' | 'image'; onModalityChang
               style={{ fontSize: '0.78rem', padding: '0.45rem 1rem' }}
               onClick={() => navigate('/labeling')}
             >
-              <span>Continuer vers le labeling</span>
+              <span>Continue to labeling</span>
               <ArrowRight size={14} />
             </button>
           </>
@@ -348,7 +348,7 @@ const TopBar: React.FC<{ modality: 'tabular' | 'text' | 'image'; onModalityChang
                 style={{ fontSize: '0.75rem', padding: '0.45rem 0.95rem' }}
                 onClick={() => window.dispatchEvent(new CustomEvent('datalift:target-definition'))}
               >
-                Définition de la cible
+                Target definition
               </button>
               <button
                 type="button"
@@ -356,7 +356,7 @@ const TopBar: React.FC<{ modality: 'tabular' | 'text' | 'image'; onModalityChang
                 style={{ fontSize: '0.78rem', padding: '0.45rem 1rem' }}
                 onClick={() => navigate('/training')}
               >
-                <span>Continuer vers le training</span>
+                <span>Continue to training</span>
                 <ArrowRight size={14} />
               </button>
             </>
@@ -396,7 +396,7 @@ const TopBar: React.FC<{ modality: 'tabular' | 'text' | 'image'; onModalityChang
                 style={{ fontSize: '0.75rem', padding: '0.45rem 0.95rem' }}
                 onClick={() => window.dispatchEvent(new CustomEvent('datalift:compare-runs'))}
               >
-                Comparer les runs
+                Compare runs
               </button>
               <button
                 type="button"
@@ -404,7 +404,7 @@ const TopBar: React.FC<{ modality: 'tabular' | 'text' | 'image'; onModalityChang
                 style={{ fontSize: '0.78rem', padding: '0.45rem 1rem' }}
                 onClick={() => navigate('/active-learning')}
               >
-                <span>Continuer vers l'apprentissage actif</span>
+                <span>Continue to active learning</span>
                 <ArrowRight size={14} />
               </button>
             </>
@@ -444,7 +444,7 @@ const TopBar: React.FC<{ modality: 'tabular' | 'text' | 'image'; onModalityChang
                 style={{ fontSize: '0.75rem', padding: '0.45rem 0.95rem' }}
                 onClick={() => window.dispatchEvent(new CustomEvent('datalift:open-round-history'))}
               >
-                Historique des cycles
+                Round history
               </button>
               <button
                 type="button"
@@ -452,7 +452,7 @@ const TopBar: React.FC<{ modality: 'tabular' | 'text' | 'image'; onModalityChang
                 style={{ fontSize: '0.78rem', padding: '0.45rem 1rem' }}
                 onClick={() => navigate('/drift')}
               >
-                <span>Continuer vers la dérive</span>
+                <span>Continue to drift</span>
                 <ArrowRight size={14} />
               </button>
             </>
@@ -492,7 +492,7 @@ const TopBar: React.FC<{ modality: 'tabular' | 'text' | 'image'; onModalityChang
                 style={{ fontSize: '0.75rem', padding: '0.45rem 0.95rem' }}
                 onClick={() => window.dispatchEvent(new CustomEvent('datalift:open-drift-history'))}
               >
-                Historique de dérive
+                Drift history
               </button>
               <button
                 type="button"
@@ -500,7 +500,7 @@ const TopBar: React.FC<{ modality: 'tabular' | 'text' | 'image'; onModalityChang
                 style={{ fontSize: '0.78rem', padding: '0.45rem 1rem' }}
                 onClick={() => navigate('/export-api')}
               >
-                <span>Continuer vers l'export</span>
+                <span>Continue to export</span>
                 <ArrowRight size={14} />
               </button>
             </>
@@ -585,10 +585,10 @@ const TopBar: React.FC<{ modality: 'tabular' | 'text' | 'image'; onModalityChang
               type="button"
               className="btn btn-secondary font-mono"
               style={{ fontSize: '0.75rem', padding: '0.45rem 0.95rem' }}
-              onClick={() => alert("Génération du rapport d'audit (bientôt disponible).")}
+              onClick={() => alert("Audit report generation (coming soon).")}
             >
               <Download size={13} />
-              Rapport d'audit
+              Audit report
             </button>
             <button
               type="button"
@@ -596,7 +596,7 @@ const TopBar: React.FC<{ modality: 'tabular' | 'text' | 'image'; onModalityChang
               style={{ fontSize: '0.78rem', padding: '0.45rem 1rem' }}
               onClick={handleNextStep}
             >
-              <span>Étape suivante</span>
+              <span>Next step</span>
               <ArrowRight size={14} />
             </button>
           </>

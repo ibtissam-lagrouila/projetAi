@@ -11,9 +11,9 @@ from sqlalchemy.pool import StaticPool
 backend_dir = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(backend_dir))
 
+import app.core.database as db_module
 from app.core.database import Base, get_db
 from app.core.config import settings
-from app.main import app
 
 # Use an in-memory SQLite database for test isolation
 SQLALCHEMY_DATABASE_URL = "sqlite:///:memory:"
@@ -24,6 +24,12 @@ engine = create_engine(
     poolclass=StaticPool,
 )
 TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+
+# Redirect core database engine and sessionmaker to in-memory test engine
+db_module.engine = engine
+db_module.SessionLocal = TestingSessionLocal
+
+from app.main import app
 
 
 @pytest.fixture(scope="session", autouse=True)

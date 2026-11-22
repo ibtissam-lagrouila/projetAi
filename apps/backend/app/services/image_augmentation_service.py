@@ -113,7 +113,7 @@ class ImageAugmentationService:
         """Provides the image augmentation recipe, split config, target balance, techniques, preview, and guardrails."""
         dataset = db.query(Dataset).filter(Dataset.id == dataset_id).first()
         if not dataset:
-            raise HTTPException(status_code=404, detail="Dataset non trouvé")
+            raise HTTPException(status_code=404, detail="Dataset not found")
 
         if version_hash:
             version = (
@@ -605,7 +605,7 @@ class ImageAugmentationService:
         """Simulates or runs quick model training comparison on v2 vs v3 evaluated on test set."""
         dataset = db.query(Dataset).filter(Dataset.id == dataset_id).first()
         if not dataset:
-            raise HTTPException(status_code=404, detail="Dataset non trouvé")
+            raise HTTPException(status_code=404, detail="Dataset not found")
 
         return {
             "metric": "mAP@50 on crack",
@@ -620,7 +620,7 @@ class ImageAugmentationService:
                 "misaligned": {"without": 0.62, "with": 0.64},
                 "crack": {"without": 0.51, "with": 0.69},
             },
-            "message": "Comparaison mAP@50 terminée : amélioration de +0.18 sur la détection des fissures.",
+            "message": "mAP@50 comparison complete: +0.18 improvement on detection of cracks.",
         }
 
     def save_v3(
@@ -633,7 +633,7 @@ class ImageAugmentationService:
         t0 = time.time()
         dataset = db.query(Dataset).filter(Dataset.id == dataset_id).first()
         if not dataset:
-            raise HTTPException(status_code=404, detail="Dataset non trouvé")
+            raise HTTPException(status_code=404, detail="Dataset not found")
 
         version = (
             db.query(DatasetVersion)

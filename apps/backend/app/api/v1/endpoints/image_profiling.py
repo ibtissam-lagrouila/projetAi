@@ -13,7 +13,7 @@ def get_image_profile(
     version_hash: Optional[str] = Query(None),
     db: Session = Depends(get_db),
 ):
-    """Calcule et renvoie le profil complet de détection / qualité d'image d'un dataset."""
+    """Computes and returns the full image detection / quality profile of a dataset."""
     return image_profiling_service.profile_dataset(dataset_id=dataset_id, db=db, version_hash=version_hash)
 
 
@@ -23,7 +23,7 @@ async def upload_image_archive(
     dataset_name: Optional[str] = Form(None),
     db: Session = Depends(get_db),
 ):
-    """Importe une archive ZIP d'images ou un fichier image et génère son profil."""
+    """Imports a ZIP archive of images or an image file and generates its profile."""
     contents = await file.read()
     return image_profiling_service.upload_image_archive(
         file_bytes=contents,

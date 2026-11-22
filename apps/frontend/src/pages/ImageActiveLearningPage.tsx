@@ -114,7 +114,7 @@ export const ImageActiveLearningPage: React.FC = () => {
           setSelectedDatasetId(preferred.id);
         }
       } catch (err: any) {
-        setError('Erreur de chargement des jeux de données: ' + (err.message || 'inconnu'));
+        setError('Error loading datasets: ' + (err.message || 'unknown'));
       }
     }
     loadDatasets();
@@ -177,7 +177,7 @@ export const ImageActiveLearningPage: React.FC = () => {
           setAutomationRules(autoMap);
         }
       } catch (err: any) {
-        setError("Erreur lors de la récupération des données d'apprentissage actif: " + (err.message || 'inconnu'));
+        setError("Error retrieving active learning data: " + (err.message || 'unknown'));
       } finally {
         setLoading(false);
       }
@@ -205,7 +205,7 @@ export const ImageActiveLearningPage: React.FC = () => {
   // Remove pick
   const handleRemovePick = (imageId: string) => {
     setPicks((prev) => prev.filter((p) => p.image_id !== imageId));
-    setNotification(`Image ${imageId} retirée de la sélection de ce round.`);
+    setNotification(`Image ${imageId} removed from this round selection.`);
     setTimeout(() => setNotification(null), 3000);
   };
 
@@ -218,10 +218,10 @@ export const ImageActiveLearningPage: React.FC = () => {
         budget: roundBudget,
         strategies,
       });
-      setNotification('✓ Brouillon du Round sauvegardé avec succès.');
+      setNotification('✓ Round draft saved successfully.');
       setTimeout(() => setNotification(null), 4000);
     } catch (err: any) {
-      setError('Erreur lors de la sauvegarde: ' + (err.message || 'inconnu'));
+      setError('Error saving: ' + (err.message || 'unknown'));
     }
   };
 
@@ -233,13 +233,13 @@ export const ImageActiveLearningPage: React.FC = () => {
         count: roundBudget,
         target_version: data?.metrics?.output || 'v5',
       });
-      setNotification(`✓ ${roundBudget} images envoyées dans la file 05 Labeling.`);
+      setNotification(`✓ ${roundBudget} images sent to 05 Labeling queue.`);
       setTimeout(() => {
         setNotification(null);
         navigate('/labeling');
       }, 1500);
     } catch (err: any) {
-      setError("Erreur lors de l'envoi vers 05 Labeling: " + (err.message || 'inconnu'));
+      setError("Error sending to 05 Labeling: " + (err.message || 'unknown'));
     }
   };
 
@@ -461,7 +461,7 @@ export const ImageActiveLearningPage: React.FC = () => {
         }}
       >
         <span style={{ fontSize: '0.75rem', fontFamily: 'monospace', color: C.textMuted, textTransform: 'uppercase' }}>
-          Jeu de données :
+          Dataset :
         </span>
         <select
           value={selectedDatasetId}
@@ -491,7 +491,7 @@ export const ImageActiveLearningPage: React.FC = () => {
         </select>
         {loading && (
           <span style={{ fontSize: '0.72rem', fontFamily: 'monospace', color: C.amber }}>
-            Chargement des données...
+            Loading data...
           </span>
         )}
       </div>
@@ -2457,7 +2457,7 @@ export const ImageActiveLearningPage: React.FC = () => {
                 type="button"
                 onClick={() => {
                   setShowCollectionModal(false);
-                  setNotification('✓ Demande de collecte envoyée aux opérateurs de ligne.');
+                  setNotification('✓ Collection request sent to line operators.');
                   setTimeout(() => setNotification(null), 3500);
                 }}
                 style={{
@@ -2584,7 +2584,7 @@ export const ImageActiveLearningPage: React.FC = () => {
                 type="button"
                 onClick={() => {
                   setShowPseudoModal(false);
-                  setNotification(`✓ Pseudo-labels ${pseudoLabelsActive ? 'activés' : 'désactivés'}.`);
+                  setNotification(`✓ Pseudo-labels ${pseudoLabelsActive ? 'enabled' : 'disabled'}.`);
                   setTimeout(() => setNotification(null), 3000);
                 }}
                 style={{

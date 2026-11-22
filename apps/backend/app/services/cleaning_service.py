@@ -106,7 +106,7 @@ class CleaningService:
                         "from": val,
                         "to": clean_c,
                         "rows": int(count),
-                        "reason": f"Abréviation ou préfixe probable de '{clean_c}'",
+                        "reason": f"Likely abbreviation or prefix of '{clean_c}'",
                         "is_uncertain": True,
                         "applied_by_default": False,
                     })
@@ -115,11 +115,11 @@ class CleaningService:
 
     def sort_operations(self, operations: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
         """Sorts operations into the fixed documented pipeline sequence:
-        1. normalisation des textes
+        1. text normalization
         2. fusion manuelle
-        3. valeurs manquantes
+        3. missing values
         4. outliers
-        5. doublons en dernier
+        5. duplicates last
         """
         return sorted(
             operations,
@@ -172,7 +172,7 @@ class CleaningService:
             # ----------------------------------------------------
             if op_type in ["TEXT_NORMALIZE", "CATEGORIES_NORMALIZE"]:
                 if not col or col not in working_df.columns:
-                    raise ValueError(f"Colonne '{col}' inexistante dans le jeu de données.")
+                    raise ValueError(f"Column '{col}' does not exist in the dataset.")
 
                 lowercase = bool(params.get("lowercase", True))
                 strip = bool(params.get("strip", True))
@@ -224,11 +224,11 @@ class CleaningService:
             # ----------------------------------------------------
             elif op_type in ["CATEGORY_MERGE", "CATEGORIES_MERGE"]:
                 if not col or col not in working_df.columns:
-                    raise ValueError(f"Colonne '{col}' inexistante dans le jeu de données.")
+                    raise ValueError(f"Column '{col}' does not exist in the dataset.")
 
                 mapping = params.get("mapping", {}) or {}
                 if not isinstance(mapping, dict):
-                    raise ValueError("Le paramètre 'mapping' doit être un dictionnaire de type {valeur_source: valeur_cible}.")
+                    raise ValueError("The 'mapping' parameter must be a dict de type {valeur_source: valeur_cible}.")
 
                 # Capture categories as they exist at the moment of fusion (post-normalization if text normalize ran)
                 categories_before_merge = sorted([str(x) for x in working_df[col].dropna().unique()])
@@ -281,7 +281,7 @@ class CleaningService:
             # ----------------------------------------------------
             elif op_type == "HANDLE_MISSING":
                 if not col or col not in working_df.columns:
-                    raise ValueError(f"Colonne '{col}' inexistante dans le jeu de données.")
+                    raise ValueError(f"Column '{col}' does not exist in the dataset.")
 
                 strategy = params.get("strategy", "drop").lower()
                 fill_value = params.get("fill_value")
@@ -290,8 +290,8 @@ class CleaningService:
                 is_numeric = pd.api.types.is_numeric_dtype(working_df[col])
                 if strategy in ["mean", "median"] and not is_numeric:
                     raise ValueError(
-                        f"L'imputation par '{strategy}' est strictement réservée aux colonnes numériques. "
-                        f"La colonne '{col}' n'est pas numérique."
+                        f"Imputation by '{strategy}' is strictly reserved for numeric columns. "
+                        f"Column '{col}' is not numeric."
                     )
 
                 # Identify missing values: NaN or empty/whitespace strings
@@ -335,13 +335,13 @@ class CleaningService:
                     working_df.loc[is_missing, col] = computed_val
                     rows_affected = missing_count
                 else:
-                    raise ValueError(f"Stratégie de valeurs manquantes non reconnue: '{strategy}'.")
+                    raise ValueError(f"Unrecognised missing-value strategy: '{strategy}'.")
 
                 total_rows_affected += rows_affected
                 total_cells_changed += (rows_affected * (len(working_df.columns) if strategy == "drop" else 1))
 
                 if missing_count > 0:
-                    after_desc = "— (supprimé)" if strategy == "drop" else str(computed_val)
+                    after_desc = "— (removed)" if strategy == "drop" else str(computed_val)
                     step_diffs["missing"].append({
                         "column": col,
                         "before": "null / vide",
@@ -367,12 +367,12 @@ class CleaningService:
             # ----------------------------------------------------
             elif op_type == "HANDLE_OUTLIERS":
                 if not col or col not in working_df.columns:
-                    raise ValueError(f"Colonne '{col}' inexistante dans le jeu de données.")
+                    raise ValueError(f"Column '{col}' does not exist in the dataset.")
 
                 if not pd.api.types.is_numeric_dtype(working_df[col]):
                     raise ValueError(
-                        f"Le traitement des outliers IQR requiert une colonne numérique. "
-                        f"La colonne '{col}' n'est pas numérique."
+                        f"IQR outlier treatment requires a numeric column. "
+                        f"Column '{col}' is not numeric."
                     )
 
                 strategy = params.get("strategy", "clip").lower()
@@ -408,7 +408,7 @@ class CleaningService:
                 elif strategy == "keep":
                     rows_affected = 0
                 else:
-                    raise ValueError(f"Stratégie outliers non reconnue: '{strategy}'.")
+                    raise ValueError(f"Unrecognised outlier strategy: '{strategy}'.")
 
                 if rows_affected > 0:
                     columns_affected_set.add(col)
@@ -419,15 +419,15 @@ class CleaningService:
                     if strategy == "clip":
                         step_diffs["outliers"].append({
                             "column": col,
-                            "before": f"valeurs < {lower_bound:.2f} ou > {upper_bound:.2f}",
-                            "after": f"borné à [{lower_bound:.2f} ; {upper_bound:.2f}]",
+                            "before": f"values < {lower_bound:.2f} or > {upper_bound:.2f}",
+                            "after": f"clipped to [{lower_bound:.2f} ; {upper_bound:.2f}]",
                             "rows": outliers_count,
                         })
                     elif strategy == "drop":
                         step_diffs["outliers"].append({
                             "column": col,
                             "before": f"{outliers_count} outliers IQR",
-                            "after": "— (supprimé)",
+                            "after": "— (removed)",
                             "rows": outliers_count,
                         })
 
@@ -462,9 +462,9 @@ class CleaningService:
                 if duplicates_count > 0:
                     columns_affected_set.update(list(working_df.columns))
                     step_diffs["duplicates"].append({
-                        "column": "Toutes",
-                        "before": f"{duplicates_count} lignes en doublon",
-                        "after": f"Occurrence '{keep}' conservée",
+                        "column": "All",
+                        "before": f"{duplicates_count} duplicate rows",
+                        "after": f"Occurrence '{keep}' kept",
                         "rows": duplicates_count,
                     })
 
@@ -481,7 +481,7 @@ class CleaningService:
                 })
 
             else:
-                raise ValueError(f"Type d'opération non supporté: '{op_type}'.")
+                raise ValueError(f"Unsupported operation type: '{op_type}'.")
 
         # Check target column protection after all operations
         if target_column and target_column in working_df.columns:
@@ -489,8 +489,8 @@ class CleaningService:
             if initial_target_dist and final_target_dist != initial_target_dist:
                 target_affected = True
                 target_warning = (
-                    f"Attention : la colonne cible '{target_column}' est modifiée par ce nettoyage "
-                    f"(changement de distribution des classes ou suppression de lignes)."
+                    f"Warning: target column '{target_column}' is modified by this cleaning "
+                    f"(class distribution change or row deletion)."
                 )
 
         final_row_count = len(working_df)
@@ -524,7 +524,7 @@ class CleaningService:
     ) -> Dict[str, Any]:
         """Simulates the cleaning operations on the dataset without modifying files or database."""
         if not parquet_path.exists():
-            raise FileNotFoundError(f"Fichier Parquet introuvable: {parquet_path}")
+            raise FileNotFoundError(f"Parquet file not found: {parquet_path}")
 
         table = pq.read_table(parquet_path)
         df = table.to_pandas()
@@ -573,7 +573,7 @@ class CleaningService:
         """
         source_path = Path(source_version.storage_path)
         if not source_path.exists():
-            raise FileNotFoundError(f"Fichier Parquet source introuvable: {source_path}")
+            raise FileNotFoundError(f"Source Parquet file not found: {source_path}")
 
         table = pq.read_table(source_path)
         df = table.to_pandas()
@@ -584,15 +584,15 @@ class CleaningService:
         # 1. No-op verification
         if pipeline_result["is_noop"] or pipeline_result["rows_affected"] == 0:
             raise ValueError(
-                "Aucune donnée modifiée (0 ligne affectée). "
-                "Cette opération ne change rien aux données ; aucune nouvelle version n'a été créée."
+                "No data modified (0 rows affected). "
+                "This operation changes nothing in the data; no new version was created."
             )
 
         # 2. Target column protection
         if pipeline_result["target_affected"] and not confirm_target_modification:
             raise ValueError(
-                f"La colonne cible '{target_column}' est modifiée par ce nettoyage. "
-                "Vous devez confirmer explicitement cette action (confirm_target_modification=True)."
+                f"Target column '{target_column}' is modified by this cleaning. "
+                "You must explicitly confirm this action (confirm_target_modification=True)."
             )
 
         df_cleaned = pipeline_result["df_cleaned"]

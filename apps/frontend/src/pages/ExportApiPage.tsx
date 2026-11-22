@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useCallback, useMemo } from 'react';
+import { useLocation } from 'react-router-dom';
 import { api } from '../services/api';
-import { filterDatasetsByModality } from '../utils/formatters';
+import { filterDatasetsByModality, getActiveDatasetForModality, saveActiveDataset } from '../utils/formatters';
 import {
   Dataset,
   ExportApiStateResponse,
@@ -166,8 +167,9 @@ function FormatCard({
 
 // ─── Main Export / API Page ─────────────────────────────────────────────────
 export function ExportApiPage() {
+  const location = useLocation();
   const [datasets, setDatasets] = useState<Dataset[]>([]);
-  const [selectedId, setSelectedId] = useState<string>(() => localStorage.getItem('datalift_selected_dataset_id') || '');
+  const [selectedId, setSelectedId] = useState<string>(() => localStorage.getItem('datalift_selected_dataset_tabular') || localStorage.getItem('datalift_selected_dataset_id') || '');
   const [state, setState] = useState<ExportApiStateResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [notif, setNotif] = useState<{ msg: string; ok: boolean } | null>(null);
@@ -185,11 +187,11 @@ export function ExportApiPage() {
         const list = filterDatasetsByModality(all, 'tabular');
         setDatasets(list);
         if (list.length > 0) {
-          const stored = localStorage.getItem('datalift_selected_dataset_id');
-          const match = list.find((d) => d.id === stored);
-          const current = match ? match.id : list[0].id;
-          setSelectedId(current);
-          localStorage.setItem('datalift_selected_dataset_id', current);
+          const chosen = getActiveDatasetForModality(list, 'tabular', location.search, location.state);
+          if (chosen) {
+            setSelectedId(chosen.id);
+            saveActiveDataset(chosen.id, 'tabular');
+          }
         }
       })
       .catch(() => {});
@@ -205,8 +207,7 @@ export function ExportApiPage() {
 
   const handleDatasetChange = (newId: string) => {
     setSelectedId(newId);
-    localStorage.setItem('datalift_selected_dataset_id', newId);
-    window.dispatchEvent(new CustomEvent('datalift:dataset-changed', { detail: newId }));
+    saveActiveDataset(newId, 'tabular');
   };
 
   // Load state when dataset changes

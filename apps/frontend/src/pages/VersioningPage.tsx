@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useMemo } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 import {
   GitBranch,
   Layers,
@@ -22,7 +22,7 @@ import {
   Sparkles,
 } from 'lucide-react';
 import { api } from '../services/api';
-import { filterDatasetsByModality } from '../utils/formatters';
+import { filterDatasetsByModality, getActiveDatasetForModality, saveActiveDataset } from '../utils/formatters';
 import {
   Dataset,
   LineageGraphResponse,
@@ -39,6 +39,7 @@ import { DataPreviewModal } from '../components/DataPreviewModal';
 
 export const VersioningPage: React.FC = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [searchParams, setSearchParams] = useSearchParams();
   const datasetParam = searchParams.get('dataset');
 
@@ -112,11 +113,13 @@ export const VersioningPage: React.FC = () => {
         setDatasets(list);
 
         if (list.length > 0) {
-          const match = datasetParam ? list.find((d) => d.id === datasetParam) : null;
-          const chosen = match || list[0];
-          setSelectedDataset(chosen);
-          if (!datasetParam || datasetParam !== chosen.id) {
-            setSearchParams({ dataset: chosen.id }, { replace: true });
+          const chosen = getActiveDatasetForModality(list, 'tabular', location.search, location.state);
+          if (chosen) {
+            setSelectedDataset(chosen);
+            saveActiveDataset(chosen.id, 'tabular');
+            if (!datasetParam || datasetParam !== chosen.id) {
+              setSearchParams({ dataset: chosen.id }, { replace: true });
+            }
           }
         }
       } catch (err) {
@@ -124,6 +127,18 @@ export const VersioningPage: React.FC = () => {
       }
     };
     fetchAllDatasets();
+
+    const onGlobalChange = (e: any) => {
+      if (e.detail && typeof e.detail === 'string') {
+        setSelectedDataset((prev) => {
+          if (prev && prev.id === e.detail) return prev;
+          const match = datasets.find(d => d.id === e.detail);
+          return match || prev;
+        });
+      }
+    };
+    window.addEventListener('datalift:dataset-changed', onGlobalChange);
+    return () => window.removeEventListener('datalift:dataset-changed', onGlobalChange);
   }, []);
 
   // 2. Fetch Lineage and Header when selectedDataset changes
@@ -509,6 +524,7 @@ export const VersioningPage: React.FC = () => {
                   const target = datasets.find((d) => d.id === e.target.value);
                   if (target) {
                     setSelectedDataset(target);
+                    saveActiveDataset(target.id, 'tabular');
                     setSearchParams({ dataset: target.id });
                   }
                 }}
@@ -1131,7 +1147,7 @@ export const VersioningPage: React.FC = () => {
               {/* TARGET CLASS EVOLUTION */}
               <div className="card" style={{ padding: '1.25rem 1.5rem' }}>
                 <div className="font-mono" style={{ fontSize: '0.72rem', color: 'var(--text-muted)', letterSpacing: '0.08em', marginBottom: '0.5rem' }}>
-                  {compareResult.target_column ? `${compareResult.target_column.toUpperCase()} • EVOLUTION` : 'CIBLE'}
+                  {compareResult.target_column ? `${compareResult.target_column.toUpperCase()} • EVOLUTION` : 'TARGET'}
                 </div>
                 <div className="font-serif" style={{ fontSize: '2.2rem', fontWeight: 500, lineHeight: 1.1, marginBottom: '0.35rem', color: 'var(--amber)' }}>
                   {compareResult.target_evolution || '—'}
@@ -2057,11 +2073,13 @@ export const VersioningPage: React.FC = () => {
         selectedDatasetId={selectedDataset?.id}
         onSuccess={async (newId) => {
           setIsUploadOpen(false);
-          const list = await api.getDatasets();
+          const all = await api.getDatasets();
+          const list = filterDatasetsByModality(all, 'tabular');
           setDatasets(list);
           const target = list.find((d) => d.id === newId) || list.find((d) => d.id === selectedDataset?.id) || list[0];
           if (target) {
             setSelectedDataset(target);
+            saveActiveDataset(target.id, 'tabular');
             setSearchParams({ dataset: target.id });
             loadDatasetData(target.id);
           }

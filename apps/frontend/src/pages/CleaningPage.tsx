@@ -99,9 +99,30 @@ export const CleaningPage: React.FC = () => {
       setDatasets(data);
 
       if (data.length > 0) {
-        const targetId = navState.datasetId || data[0].id;
+        const queryParams = new URLSearchParams(location.search);
+        const queryDatasetId = queryParams.get('dataset');
+        const queryVersionHash = queryParams.get('version');
+
+        const stateDatasetId = navState.datasetId;
+        const stateVersionHash = navState.versionHash;
+
+        const storedTabular = localStorage.getItem('datalift_selected_dataset_tabular');
+        const storedId = localStorage.getItem('datalift_selected_dataset_id');
+
+        const targetDs =
+          (queryDatasetId && data.find((d) => d.id === queryDatasetId)) ||
+          (stateDatasetId && data.find((d) => d.id === stateDatasetId)) ||
+          (storedTabular && data.find((d) => d.id === storedTabular)) ||
+          (storedId && data.find((d) => d.id === storedId)) ||
+          data[0];
+
+        const targetId = targetDs.id;
         setSelectedDatasetId(targetId);
-        await loadVersions(targetId, navState.versionHash);
+        localStorage.setItem('datalift_selected_dataset_id', targetId);
+        localStorage.setItem('datalift_selected_dataset_tabular', targetId);
+
+        const targetVersionHash = queryVersionHash || stateVersionHash;
+        await loadVersions(targetId, targetVersionHash);
       } else {
         setLoading(false);
       }
@@ -173,6 +194,9 @@ export const CleaningPage: React.FC = () => {
   const handleDatasetChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const newId = e.target.value;
     setSelectedDatasetId(newId);
+    localStorage.setItem('datalift_selected_dataset_id', newId);
+    localStorage.setItem('datalift_selected_dataset_tabular', newId);
+    window.dispatchEvent(new CustomEvent('datalift:dataset-changed', { detail: newId }));
     setPreviewData(null);
     setSelectedUncertainMatches({});
     loadVersions(newId);
@@ -886,7 +910,7 @@ export const CleaningPage: React.FC = () => {
           <button
             type="button"
             className="btn btn-primary font-mono"
-            onClick={() => navigate('/augmentation')}
+            onClick={() => navigate(`/augmentation?dataset=${selectedDatasetId}&version=${selectedVersionHash}`, { state: { datasetId: selectedDatasetId, versionHash: selectedVersionHash } })}
           >
             <span>Continue to next step: Augmentation</span>
             <ArrowRight size={14} />
@@ -1160,7 +1184,7 @@ export const CleaningPage: React.FC = () => {
                     className={`preview-action-btn ${activePreviewStep === '05' ? 'active' : ''}`}
                     onClick={() => {
                       setActivePreviewStep('05');
-                      navigate('/augmentation');
+                      navigate(`/augmentation?dataset=${selectedDatasetId}&version=${selectedVersionHash}`, { state: { datasetId: selectedDatasetId, versionHash: selectedVersionHash } });
                     }}
                   >
                     <span>Preview →</span>

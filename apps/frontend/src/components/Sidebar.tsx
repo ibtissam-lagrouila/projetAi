@@ -3,7 +3,7 @@ import { NavLink } from 'react-router-dom';
 import { ChevronDown } from 'lucide-react';
 import { api } from '../services/api';
 import { Dataset } from '../types';
-import { filterDatasetsByModality, ModalityType } from '../utils/formatters';
+import { filterDatasetsByModality, ModalityType, saveActiveDataset } from '../utils/formatters';
 
 interface WorkflowStep {
   number: string;
@@ -31,7 +31,7 @@ export const Sidebar: React.FC = () => {
   useEffect(() => {
     api.getDatasets().then(list => {
       setAllDatasets(list);
-    }).catch(() => {});
+    }).catch(() => { });
 
     const onModalityChange = (e: any) => {
       if (e.detail && typeof e.detail === 'string') {
@@ -60,15 +60,14 @@ export const Sidebar: React.FC = () => {
       const match = datasets.find(d => d.id === selectedId);
       if (!match) {
         setSelectedId(datasets[0].id);
-        localStorage.setItem('datalift_selected_dataset_id', datasets[0].id);
+        saveActiveDataset(datasets[0].id, modality);
       }
     }
-  }, [datasets, selectedId]);
+  }, [datasets, selectedId, modality]);
 
   const handleSelect = (id: string) => {
     setSelectedId(id);
-    localStorage.setItem('datalift_selected_dataset_id', id);
-    window.dispatchEvent(new CustomEvent('datalift:dataset-changed', { detail: id }));
+    saveActiveDataset(id, modality);
   };
 
 
@@ -130,7 +129,8 @@ export const Sidebar: React.FC = () => {
           {WORKFLOW_STEPS.map((step) => (
             <NavLink
               key={step.path}
-              to={step.path}
+              to={selectedId ? `${step.path}?dataset=${selectedId}` : step.path}
+              state={{ datasetId: selectedId }}
               className={({ isActive }) => `workflow-item ${isActive ? 'active' : ''}`}
             >
               <span className="workflow-num font-mono">{step.number}</span>

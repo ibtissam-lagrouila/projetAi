@@ -69,6 +69,9 @@ export const ProfilingPage: React.FC = () => {
       const freshDatasets = filterDatasetsByModality(all, 'tabular');
       setDatasets(freshDatasets);
       setSelectedDatasetId(createdDataset.id);
+      localStorage.setItem('datalift_selected_dataset_id', createdDataset.id);
+      localStorage.setItem('datalift_selected_dataset_tabular', createdDataset.id);
+      window.dispatchEvent(new CustomEvent('datalift:dataset-changed', { detail: createdDataset.id }));
       await loadVersions(createdDataset.id);
       setUploadSuccess(`File "${file.name}" uploaded successfully! Data profiling computed.`);
       setTimeout(() => setUploadSuccess(null), 5000);
@@ -96,9 +99,21 @@ export const ProfilingPage: React.FC = () => {
       setDatasets(data);
 
       if (data.length > 0) {
-        const firstDs = data[0];
-        setSelectedDatasetId(firstDs.id);
-        loadVersions(firstDs.id);
+        const queryParams = new URLSearchParams(window.location.search);
+        const urlId = queryParams.get('dataset');
+        const storedTabular = localStorage.getItem('datalift_selected_dataset_tabular');
+        const storedId = localStorage.getItem('datalift_selected_dataset_id');
+
+        const targetDs =
+          (urlId && data.find((d) => d.id === urlId)) ||
+          (storedTabular && data.find((d) => d.id === storedTabular)) ||
+          (storedId && data.find((d) => d.id === storedId)) ||
+          data[0];
+
+        setSelectedDatasetId(targetDs.id);
+        localStorage.setItem('datalift_selected_dataset_id', targetDs.id);
+        localStorage.setItem('datalift_selected_dataset_tabular', targetDs.id);
+        loadVersions(targetDs.id, queryParams.get('version') || undefined);
       } else {
         setLoading(false);
       }
@@ -108,13 +123,14 @@ export const ProfilingPage: React.FC = () => {
     }
   };
 
-  const loadVersions = async (datasetId: string) => {
+  const loadVersions = async (datasetId: string, preferredHash?: string) => {
     try {
       const vers = await api.getVersions(datasetId);
       setVersions(vers);
 
       if (vers.length > 0) {
-        const latestHash = vers[0].version_hash;
+        const targetVersion = (preferredHash && vers.find((v) => v.version_hash === preferredHash)) || vers[0];
+        const latestHash = targetVersion.version_hash;
         setSelectedVersionHash(latestHash);
         loadProfile(latestHash);
       } else {
@@ -144,6 +160,9 @@ export const ProfilingPage: React.FC = () => {
   const handleDatasetChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const newId = e.target.value;
     setSelectedDatasetId(newId);
+    localStorage.setItem('datalift_selected_dataset_id', newId);
+    localStorage.setItem('datalift_selected_dataset_tabular', newId);
+    window.dispatchEvent(new CustomEvent('datalift:dataset-changed', { detail: newId }));
     loadVersions(newId);
   };
 
@@ -410,7 +429,7 @@ export const ProfilingPage: React.FC = () => {
             type="button"
             className="btn btn-primary"
             style={{ fontSize: '0.78rem', padding: '0.45rem 1rem' }}
-            onClick={() => navigate(`/cleaning?dataset=${selectedDatasetId}&version=${selectedVersionHash}`)}
+            onClick={() => navigate(`/cleaning?dataset=${selectedDatasetId}&version=${selectedVersionHash}`, { state: { datasetId: selectedDatasetId, versionHash: selectedVersionHash } })}
           >
             <span>Continue to cleaning</span>
             <ArrowRight size={14} />

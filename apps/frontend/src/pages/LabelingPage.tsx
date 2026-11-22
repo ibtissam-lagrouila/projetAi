@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import {
   Check,
   AlertTriangle,
@@ -11,7 +11,7 @@ import {
   X,
 } from 'lucide-react';
 import { api } from '../services/api';
-import { filterDatasetsByModality } from '../utils/formatters';
+import { filterDatasetsByModality, getActiveDatasetForModality, saveActiveDataset } from '../utils/formatters';
 import {
   Dataset,
   LabelingStatusResponse,
@@ -23,6 +23,7 @@ import {
 
 export const LabelingPage: React.FC = () => {
   const navigate = useNavigate();
+  const location = useLocation();
 
   // Datasets
   const [datasets, setDatasets] = useState<Dataset[]>([]);
@@ -44,7 +45,7 @@ export const LabelingPage: React.FC = () => {
 
   // Decision State
   const [selectedDecision, setSelectedDecision] = useState<'keep' | 'change' | 'not_yet' | 'unsure'>('change');
-  const [selectedReason, setSelectedReason] = useState<string>('Late cancellation entry in le CRM');
+  const [selectedReason, setSelectedReason] = useState<string>('Late cancellation entry in the CRM');
   const [isSubmittingDecision, setIsSubmittingDecision] = useState<boolean>(false);
 
   // Checks & Guardrails
@@ -71,12 +72,23 @@ export const LabelingPage: React.FC = () => {
         const data = filterDatasetsByModality(all, 'tabular');
         setDatasets(data);
         if (data.length > 0) {
-          const defaultDs = data.find((d) => d.name === 'data' || d.name === 'customer_churn.csv') || data[0];
-          setSelectedDatasetId(defaultDs.id);
+          const chosen = getActiveDatasetForModality(data, 'tabular', location.search, location.state);
+          if (chosen) {
+            setSelectedDatasetId(chosen.id);
+            saveActiveDataset(chosen.id, 'tabular');
+          }
         }
       })
       .catch((err) => console.error('Error loading datasets:', err))
       .finally(() => setLoadingInitial(false));
+
+    const onGlobalChange = (e: any) => {
+      if (e.detail && typeof e.detail === 'string') {
+        setSelectedDatasetId(e.detail);
+      }
+    };
+    window.addEventListener('datalift:dataset-changed', onGlobalChange);
+    return () => window.removeEventListener('datalift:dataset-changed', onGlobalChange);
   }, []);
 
   const selectedDataset = useMemo(
@@ -281,14 +293,17 @@ export const LabelingPage: React.FC = () => {
         {/* Breadcrumb row */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.65rem' }}>
           <div className="font-mono" style={{ fontSize: '0.75rem', color: 'var(--text-muted)', letterSpacing: '0.08em' }}>
-            DATASET • {status?.source_version_label || 'V3'} → {status?.target_version_label || 'V4'} DRAFT • TARGETASSIFICATION BINAIRE • CIBLE = {(status?.target_column || 'CHURNED').toUpperCase()}
+            DATASET • {status?.source_version_label || 'V3'} → {status?.target_version_label || 'V4'} DRAFT • BINARY CLASSIFICATION • TARGET = {(status?.target_column || 'CHURNED').toUpperCase()}
           </div>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
             <span className="font-mono" style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>DATASET :</span>
             <select
               value={selectedDatasetId}
-              onChange={(e) => setSelectedDatasetId(e.target.value)}
+              onChange={(e) => {
+                setSelectedDatasetId(e.target.value);
+                saveActiveDataset(e.target.value, 'tabular');
+              }}
               className="font-mono"
               style={{
                 backgroundColor: 'var(--bg-surface)',
@@ -686,7 +701,7 @@ export const LabelingPage: React.FC = () => {
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                   <h3 className="font-serif" style={{ fontSize: '1.85rem', fontWeight: 400, margin: 0 }}>
-                    Client {candidate.customer_id}
+                    Customer {candidate.customer_id}
                   </h3>
                   <span
                     className="font-mono"
@@ -944,7 +959,7 @@ export const LabelingPage: React.FC = () => {
               {/* Box 1: Customer History Timeline */}
               <div className="card" style={{ padding: '1.25rem' }}>
                 <div className="font-mono" style={{ fontSize: '0.72rem', color: 'var(--text-muted)', letterSpacing: '0.08em', marginBottom: '0.85rem' }}>
-                  HISTORIQUE CLIENT
+                  CUSTOMER HISTORY
                 </div>
 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', fontSize: '0.78rem' }}>

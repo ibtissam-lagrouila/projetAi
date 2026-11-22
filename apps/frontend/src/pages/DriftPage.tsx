@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import {
   Check,
   AlertTriangle,
@@ -12,7 +12,7 @@ import {
   Zap,
 } from 'lucide-react';
 import { api } from '../services/api';
-import { filterDatasetsByModality } from '../utils/formatters';
+import { filterDatasetsByModality, getActiveDatasetForModality, saveActiveDataset } from '../utils/formatters';
 import {
   Dataset,
   DriftStateResponse,
@@ -21,6 +21,7 @@ import {
 
 export const DriftPage: React.FC = () => {
   const navigate = useNavigate();
+  const location = useLocation();
 
   // 1. Dataset state
   const [datasets, setDatasets] = useState<Dataset[]>([]);
@@ -65,11 +66,11 @@ export const DriftPage: React.FC = () => {
         const data = filterDatasetsByModality(all, 'tabular');
         setDatasets(data);
         if (data.length > 0) {
-          const stored = localStorage.getItem('datalift_selected_dataset_id');
-          const match = data.find((d) => d.id === stored);
-          const defaultDs = match || data.find((d) => d.name === 'data' || d.name === 'customer_churn.csv') || data[0];
-          setSelectedDatasetId(defaultDs.id);
-          localStorage.setItem('datalift_selected_dataset_id', defaultDs.id);
+          const chosen = getActiveDatasetForModality(data, 'tabular', location.search, location.state);
+          if (chosen) {
+            setSelectedDatasetId(chosen.id);
+            saveActiveDataset(chosen.id, 'tabular');
+          }
         }
       })
       .catch((err) => {
@@ -266,8 +267,7 @@ export const DriftPage: React.FC = () => {
                   onChange={(e) => {
                     const newId = e.target.value;
                     setSelectedDatasetId(newId);
-                    localStorage.setItem('datalift_selected_dataset_id', newId);
-                    window.dispatchEvent(new CustomEvent('datalift:dataset-changed', { detail: newId }));
+                    saveActiveDataset(newId, 'tabular');
                   }}
                   style={{
                     backgroundColor: '#18191c',

@@ -294,20 +294,22 @@ export const ImageProfilingPage: React.FC = () => {
       setDatasets(data);
 
       if (data.length > 0) {
+        const queryParams = new URLSearchParams(window.location.search);
+        const urlId = queryParams.get('dataset');
+        const storedImg = localStorage.getItem('datalift_selected_dataset_image');
         const storedId = localStorage.getItem('datalift_selected_dataset_id');
-        const matchStored = data.find((d) => d.id === storedId);
 
         const targetDs =
-          (matchStored && (matchStored.name.includes('defect') || matchStored.name.includes('image') || matchStored.name.includes('product')))
-            ? matchStored
-            : data.find((d) => d.name === 'product_defects/' || d.name.includes('defect')) ||
-              data.find((d) => d.name.includes('image')) ||
-              data[0];
+          (urlId && data.find((d) => d.id === urlId)) ||
+          (storedImg && data.find((d) => d.id === storedImg)) ||
+          (storedId && data.find((d) => d.id === storedId)) ||
+          data[0];
 
         if (targetDs) {
           setSelectedDatasetId(targetDs.id);
           localStorage.setItem('datalift_selected_dataset_id', targetDs.id);
-          loadVersions(targetDs.id);
+          localStorage.setItem('datalift_selected_dataset_image', targetDs.id);
+          loadVersions(targetDs.id, queryParams.get('version') || undefined);
         } else {
           setLoading(false);
         }
@@ -320,12 +322,13 @@ export const ImageProfilingPage: React.FC = () => {
     }
   };
 
-  const loadVersions = async (datasetId: string) => {
+  const loadVersions = async (datasetId: string, preferredHash?: string) => {
     try {
       const vers = await api.getVersions(datasetId);
 
       if (vers.length > 0) {
-        const latestHash = vers[0].version_hash;
+        const targetV = (preferredHash && vers.find((v) => v.version_hash === preferredHash)) || vers[0];
+        const latestHash = targetV.version_hash;
         setSelectedVersionHash(latestHash);
         loadProfile(datasetId, latestHash);
       } else {
@@ -371,6 +374,8 @@ export const ImageProfilingPage: React.FC = () => {
       setDatasets(freshDs);
       setSelectedDatasetId(newProfile.dataset_id);
       localStorage.setItem('datalift_selected_dataset_id', newProfile.dataset_id);
+      localStorage.setItem('datalift_selected_dataset_image', newProfile.dataset_id);
+      window.dispatchEvent(new CustomEvent('datalift:dataset-changed', { detail: newProfile.dataset_id }));
     } catch (err) {
       console.error('Upload image failed:', err);
       showNotif("Failed to import image archive", false);
@@ -599,7 +604,7 @@ export const ImageProfilingPage: React.FC = () => {
           </button>
 
           <button
-            onClick={() => navigate(`/cleaning?dataset=${selectedDatasetId}&version=${selectedVersionHash}`)}
+            onClick={() => navigate(`/cleaning?dataset=${selectedDatasetId}&version=${selectedVersionHash}`, { state: { datasetId: selectedDatasetId, versionHash: selectedVersionHash } })}
             style={{
               background: C.amber,
               border: 'none',

@@ -1056,11 +1056,11 @@ export const LabelingPage: React.FC = () => {
                 </div>
 
                 <div style={{ display: 'grid', gridTemplateColumns: '110px 1fr', gap: '0.45rem', marginBottom: '0.35rem' }}>
-                  <span className="font-mono" style={{ color: 'var(--text-muted)' }}>Source du label</span>
+                  <span className="font-mono" style={{ color: 'var(--text-muted)' }}>Label source</span>
                   <span style={{ color: 'var(--text-main)' }}>{candidate.label_source}</span>
                 </div>
                 <div style={{ display: 'grid', gridTemplateColumns: '110px 1fr', gap: '0.45rem' }}>
-                  <span className="font-mono" style={{ color: 'var(--text-muted)' }}>Enfants SMOTE</span>
+                  <span className="font-mono" style={{ color: 'var(--text-muted)' }}>SMOTE children</span>
                   <span style={{ color: 'var(--text-main)' }}>{candidate.smote_children}</span>
                 </div>
               </div>

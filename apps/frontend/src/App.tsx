@@ -593,7 +593,7 @@ const TopBar: React.FC<{ modality: 'tabular' | 'text' | 'image'; onModalityChang
               type="button"
               className="btn btn-secondary font-mono"
               style={{ fontSize: '0.75rem', padding: '0.45rem 0.95rem' }}
-              onClick={() => alert("Audit report generation (coming soon).")}
+              onClick={() => window.dispatchEvent(new CustomEvent('datalift:generate-audit-report'))}
             >
               <Download size={13} />
               Audit report

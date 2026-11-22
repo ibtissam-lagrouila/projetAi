@@ -2,9 +2,11 @@ import React, { useEffect, useState, useRef } from 'react';
 import { api } from '../services/api';
 import { filterDatasetsByModality } from '../utils/formatters';
 import { Dataset, DatasetVersion, VersionProfile, ColumnProfile } from '../types';
-import { RefreshCw, Database, ArrowRight, Upload, AlertCircle, X, CheckCircle2 } from 'lucide-react';
+import { RefreshCw, Database, ArrowRight, Upload, AlertCircle, X, CheckCircle2, Download } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { UploadModal } from '../components/UploadModal';
+import { AuditReportModal } from '../components/AuditReportModal';
+import { generateTabularAuditReport, downloadTabularAuditReportPdf } from '../utils/auditReport';
 
 const SegmentedGauge: React.FC<{ value: number | null }> = ({ value }) => {
   const totalBlocks = 20;
@@ -47,7 +49,27 @@ export const ProfilingPage: React.FC = () => {
   const [uploading, setUploading] = useState<boolean>(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [uploadSuccess, setUploadSuccess] = useState<string | null>(null);
+  const [auditModalOpen, setAuditModalOpen] = useState<boolean>(false);
+  const [auditReportContent, setAuditReportContent] = useState<string>('');
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+
+  const handleGenerateAuditReport = () => {
+    if (!profile) return;
+    const curDataset = datasets.find(d => d.id === selectedDatasetId);
+    const datasetName = curDataset?.name || profile.dataset_name || 'dataset';
+    const report = generateTabularAuditReport(datasetName, profile, selectedVersionHash);
+    setAuditReportContent(report);
+    setAuditModalOpen(true);
+    downloadTabularAuditReportPdf(datasetName, profile, selectedVersionHash);
+  };
+
+  useEffect(() => {
+    const onAuditReport = () => {
+      handleGenerateAuditReport();
+    };
+    window.addEventListener('datalift:generate-audit-report', onAuditReport);
+    return () => window.removeEventListener('datalift:generate-audit-report', onAuditReport);
+  }, [profile, selectedDatasetId, selectedVersionHash, datasets]);
 
   const handleFileUpload = async (file: File) => {
     if (!file) return;
@@ -427,6 +449,30 @@ export const ProfilingPage: React.FC = () => {
 
           <button
             type="button"
+            onClick={handleGenerateAuditReport}
+            disabled={!profile}
+            style={{
+              background: '#18191d',
+              border: '1px solid var(--border)',
+              color: 'var(--text-main)',
+              padding: '7px 16px',
+              borderRadius: 6,
+              fontSize: 12,
+              fontFamily: 'monospace',
+              cursor: profile ? 'pointer' : 'not-allowed',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 8,
+              transition: 'all 0.15s',
+              opacity: profile ? 1 : 0.5,
+            }}
+          >
+            <Download size={13} />
+            <span>Audit report</span>
+          </button>
+
+          <button
+            type="button"
             className="btn btn-primary"
             style={{ fontSize: '0.78rem', padding: '0.45rem 1rem' }}
             onClick={() => navigate(`/cleaning?dataset=${selectedDatasetId}&version=${selectedVersionHash}`, { state: { datasetId: selectedDatasetId, versionHash: selectedVersionHash } })}
@@ -744,7 +790,7 @@ export const ProfilingPage: React.FC = () => {
                     {/* Warning / Finding description line */}
                     {col.is_flagged ? (
                       <div className="font-mono" style={{ fontSize: '0.7rem', color: '#fb7185', fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={col.flag_reasons?.join(', ') || ''}>
-                        {col.flag_reasons?.[0] || 'Attention requise'}
+                        {col.flag_reasons?.[0] || 'Attention required'}
                       </div>
                     ) : (
                       <div className="font-mono" style={{ fontSize: '0.68rem', color: 'var(--text-faint)' }}>
@@ -778,6 +824,17 @@ export const ProfilingPage: React.FC = () => {
           setSelectedDatasetId(targetId);
           await loadVersions(targetId);
         }}
+      />
+
+      {/* Audit Report Modal */}
+      <AuditReportModal
+        isOpen={auditModalOpen}
+        onClose={() => setAuditModalOpen(false)}
+        reportText={auditReportContent}
+        datasetName={datasets.find(d => d.id === selectedDatasetId)?.name || profile?.dataset_name || 'dataset'}
+        modality="tabular"
+        versionHash={selectedVersionHash}
+        tabularProfile={profile || undefined}
       />
     </div>
   );

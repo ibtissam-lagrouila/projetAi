@@ -2,8 +2,10 @@ import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { api } from '../services/api';
 import { filterDatasetsByModality } from '../utils/formatters';
 import { Dataset, ImageProfileResponse, ImageContactSheetItem } from '../types';
-import { RefreshCw, Upload } from 'lucide-react';
+import { RefreshCw, Upload, Download } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { AuditReportModal } from '../components/AuditReportModal';
+import { generateImageAuditReport, downloadImageAuditReportPdf } from '../utils/auditReport';
 
 // ─── Theme Colors ───────────────────────────────────────────────────────────
 const C = {
@@ -270,8 +272,21 @@ export const ImageProfilingPage: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const [uploading, setUploading] = useState<boolean>(false);
   const [notif, setNotif] = useState<{ msg: string; ok: boolean } | null>(null);
+  const [auditModalOpen, setAuditModalOpen] = useState<boolean>(false);
+  const [auditReportContent, setAuditReportContent] = useState<string>('');
 
   const showNotif = useCallback((msg: string, ok = true) => setNotif({ msg, ok }), []);
+
+  const handleGenerateAuditReport = useCallback(() => {
+    if (!profile) return;
+    const curDataset = datasets.find(d => d.id === selectedDatasetId);
+    const datasetName = curDataset?.name || profile.dataset_name || 'dataset';
+    const report = generateImageAuditReport(datasetName, profile, selectedVersionHash);
+    setAuditReportContent(report);
+    setAuditModalOpen(true);
+    downloadImageAuditReportPdf(datasetName, profile, selectedVersionHash);
+    showNotif('Image audit report (PDF) generated and downloaded');
+  }, [profile, datasets, selectedDatasetId, selectedVersionHash, showNotif]);
 
   useEffect(() => {
     loadDatasets();
@@ -282,9 +297,16 @@ export const ImageProfilingPage: React.FC = () => {
         loadVersions(e.detail);
       }
     };
+    const onAudit = () => {
+      handleGenerateAuditReport();
+    };
     window.addEventListener('datalift:dataset-changed', onDsChange);
-    return () => window.removeEventListener('datalift:dataset-changed', onDsChange);
-  }, []);
+    window.addEventListener('datalift:generate-audit-report', onAudit);
+    return () => {
+      window.removeEventListener('datalift:dataset-changed', onDsChange);
+      window.removeEventListener('datalift:generate-audit-report', onAudit);
+    };
+  }, [handleGenerateAuditReport]);
 
   const loadDatasets = async () => {
     try {
@@ -588,7 +610,9 @@ export const ImageProfilingPage: React.FC = () => {
           </button>
 
           <button
-            onClick={() => showNotif("Image audit report downloaded")}
+            type="button"
+            onClick={handleGenerateAuditReport}
+            disabled={!profile}
             style={{
               background: '#18191d',
               border: `1px solid ${C.border}`,
@@ -597,10 +621,15 @@ export const ImageProfilingPage: React.FC = () => {
               borderRadius: 6,
               fontSize: 12,
               fontFamily: 'monospace',
-              cursor: 'pointer',
+              cursor: profile ? 'pointer' : 'not-allowed',
+              opacity: profile ? 1 : 0.5,
+              display: 'flex',
+              alignItems: 'center',
+              gap: 8,
             }}
           >
-            Download report
+            <Download size={13} />
+            <span>Audit report</span>
           </button>
 
           <button
@@ -1041,6 +1070,17 @@ export const ImageProfilingPage: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Audit Report Modal */}
+      <AuditReportModal
+        isOpen={auditModalOpen}
+        onClose={() => setAuditModalOpen(false)}
+        reportText={auditReportContent}
+        datasetName={datasets.find(d => d.id === selectedDatasetId)?.name || profile?.dataset_name || 'dataset'}
+        modality="image"
+        versionHash={selectedVersionHash}
+        imageProfile={profile || undefined}
+      />
     </div>
   );
 };

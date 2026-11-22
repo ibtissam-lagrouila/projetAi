@@ -1376,7 +1376,7 @@ export const AugmentationPage: React.FC = () => {
                 Randomly drops rows from the majority class once the synthetic ceiling is reached
                 {majorityUndersampledPct > 40 && undersampleActive && (
                   <span style={{ display: 'block', color: '#fbbf24', marginTop: '0.2rem', fontWeight: 500 }}>
-                    ⚠ Attention : retire {majorityUndersampledPct.toFixed(1)}% de la majority class (&gt; 40%)
+                    ⚠ Warning: removes {majorityUndersampledPct.toFixed(1)}% of the majority class (&gt; 40%)
                   </span>
                 )}
               </div>

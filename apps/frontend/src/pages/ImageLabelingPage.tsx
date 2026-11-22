@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Check, AlertTriangle, X } from 'lucide-react';
 import { api } from '../services/api';
@@ -42,6 +42,18 @@ export const ImageLabelingPage: React.FC = () => {
   const [selectedImageIndex, setSelectedImageIndex] = useState<number>(2);
 
   // Workspace interactive state
+  const svgRef = useRef<SVGSVGElement | null>(null);
+  const previousBoxesRef = useRef<ImageLabelingBoundingBox[]>([]);
+  const [history, setHistory] = useState<ImageLabelingBoundingBox[][]>([]);
+  const [dragState, setDragState] = useState<{
+    mode: 'move' | 'nw' | 'ne' | 'sw' | 'se' | 'draw';
+    boxId?: string;
+    startX: number;
+    startY: number;
+    initialBox?: { x: number; y: number; width: number; height: number };
+    currentDraw?: { x: number; y: number; width: number; height: number };
+  } | null>(null);
+
   const [activeTool, setActiveTool] = useState<'box' | 'polygon' | 'zoom'>('box');
   const [hideModelSuggestions, setHideModelSuggestions] = useState<boolean>(false);
   const [boxes, setBoxes] = useState<ImageLabelingBoundingBox[]>([]);
@@ -125,12 +137,275 @@ export const ImageLabelingPage: React.FC = () => {
     setSelectedImageIndex(2);
   };
 
-  // Keyboard shortcuts (A, 1-6, Enter, Del)
+  const changeImageIndex = useCallback(
+    (newIdx: number | ((prev: number) => number)) => {
+      if (boxes.length > 0) {
+        previousBoxesRef.current = boxes;
+      }
+      setSelectedImageIndex(newIdx);
+    },
+    [boxes]
+  );
+
+  const getSvgCoords = (e: React.MouseEvent | MouseEvent) => {
+    if (!svgRef.current) return { x: 0, y: 0 };
+    const rect = svgRef.current.getBoundingClientRect();
+    return {
+      x: Math.max(0, Math.min(Math.round(e.clientX - rect.left), Math.round(rect.width))),
+      y: Math.max(0, Math.min(Math.round(e.clientY - rect.top), Math.round(rect.height))),
+    };
+  };
+
+  const handleUndo = useCallback(() => {
+    if (history.length > 0) {
+      const previousState = history[history.length - 1];
+      setHistory((prev) => prev.slice(0, -1));
+      setBoxes(previousState);
+      setNotification('Action undone');
+      setTimeout(() => setNotification(null), 1500);
+    } else {
+      setNotification('Nothing to undo');
+      setTimeout(() => setNotification(null), 1500);
+    }
+  }, [history]);
+
+  const handleCopyPreviousBoxes = () => {
+    if (previousBoxesRef.current && previousBoxesRef.current.length > 0) {
+      setHistory((prev) => [...prev.slice(-20), boxes]);
+      const copied = previousBoxesRef.current.map((b, idx) => ({
+        ...b,
+        id: `box_copied_${Date.now()}_${idx}`,
+        type: 'human' as const,
+        tag: `${b.label} · human`,
+        color: '#f59e0b',
+      }));
+      setBoxes(copied);
+      if (copied.length > 0) setSelectedBoxId(copied[0].id);
+      setNotification(`${copied.length} bounding box(es) copied from previous image`);
+      setTimeout(() => setNotification(null), 2500);
+    } else {
+      setNotification('No previous frame boxes available to copy');
+      setTimeout(() => setNotification(null), 2000);
+    }
+  };
+
+  const handleNoDefect = () => {
+    setHistory((prev) => [...prev.slice(-20), boxes]);
+    setBoxes([]);
+    setSelectedBoxId('');
+    setNotification('Image marked "No defect · ok"');
+    setTimeout(() => setNotification(null), 2500);
+  };
+
+  // Box drag / resize handlers
+  const handleBoxMouseDown = (e: React.MouseEvent, boxId: string) => {
+    if (e.button !== 0) return;
+    e.stopPropagation();
+    setSelectedBoxId(boxId);
+    const targetBox = boxes.find((b) => b.id === boxId);
+    if (!targetBox) return;
+
+    setHistory((prev) => [...prev.slice(-20), boxes]);
+    const coords = getSvgCoords(e);
+    setDragState({
+      mode: 'move',
+      boxId,
+      startX: coords.x,
+      startY: coords.y,
+      initialBox: {
+        x: targetBox.x,
+        y: targetBox.y,
+        width: targetBox.width,
+        height: targetBox.height,
+      },
+    });
+  };
+
+  const handleCornerMouseDown = (
+    e: React.MouseEvent,
+    boxId: string,
+    corner: 'nw' | 'ne' | 'sw' | 'se'
+  ) => {
+    if (e.button !== 0) return;
+    e.stopPropagation();
+    setSelectedBoxId(boxId);
+    const targetBox = boxes.find((b) => b.id === boxId);
+    if (!targetBox) return;
+
+    setHistory((prev) => [...prev.slice(-20), boxes]);
+    const coords = getSvgCoords(e);
+    setDragState({
+      mode: corner,
+      boxId,
+      startX: coords.x,
+      startY: coords.y,
+      initialBox: {
+        x: targetBox.x,
+        y: targetBox.y,
+        width: targetBox.width,
+        height: targetBox.height,
+      },
+    });
+  };
+
+  const handleSvgMouseDown = (e: React.MouseEvent) => {
+    if (e.button !== 0) return;
+    if (activeTool !== 'box') {
+      setSelectedBoxId('');
+      return;
+    }
+    const coords = getSvgCoords(e);
+    setHistory((prev) => [...prev.slice(-20), boxes]);
+    setDragState({
+      mode: 'draw',
+      startX: coords.x,
+      startY: coords.y,
+      currentDraw: { x: coords.x, y: coords.y, width: 0, height: 0 },
+    });
+  };
+
+  // Drag & Draw global listeners
+  useEffect(() => {
+    if (!dragState) return;
+
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!svgRef.current) return;
+      const rect = svgRef.current.getBoundingClientRect();
+      const curX = Math.max(0, Math.min(Math.round(e.clientX - rect.left), Math.round(rect.width)));
+      const curY = Math.max(0, Math.min(Math.round(e.clientY - rect.top), Math.round(rect.height)));
+
+      if (dragState.mode === 'draw') {
+        const minX = Math.min(dragState.startX, curX);
+        const minY = Math.min(dragState.startY, curY);
+        const w = Math.abs(curX - dragState.startX);
+        const h = Math.abs(curY - dragState.startY);
+        setDragState((prev) =>
+          prev ? { ...prev, currentDraw: { x: minX, y: minY, width: w, height: h } } : null
+        );
+      } else if (dragState.mode === 'move' && dragState.initialBox && dragState.boxId) {
+        const dx = curX - dragState.startX;
+        const dy = curY - dragState.startY;
+        const init = dragState.initialBox;
+        const maxX = Math.max(0, rect.width - init.width);
+        const maxY = Math.max(0, rect.height - init.height);
+        const newX = Math.max(0, Math.min(maxX, init.x + dx));
+        const newY = Math.max(0, Math.min(maxY, init.y + dy));
+
+        setBoxes((prev) =>
+          prev.map((b) => {
+            if (b.id !== dragState.boxId) return b;
+            return {
+              ...b,
+              x: newX,
+              y: newY,
+              type: 'human',
+              tag: `${b.label} · human`,
+              color: '#f59e0b',
+            };
+          })
+        );
+      } else if (dragState.initialBox && dragState.boxId) {
+        const init = dragState.initialBox;
+        let newX = init.x;
+        let newY = init.y;
+        let newW = init.width;
+        let newH = init.height;
+
+        if (dragState.mode === 'se') {
+          newW = Math.max(20, curX - init.x);
+          newH = Math.max(20, curY - init.y);
+        } else if (dragState.mode === 'sw') {
+          const right = init.x + init.width;
+          newX = Math.min(curX, right - 20);
+          newW = right - newX;
+          newH = Math.max(20, curY - init.y);
+        } else if (dragState.mode === 'ne') {
+          const bottom = init.y + init.height;
+          newY = Math.min(curY, bottom - 20);
+          newW = Math.max(20, curX - init.x);
+          newH = bottom - newY;
+        } else if (dragState.mode === 'nw') {
+          const right = init.x + init.width;
+          const bottom = init.y + init.height;
+          newX = Math.min(curX, right - 20);
+          newY = Math.min(curY, bottom - 20);
+          newW = right - newX;
+          newH = bottom - newY;
+        }
+
+        setBoxes((prev) =>
+          prev.map((b) => {
+            if (b.id !== dragState.boxId) return b;
+            return {
+              ...b,
+              x: newX,
+              y: newY,
+              width: newW,
+              height: newH,
+              type: 'human',
+              tag: `${b.label} · human`,
+              color: '#f59e0b',
+            };
+          })
+        );
+      }
+    };
+
+    const handleMouseUp = () => {
+      if (dragState.mode === 'draw' && dragState.currentDraw) {
+        const { width, height, x, y } = dragState.currentDraw;
+        if (width >= 20 && height >= 20) {
+          const activeClass =
+            data?.workspace?.classes.find((c) => c.id === selectedClassId) ||
+            data?.workspace?.classes[0];
+          const className = activeClass ? activeClass.name : 'defect_a';
+          const newId = `box_${Date.now()}`;
+          const newBox: ImageLabelingBoundingBox = {
+            id: newId,
+            label: className,
+            tag: `${className} · human`,
+            type: 'human',
+            confidence: 1.0,
+            x,
+            y,
+            width,
+            height,
+            color: '#f59e0b',
+          };
+          setBoxes((prev) => [...prev, newBox]);
+          setSelectedBoxId(newId);
+          setNotification(`Bounding box created: "${className}"`);
+          setTimeout(() => setNotification(null), 2000);
+        }
+      }
+      setDragState(null);
+    };
+
+    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('mouseup', handleMouseUp);
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [dragState, data, selectedClassId]);
+
+  // Keyboard shortcuts (A, 1-6, Enter, Del, B, P, C, 0, Ctrl+Z)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
 
-      if (e.key === 'a' || e.key === 'A') {
+      if ((e.ctrlKey || e.metaKey) && (e.key === 'z' || e.key === 'Z')) {
+        e.preventDefault();
+        handleUndo();
+      } else if (e.key === 'b' || e.key === 'B') {
+        setActiveTool('box');
+      } else if (e.key === 'p' || e.key === 'P') {
+        setActiveTool('polygon');
+      } else if (e.key === 'c' || e.key === 'C') {
+        handleCopyPreviousBoxes();
+      } else if (e.key === '0') {
+        handleNoDefect();
+      } else if (e.key === 'a' || e.key === 'A') {
         handleAcceptSuggestion();
       } else if (e.key >= '1' && e.key <= '6') {
         const classNum = parseInt(e.key, 10);
@@ -151,17 +426,18 @@ export const ImageLabelingPage: React.FC = () => {
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [selectedBoxId, data, selectedImageIndex]);
+  }, [selectedBoxId, data, selectedImageIndex, handleUndo]);
 
   // Box actions
   const updateBoxLabel = (boxId: string, newLabel: string) => {
+    setHistory((prev) => [...prev.slice(-20), boxes]);
     setBoxes((prev) =>
       prev.map((b) => {
         if (b.id === boxId) {
           return {
             ...b,
             label: newLabel,
-            tag: `${newLabel} · drawn by you`,
+            tag: `${newLabel} · human`,
             type: 'human',
             color: '#f59e0b',
           };
@@ -174,6 +450,7 @@ export const ImageLabelingPage: React.FC = () => {
   };
 
   const handleDeleteBox = (boxId: string) => {
+    setHistory((prev) => [...prev.slice(-20), boxes]);
     setBoxes((prev) => prev.filter((b) => b.id !== boxId));
     if (selectedBoxId === boxId) {
       setSelectedBoxId('');
@@ -185,10 +462,11 @@ export const ImageLabelingPage: React.FC = () => {
   const handleAcceptSuggestion = () => {
     const suggestion = data?.workspace?.model_suggestions?.[0];
     if (!suggestion) return;
+    setHistory((prev) => [...prev.slice(-20), boxes]);
     const newBox: ImageLabelingBoundingBox = {
       id: `box_${Date.now()}`,
       label: suggestion.label,
-      tag: `${suggestion.label} · accepted AI`,
+      tag: `${suggestion.label} · human`,
       type: 'human',
       x: 320,
       y: 145,
@@ -204,6 +482,7 @@ export const ImageLabelingPage: React.FC = () => {
   };
 
   const handleRejectSuggestion = () => {
+    setHistory((prev) => [...prev.slice(-20), boxes]);
     setBoxes((prev) => prev.filter((b) => b.type !== 'model'));
     setNotification('Model suggestions rejected for this image');
     setTimeout(() => setNotification(null), 2500);
@@ -219,10 +498,10 @@ export const ImageLabelingPage: React.FC = () => {
       setNotification(`Annotations saved for ${data?.workspace?.image_name}. Next image...`);
       setTimeout(() => {
         setNotification(null);
-        setSelectedImageIndex((prev) => (prev + 1) % (data?.workspace?.filmstrip.length || 6));
+        changeImageIndex((prev) => (prev + 1) % (data?.workspace?.filmstrip.length || 6));
       }, 1000);
     } catch (err: any) {
-      setNotification('Error enregistrement: ' + err.message);
+      setNotification('Error saving annotations: ' + err.message);
     }
   };
 
@@ -246,7 +525,7 @@ export const ImageLabelingPage: React.FC = () => {
     setNotification(`Image ${data?.workspace?.image_name} flagged (${flagReason}). Removed from queue.`);
     setTimeout(() => {
       setNotification(null);
-      setSelectedImageIndex((prev) => (prev + 1) % 6);
+      changeImageIndex((prev) => (prev + 1) % 6);
     }, 2000);
   };
 
@@ -760,10 +1039,7 @@ export const ImageLabelingPage: React.FC = () => {
 
             <button
               type="button"
-              onClick={() => {
-                setNotification('Bounding boxes from previous frame copied');
-                setTimeout(() => setNotification(null), 2500);
-              }}
+              onClick={handleCopyPreviousBoxes}
               style={{
                 backgroundColor: 'transparent',
                 border: `1px solid ${C.border}`,
@@ -780,11 +1056,7 @@ export const ImageLabelingPage: React.FC = () => {
 
             <button
               type="button"
-              onClick={() => {
-                setBoxes([]);
-                setNotification('Image marked "No defect · ok"');
-                setTimeout(() => setNotification(null), 2500);
-              }}
+              onClick={handleNoDefect}
               style={{
                 backgroundColor: 'transparent',
                 border: `1px solid ${C.border}`,
@@ -837,10 +1109,7 @@ export const ImageLabelingPage: React.FC = () => {
 
             <button
               type="button"
-              onClick={() => {
-                setNotification('Action cancelled');
-                setTimeout(() => setNotification(null), 2000);
-              }}
+              onClick={handleUndo}
               style={{
                 backgroundColor: 'transparent',
                 border: `1px solid ${C.border}`,
@@ -913,12 +1182,26 @@ export const ImageLabelingPage: React.FC = () => {
 
               {/* Interactive Bounding Boxes Overlay */}
               <svg
+                ref={svgRef}
+                onMouseDown={handleSvgMouseDown}
                 style={{
                   position: 'absolute',
                   inset: 0,
                   width: '100%',
                   height: '100%',
-                  cursor: 'crosshair',
+                  cursor:
+                    dragState?.mode === 'move'
+                      ? 'grabbing'
+                      : dragState?.mode === 'nw' || dragState?.mode === 'se'
+                        ? 'nwse-resize'
+                        : dragState?.mode === 'ne' || dragState?.mode === 'sw'
+                          ? 'nesw-resize'
+                          : dragState?.mode === 'draw'
+                            ? 'crosshair'
+                            : activeTool === 'box'
+                              ? 'crosshair'
+                              : 'default',
+                  userSelect: 'none',
                 }}
               >
                 {boxes.map((box) => {
@@ -927,50 +1210,146 @@ export const ImageLabelingPage: React.FC = () => {
                   const isModel = box.type === 'model';
                   const isDrawing = box.type === 'drawing';
 
+                  const displayTag = isSelected
+                    ? (isModel ? (box.tag || `model ${box.confidence ?? 0.67}`) : 'you · selected')
+                    : (box.tag || `${box.label} · ${isModel ? 'model' : 'human'}`);
+
+                  const tagWidth = Math.max(76, displayTag.length * 6.5 + 16);
+                  const tagY = Math.max(0, box.y - 18);
+
                   return (
-                    <g key={box.id} onClick={() => setSelectedBoxId(box.id)} style={{ cursor: 'pointer' }}>
+                    <g
+                      key={box.id}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setSelectedBoxId(box.id);
+                      }}
+                    >
+                      {/* Main Bounding Box Rectangle */}
                       <rect
                         x={box.x}
                         y={box.y}
                         width={box.width}
                         height={box.height}
-                        fill={isSelected ? 'rgba(245, 158, 11, 0.08)' : 'transparent'}
+                        fill={isSelected ? 'rgba(245, 158, 11, 0.12)' : 'transparent'}
                         stroke={isModel ? '#3b82f6' : '#f59e0b'}
                         strokeWidth={isSelected ? '2' : '1.5'}
                         strokeDasharray={isModel || isDrawing ? '4 4' : 'none'}
+                        style={{ cursor: isSelected ? 'grab' : 'pointer' }}
+                        onMouseDown={(e) => handleBoxMouseDown(e, box.id)}
                       />
 
-                      {/* Tag / Label above box */}
+                      {/* Tag / Label Header above box */}
                       <rect
                         x={box.x}
-                        y={box.y - 18}
-                        width={Math.max(80, box.tag.length * 6.5)}
+                        y={tagY}
+                        width={tagWidth}
                         height="18"
                         fill={isModel ? '#1e3a8a' : '#d97706'}
+                        style={{ cursor: 'grab' }}
+                        onMouseDown={(e) => handleBoxMouseDown(e, box.id)}
                       />
                       <text
-                        x={box.x + 4}
-                        y={box.y - 5}
+                        x={box.x + 5}
+                        y={tagY + 12}
                         fill="#ffffff"
                         fontSize="9"
                         fontFamily="monospace"
                         fontWeight="500"
+                        style={{ pointerEvents: 'none', userSelect: 'none' }}
                       >
-                        {box.tag}
+                        {displayTag}
                       </text>
 
-                      {/* Corner Handles if Selected */}
+                      {/* 4 Interactive Corner Handles if Selected */}
                       {isSelected && (
                         <>
-                          <rect x={box.x - 3} y={box.y - 3} width="6" height="6" fill="#000000" stroke="#f59e0b" strokeWidth="1.5" />
-                          <rect x={box.x + box.width - 3} y={box.y - 3} width="6" height="6" fill="#000000" stroke="#f59e0b" strokeWidth="1.5" />
-                          <rect x={box.x - 3} y={box.y + box.height - 3} width="6" height="6" fill="#000000" stroke="#f59e0b" strokeWidth="1.5" />
-                          <rect x={box.x + box.width - 3} y={box.y + box.height - 3} width="6" height="6" fill="#000000" stroke="#f59e0b" strokeWidth="1.5" />
+                          {/* Top-Left (NW) */}
+                          <rect
+                            x={box.x - 4}
+                            y={box.y - 4}
+                            width="8"
+                            height="8"
+                            fill="#000000"
+                            stroke="#f59e0b"
+                            strokeWidth="1.5"
+                            style={{ cursor: 'nwse-resize' }}
+                            onMouseDown={(e) => handleCornerMouseDown(e, box.id, 'nw')}
+                          />
+                          {/* Top-Right (NE) */}
+                          <rect
+                            x={box.x + box.width - 4}
+                            y={box.y - 4}
+                            width="8"
+                            height="8"
+                            fill="#000000"
+                            stroke="#f59e0b"
+                            strokeWidth="1.5"
+                            style={{ cursor: 'nesw-resize' }}
+                            onMouseDown={(e) => handleCornerMouseDown(e, box.id, 'ne')}
+                          />
+                          {/* Bottom-Left (SW) */}
+                          <rect
+                            x={box.x - 4}
+                            y={box.y + box.height - 4}
+                            width="8"
+                            height="8"
+                            fill="#000000"
+                            stroke="#f59e0b"
+                            strokeWidth="1.5"
+                            style={{ cursor: 'nesw-resize' }}
+                            onMouseDown={(e) => handleCornerMouseDown(e, box.id, 'sw')}
+                          />
+                          {/* Bottom-Right (SE) */}
+                          <rect
+                            x={box.x + box.width - 4}
+                            y={box.y + box.height - 4}
+                            width="8"
+                            height="8"
+                            fill="#000000"
+                            stroke="#f59e0b"
+                            strokeWidth="1.5"
+                            style={{ cursor: 'nwse-resize' }}
+                            onMouseDown={(e) => handleCornerMouseDown(e, box.id, 'se')}
+                          />
                         </>
                       )}
                     </g>
                   );
                 })}
+
+                {/* Active Drawing Box Preview */}
+                {dragState?.mode === 'draw' && dragState.currentDraw && dragState.currentDraw.width > 2 && dragState.currentDraw.height > 2 && (
+                  <g style={{ pointerEvents: 'none' }}>
+                    <rect
+                      x={dragState.currentDraw.x}
+                      y={dragState.currentDraw.y}
+                      width={dragState.currentDraw.width}
+                      height={dragState.currentDraw.height}
+                      fill="rgba(245, 158, 11, 0.12)"
+                      stroke="#f59e0b"
+                      strokeWidth="2"
+                      strokeDasharray="4 4"
+                    />
+                    <rect
+                      x={dragState.currentDraw.x}
+                      y={Math.max(0, dragState.currentDraw.y - 18)}
+                      width={95}
+                      height="18"
+                      fill="#d97706"
+                    />
+                    <text
+                      x={dragState.currentDraw.x + 5}
+                      y={Math.max(0, dragState.currentDraw.y - 18) + 12}
+                      fill="#ffffff"
+                      fontSize="9"
+                      fontFamily="monospace"
+                      fontWeight="500"
+                    >
+                      drawing box...
+                    </text>
+                  </g>
+                )}
               </svg>
 
               {/* Legend inside canvas */}
@@ -1024,7 +1403,7 @@ export const ImageLabelingPage: React.FC = () => {
                 return (
                   <div
                     key={img.id}
-                    onClick={() => setSelectedImageIndex(i)}
+                    onClick={() => changeImageIndex(i)}
                     style={{
                       backgroundColor: '#1b1d22',
                       border: isCurrent ? `2px solid ${C.amber}` : `1px solid ${C.borderLight}`,

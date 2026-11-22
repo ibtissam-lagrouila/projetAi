@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { api } from '../services/api';
+import { filterDatasetsByModality } from '../utils/formatters';
 import { Dataset, ImageProfileResponse, ImageContactSheetItem } from '../types';
 import { RefreshCw, Upload } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
@@ -288,7 +289,8 @@ export const ImageProfilingPage: React.FC = () => {
   const loadDatasets = async () => {
     try {
       setLoading(true);
-      const data = await api.getDatasets();
+      const all = await api.getDatasets();
+      const data = filterDatasetsByModality(all, 'image');
       setDatasets(data);
 
       if (data.length > 0) {
@@ -364,7 +366,8 @@ export const ImageProfilingPage: React.FC = () => {
       const newProfile = await api.uploadImageArchive(file);
       setProfile(newProfile);
       showNotif(`Dataset « ${file.name} » imported and analyzed successfully!`, true);
-      const freshDs = await api.getDatasets();
+      const all = await api.getDatasets();
+      const freshDs = filterDatasetsByModality(all, 'image');
       setDatasets(freshDs);
       setSelectedDatasetId(newProfile.dataset_id);
       localStorage.setItem('datalift_selected_dataset_id', newProfile.dataset_id);
@@ -429,7 +432,7 @@ export const ImageProfilingPage: React.FC = () => {
             }}
           >
             <Upload size={14} />
-            <span>{uploading ? 'Importation…' : "Import an image dataset (.zip)"}</span>
+            <span>{uploading ? 'Importing…' : "Import an image dataset (.zip)"}</span>
           </button>
         </div>
 
@@ -576,7 +579,7 @@ export const ImageProfilingPage: React.FC = () => {
             }}
           >
             <Upload size={14} />
-            <span>{uploading ? 'Importation…' : "Import an image dataset (.zip)"}</span>
+            <span>{uploading ? 'Importing…' : "Import an image dataset (.zip)"}</span>
           </button>
 
           <button

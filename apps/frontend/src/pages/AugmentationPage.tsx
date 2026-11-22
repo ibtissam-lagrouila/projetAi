@@ -12,6 +12,7 @@ import {
   ArrowRight,
 } from 'lucide-react';
 import { api } from '../services/api';
+import { filterDatasetsByModality } from '../utils/formatters';
 import {
   Dataset,
   DatasetVersion,
@@ -102,7 +103,8 @@ export const AugmentationPage: React.FC = () => {
     const fetchDatasets = async () => {
       try {
         setLoading(true);
-        const data = await api.getDatasets();
+        const all = await api.getDatasets();
+        const data = filterDatasetsByModality(all, 'tabular');
         setDatasets(data);
 
         const urlDatasetId = searchParams.get('dataset');
@@ -1600,7 +1602,7 @@ export const AugmentationPage: React.FC = () => {
               <thead>
                 <tr style={{ borderBottom: '1px solid #202026' }}>
                   <th className="font-mono" style={{ padding: '0.75rem 1rem', textAlign: 'left', color: '#71717a', fontWeight: 500, fontSize: '0.68rem' }}>
-                    ORIGINE
+                    ORIGIN
                   </th>
                   {previewColumns.map((col) => (
                     <th key={col} className="font-mono" style={{ padding: '0.75rem 1rem', textAlign: 'left', color: '#71717a', fontWeight: 500, fontSize: '0.68rem' }}>

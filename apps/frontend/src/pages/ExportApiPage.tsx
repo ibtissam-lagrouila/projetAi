@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import { api } from '../services/api';
+import { filterDatasetsByModality } from '../utils/formatters';
 import {
   Dataset,
   ExportApiStateResponse,
@@ -180,7 +181,8 @@ export function ExportApiPage() {
   // Fetch datasets and sync with localStorage / global events
   useEffect(() => {
     api.getDatasets()
-      .then((list) => {
+      .then((all) => {
+        const list = filterDatasetsByModality(all, 'tabular');
         setDatasets(list);
         if (list.length > 0) {
           const stored = localStorage.getItem('datalift_selected_dataset_id');

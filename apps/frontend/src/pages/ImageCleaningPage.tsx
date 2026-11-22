@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { api } from '../services/api';
+import { filterDatasetsByModality } from '../utils/formatters';
 import { Dataset, ImageCleaningRecipeResponse } from '../types';
 import { RefreshCw, AlertCircle } from 'lucide-react';
 
@@ -68,7 +69,7 @@ export const ImageCleaningPage: React.FC = () => {
       const imgList = list.filter(
         d => d.name.includes('defect') || d.name.includes('image') || d.name.endsWith('/')
       );
-      setDatasets(imgList.length > 0 ? imgList : list);
+      setDatasets(filterDatasetsByModality(list, 'image'));
 
       const savedId = localStorage.getItem('datalift_selected_dataset_id');
       const match = (imgList.length > 0 ? imgList : list).find(d => d.id === savedId);

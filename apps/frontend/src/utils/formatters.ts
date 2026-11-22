@@ -77,3 +77,65 @@ export function pluralize(count: number, singular: string, plural?: string): str
   const p = plural || (singular.endsWith('s') ? `${singular}es` : `${singular}s`);
   return count === 1 ? `1 ${singular}` : `${formatNumber(count)} ${p}`;
 }
+
+export type ModalityType = 'tabular' | 'text' | 'image';
+
+/**
+ * Categorizes a dataset into tabular, text, or image modality
+ * based on its name and description.
+ */
+export function getDatasetModality(dataset: { name: string; description?: string | null }): ModalityType {
+  const name = (dataset.name || '').toLowerCase();
+  const desc = (dataset.description || '').toLowerCase();
+
+  // 1. Image criteria
+  if (
+    desc.includes('image') ||
+    desc.includes('vision') ||
+    desc.includes('defect') ||
+    name.includes('image') ||
+    name.includes('defect') ||
+    name.includes('photo') ||
+    name.includes('vision') ||
+    name.includes('chat') ||
+    name.includes('chien') ||
+    name.endsWith('.zip') ||
+    name.endsWith('.tar') ||
+    name.endsWith('.tar.gz') ||
+    name.endsWith('/')
+  ) {
+    return 'image';
+  }
+
+  // 2. Text criteria
+  if (
+    desc.includes('text') ||
+    desc.includes('corpus') ||
+    desc.includes('nlp') ||
+    name.endsWith('.txt') ||
+    name.endsWith('.jsonl') ||
+    name.endsWith('.json') ||
+    name.includes('review') ||
+    name.includes('nlp') ||
+    name.includes('texte') ||
+    name.includes('text') ||
+    name.includes('ticket') ||
+    name.includes('corpus')
+  ) {
+    return 'text';
+  }
+
+  // 3. Tabular criteria (CSV, TSV, tables)
+  return 'tabular';
+}
+
+/**
+ * Filters a list of datasets to strictly match the requested modality.
+ */
+export function filterDatasetsByModality<T extends { name: string; description?: string | null }>(
+  datasets: T[],
+  modality: ModalityType
+): T[] {
+  return datasets.filter((d) => getDatasetModality(d) === modality);
+}
+

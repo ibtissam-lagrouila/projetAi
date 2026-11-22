@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../services/api';
+import { filterDatasetsByModality } from '../utils/formatters';
 import { Dataset, TextAugmentationRecipeResponse, TextAugmentationComparisonResponse } from '../types';
 import { RefreshCw, AlertCircle, Lock, Check } from 'lucide-react';
 
@@ -79,7 +80,7 @@ export const TextAugmentationPage: React.FC = () => {
       const textList = list.filter(
         d => d.name.endsWith('.txt') || d.name.endsWith('.jsonl') || d.name.includes('nlp') || d.name.includes('text')
       );
-      setDatasets(textList.length > 0 ? textList : list);
+      setDatasets(filterDatasetsByModality(list, 'text'));
 
       const savedId = localStorage.getItem('datalift_selected_dataset_id');
       const match = (textList.length > 0 ? textList : list).find(d => d.id === savedId);

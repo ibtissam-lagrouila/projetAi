@@ -12,6 +12,7 @@ import {
   Zap,
 } from 'lucide-react';
 import { api } from '../services/api';
+import { filterDatasetsByModality } from '../utils/formatters';
 import {
   Dataset,
   DriftStateResponse,
@@ -60,7 +61,8 @@ export const DriftPage: React.FC = () => {
   // Initial datasets load
   useEffect(() => {
     api.getDatasets()
-      .then((data) => {
+      .then((all) => {
+        const data = filterDatasetsByModality(all, 'tabular');
         setDatasets(data);
         if (data.length > 0) {
           const stored = localStorage.getItem('datalift_selected_dataset_id');

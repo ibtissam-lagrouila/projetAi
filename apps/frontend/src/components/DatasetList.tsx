@@ -23,7 +23,7 @@ export const DatasetList: React.FC<DatasetListProps> = ({
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
           <Database size={16} color="var(--amber)" />
           <h2 className="font-serif" style={{ fontSize: '1.2rem', fontWeight: 500 }}>
-            Datasets IA ({datasets.length})
+            AI Datasets ({datasets.length})
           </h2>
         </div>
         <button
@@ -32,7 +32,7 @@ export const DatasetList: React.FC<DatasetListProps> = ({
           onClick={() => onOpenUpload()}
         >
           <Plus size={14} />
-          Nouveau Dataset
+          New Dataset
         </button>
       </div>
 

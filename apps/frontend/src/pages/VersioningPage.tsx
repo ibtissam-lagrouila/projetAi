@@ -22,6 +22,7 @@ import {
   Sparkles,
 } from 'lucide-react';
 import { api } from '../services/api';
+import { filterDatasetsByModality } from '../utils/formatters';
 import {
   Dataset,
   LineageGraphResponse,
@@ -106,7 +107,8 @@ export const VersioningPage: React.FC = () => {
   useEffect(() => {
     const fetchAllDatasets = async () => {
       try {
-        const list = await api.getDatasets();
+        const all = await api.getDatasets();
+        const list = filterDatasetsByModality(all, 'tabular');
         setDatasets(list);
 
         if (list.length > 0) {

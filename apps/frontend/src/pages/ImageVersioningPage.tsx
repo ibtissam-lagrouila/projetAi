@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../services/api';
+import { filterDatasetsByModality } from '../utils/formatters';
 import { Dataset, ImageVersioningDataResponse, ImageVersioningDiffItem } from '../types';
 import { RefreshCw, AlertCircle, Check, Copy, Download, X } from 'lucide-react';
 
@@ -74,7 +75,7 @@ export const ImageVersioningPage: React.FC = () => {
         );
       });
       const candidates = imgSets.length > 0 ? imgSets : all;
-      setDatasets(candidates);
+      setDatasets(filterDatasetsByModality(all, 'image'));
 
       if (candidates.length > 0 && !selectedDatasetId) {
         const preferred =

@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Check, AlertTriangle, X } from 'lucide-react';
 import { api } from '../services/api';
+import { filterDatasetsByModality } from '../utils/formatters';
 import { Dataset, TextTrainingDataResponse } from '../types';
 
 const C = {
@@ -66,7 +67,7 @@ export const TextTrainingPage: React.FC = () => {
           );
         });
         const usableList = textDatasets.length > 0 ? textDatasets : list;
-        setDatasets(usableList);
+        setDatasets(filterDatasetsByModality(list, 'text'));
 
         const preferred = usableList.find(d => d.name.toLowerCase().includes('support_tickets')) || usableList[0];
         if (preferred) {

@@ -11,6 +11,7 @@ import {
   X,
 } from 'lucide-react';
 import { api } from '../services/api';
+import { filterDatasetsByModality } from '../utils/formatters';
 import {
   Dataset,
   LabelingStatusResponse,
@@ -66,7 +67,8 @@ export const LabelingPage: React.FC = () => {
   // 1. Load initial datasets
   useEffect(() => {
     api.getDatasets()
-      .then((data) => {
+      .then((all) => {
+        const data = filterDatasetsByModality(all, 'tabular');
         setDatasets(data);
         if (data.length > 0) {
           const defaultDs = data.find((d) => d.name === 'data' || d.name === 'customer_churn.csv') || data[0];

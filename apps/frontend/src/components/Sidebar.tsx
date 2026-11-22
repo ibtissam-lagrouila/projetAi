@@ -3,6 +3,7 @@ import { NavLink } from 'react-router-dom';
 import { ChevronDown } from 'lucide-react';
 import { api } from '../services/api';
 import { Dataset } from '../types';
+import { filterDatasetsByModality, ModalityType } from '../utils/formatters';
 
 interface WorkflowStep {
   number: string;
@@ -23,29 +24,46 @@ const WORKFLOW_STEPS: WorkflowStep[] = [
 ];
 
 export const Sidebar: React.FC = () => {
-  const [datasets, setDatasets] = useState<Dataset[]>([]);
+  const [allDatasets, setAllDatasets] = useState<Dataset[]>([]);
+  const [modality, setModality] = useState<ModalityType>(() => (localStorage.getItem('datalift_modality') as ModalityType) || 'tabular');
   const [selectedId, setSelectedId] = useState<string>(() => localStorage.getItem('datalift_selected_dataset_id') || '');
 
   useEffect(() => {
     api.getDatasets().then(list => {
-      setDatasets(list);
-      if (list.length > 0) {
-        const stored = localStorage.getItem('datalift_selected_dataset_id');
-        const match = list.find(d => d.id === stored);
-        const current = match ? match.id : list[0].id;
-        setSelectedId(current);
-        localStorage.setItem('datalift_selected_dataset_id', current);
-      }
+      setAllDatasets(list);
     }).catch(() => {});
 
+    const onModalityChange = (e: any) => {
+      if (e.detail && typeof e.detail === 'string') {
+        setModality(e.detail as ModalityType);
+      }
+    };
     const onDatasetChange = (e: any) => {
       if (e.detail && typeof e.detail === 'string') {
         setSelectedId(e.detail);
       }
     };
+    window.addEventListener('datalift:modality-changed', onModalityChange);
     window.addEventListener('datalift:dataset-changed', onDatasetChange);
-    return () => window.removeEventListener('datalift:dataset-changed', onDatasetChange);
+    return () => {
+      window.removeEventListener('datalift:modality-changed', onModalityChange);
+      window.removeEventListener('datalift:dataset-changed', onDatasetChange);
+    };
   }, []);
+
+  const datasets = React.useMemo(() => {
+    return filterDatasetsByModality(allDatasets, modality);
+  }, [allDatasets, modality]);
+
+  useEffect(() => {
+    if (datasets.length > 0) {
+      const match = datasets.find(d => d.id === selectedId);
+      if (!match) {
+        setSelectedId(datasets[0].id);
+        localStorage.setItem('datalift_selected_dataset_id', datasets[0].id);
+      }
+    }
+  }, [datasets, selectedId]);
 
   const handleSelect = (id: string) => {
     setSelectedId(id);

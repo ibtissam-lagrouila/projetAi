@@ -11,8 +11,8 @@ router = APIRouter()
 @router.get("/{dataset_id}/data", response_model=Dict[str, Any])
 def get_text_labeling_data(
     dataset_id: str,
-    queue: str = Query("unlabeled", description="ID de la file d'attente"),
-    index: int = Query(0, ge=0, description="Index de l'élément à annoter"),
+    queue: str = Query("unlabeled", description="Queue ID"),
+    index: int = Query(0, ge=0, description="Index of item to annotate"),
     db: Session = Depends(get_db),
 ) -> Any:
     return text_labeling_service.get_labeling_data(

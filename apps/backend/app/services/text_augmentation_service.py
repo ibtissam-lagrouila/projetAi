@@ -29,7 +29,7 @@ class TextAugmentationService:
         """Provides the text augmentation recipe, split config, target balance, techniques, preview, and guardrails."""
         dataset = db.query(Dataset).filter(Dataset.id == dataset_id).first()
         if not dataset:
-            raise HTTPException(status_code=404, detail="Dataset non trouvé")
+            raise HTTPException(status_code=404, detail="Dataset not found")
 
         if version_hash:
             version = (
@@ -195,11 +195,11 @@ class TextAugmentationService:
                     "header": "01 · PARAPHRASE WITH AN LLM",
                     "original_card": {
                         "label": "ORIGINAL · #10482 · BILLING · FRENCH",
-                        "text": "Bonjour, je n'ai toujours pas reçu ma facture du mois dernier malgré ma relance.",
+                        "text": "Hello, I still have not received my bill from last month despite my follow-up.",
                     },
                     "variants": [
-                        {"type": "PARAPHRASE 1", "text": "Bonjour, je souhaite obtenir ma facture du mois précédent qui ne m'est pas encore parvenue."},
-                        {"type": "PARAPHRASE 2", "text": "Bonjour, pourriez-vous me renvoyer la facture du mois passé svp ? Je l'attends toujours."},
+                        {"type": "PARAPHRASE 1", "text": "Hello, I would like to get my bill from the previous month which has not'est pas encore parvenue."},
+                        {"type": "PARAPHRASE 2", "text": "Hello, could you please resend my bill from last month? Je l'attends toujours."},
                     ],
                     "footnote": "Preserves label semantic context while synthesizing natural lexical variations.",
                 },
@@ -207,10 +207,10 @@ class TextAugmentationService:
                     "header": "02 · BACK-TRANSLATION",
                     "original_card": {
                         "label": "ORIGINAL · #31907 · REFUND · FRENCH",
-                        "text": "Est-il possible d'annuler mon retour et d'obtenir un remboursement sur ma carte bancaire ?",
+                        "text": "Is it possible to cancel my return and get a refund on my credit card?",
                     },
                     "variants": [
-                        {"type": "FR → EN → FR", "text": "Puis-je annuler mon retour et recevoir un remboursement directement sur ma carte de crédit ?"},
+                        {"type": "FR → EN → FR", "text": "Can I cancel my return and receive a refund directly to my card ?"},
                     ],
                     "footnote": "Round-trip translation introduces syntactic variation while retaining original intent.",
                 },
@@ -218,10 +218,10 @@ class TextAugmentationService:
                     "header": "04 · WRITE NEW TICKETS FOR RARE LABELS",
                     "original_card": {
                         "label": "FEW-SHOT SEED · COMPLAINT",
-                        "text": "Service client injoignable après 5 tentatives et prélèvement indu sur mon compte.",
+                        "text": "Customer service unreachable after 5 attempts and unauthorized charge on my account.",
                     },
                     "variants": [
-                        {"type": "SYNTHESIZED TICKET", "text": "Impossible de contacter le support téléphonique, plusieurs prélèvements sans justification !"},
+                        {"type": "SYNTHESIZED TICKET", "text": "Unable to reach phone support, unauthorized charges onns justification !"},
                     ],
                     "footnote": "Generated from scratch using 20 real few-shot anchors for severe under-represented classes.",
                 },
@@ -229,11 +229,11 @@ class TextAugmentationService:
                     "header": "05 · REALISTIC TYPOS AND CASING",
                     "original_card": {
                         "label": "ORIGINAL · #22104 · ACCOUNT · FRENCH",
-                        "text": "Je veux changer mon mot de passe mais le lien reçu par email a déjà expiré.",
+                        "text": "I want to change my password but the email link has already expired.",
                     },
                     "variants": [
-                        {"type": "NO ACCENTS / LOWER", "text": "je veux changer mon mot de passe mais le lien recu par email a deja expire"},
-                        {"type": "SMS ABBREVIATIONS", "text": "Je veu changer mon mdp mais le lien reçu par mail a deja expire"},
+                        {"type": "NO ACCENTS / LOWER", "text": "i want to change my password but the link received by email a deja expire"},
+                        {"type": "SMS ABBREVIATIONS", "text": "I want to change my pwd but the link recvd by email already expre"},
                     ],
                     "footnote": "Simulates real customer typing habits on mobile keyboard without altering document semantics.",
                 },
@@ -294,7 +294,7 @@ class TextAugmentationService:
         val_count = max(0, total_docs - train_count - test_count)
 
         # Detect real text column and sample text
-        sample_text = "Franchement, le colis dépasse mes attentes. Merci infiniment pour la livraison rapide et soignée."
+        sample_text = "Honestly, the package exceeds my expectations. Thanks a lot for the quick delivery and neat packaging."
         group_col = "document_id"
         stratify_col = "label"
 
@@ -515,8 +515,8 @@ class TextAugmentationService:
                         "text": sample_text,
                     },
                     "variants": [
-                        {"type": "REWORDED", "text": "Formulation alternative avec variation du vocabulaire et du style."},
-                        {"type": "CODE-SWITCHING", "text": "Version adaptée avec alternance d'expressions naturelles."},
+                        {"type": "REWORDED", "text": "Alternative phrasing with vocabulary and style variation."},
+                        {"type": "CODE-SWITCHING", "text": "Adapted version with natural expression alternation."},
                     ],
                     "footnote": "Variants generated according to semantic structure and language detected.",
                 },
@@ -527,7 +527,7 @@ class TextAugmentationService:
                         "text": sample_text,
                     },
                     "variants": [
-                        {"type": "PARAPHRASE 1", "text": "Reformulation préservant fidèlement l'intention sans ajout factuel."},
+                        {"type": "PARAPHRASE 1", "text": "Paraphrase faithfully preserving intent without factual additions."},
                     ],
                     "footnote": "Preserves label semantic context while synthesizing natural lexical variations.",
                 },
@@ -582,7 +582,7 @@ class TextAugmentationService:
         """Simulates or runs quick model training comparison on v2 vs v3 evaluated on test set."""
         dataset = db.query(Dataset).filter(Dataset.id == dataset_id).first()
         if not dataset:
-            raise HTTPException(status_code=404, detail="Dataset non trouvé")
+            raise HTTPException(status_code=404, detail="Dataset not found")
 
         return {
             "metric": "Macro F1 across 7 labels",
@@ -598,7 +598,7 @@ class TextAugmentationService:
                 "complaint": {"without": 0.54, "with": 0.71},
                 "other": {"without": 0.48, "with": 0.68},
             },
-            "message": "Comparaison terminée : amélioration de +0.09 sur le Macro F1 du jeu de test.",
+            "message": "Comparison complete: +0.09 improvement on test set Macro F1.",
         }
 
     def save_v3(
@@ -611,7 +611,7 @@ class TextAugmentationService:
         t0 = time.time()
         dataset = db.query(Dataset).filter(Dataset.id == dataset_id).first()
         if not dataset:
-            raise HTTPException(status_code=404, detail="Dataset non trouvé")
+            raise HTTPException(status_code=404, detail="Dataset not found")
 
         version = (
             db.query(DatasetVersion)

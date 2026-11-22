@@ -29,7 +29,7 @@ class TextLabelingService:
             .all()
         )
         if not versions:
-            raise HTTPException(status_code=404, detail="Aucune version trouvée pour ce dataset")
+            raise HTTPException(status_code=404, detail="No version found for this dataset")
 
         name = dataset.name.lower()
         if "ticket" in name or "support" in name:
@@ -77,7 +77,7 @@ class TextLabelingService:
                         {"label": "refund", "confidence": 0.14},
                     ],
                     "similar_tickets": [
-                        {"text": "prélévé deux fois ce mois", "label": "BILLING"},
+                        {"text": "charged twice this month", "label": "BILLING"},
                         {"text": "bghit nrj3 flous dyali", "label": "REFUND"},
                         {"text": "facture ghalta f lmontant", "label": "BILLING"},
                     ],
@@ -93,10 +93,10 @@ class TextLabelingService:
                     "ticket_id": "#52019",
                     "language": "FR",
                     "meta": "web_form · 02 Nov · part 1 of 1",
-                    "text_raw": "Bonjour, mon colis n'est toujours pas arrivé au point relais depuis lundi [DATE].",
+                    "text_raw": "Hello, my package has still not arrived at the pickup point since Monday [DATE].",
                     "tokens": [
                         {"text": "Bonjour, mon ", "highlight": False},
-                        {"text": "colis n'est toujours pas arrivé", "highlight": True},
+                        {"text": "package still not arrived", "highlight": True},
                         {"text": " au point relais depuis lundi [DATE].", "highlight": False},
                     ],
                     "meaning_en": '"Hello, my parcel still hasn\'t arrived at the relay point since Monday."',
@@ -116,8 +116,8 @@ class TextLabelingService:
                     ],
                     "similar_tickets": [
                         {"text": "colis en retard de 4 jours", "label": "DELIVERY"},
-                        {"text": "relais colis fermé sans avis", "label": "DELIVERY"},
-                        {"text": "livraison jamais reçue", "label": "DELIVERY"},
+                        {"text": "pickup location closed without notice", "label": "DELIVERY"},
+                        {"text": "delivery never received", "label": "DELIVERY"},
                     ],
                     "definition_title": "DEFINITION · DELIVERY VS COMPLAINT",
                     "definition_text": "delivery: question about tracking, carrier or delay. complaint: customer expressing anger or dissatisfaction.",
@@ -133,12 +133,12 @@ class TextLabelingService:
                     "ticket_id": "#38102",
                     "language": "FR",
                     "meta": "chat · 03 Nov · part 1 of 1",
-                    "text_raw": "J'ai été débité d'un abonnement que je n'ai jamais souscrit, rendez-moi mes fonds.",
+                    "text_raw": "I was charged for a subscription I never signed up for, refund my money.",
                     "tokens": [
-                        {"text": "J'ai été ", "highlight": False},
-                        {"text": "débité d'un abonnement", "highlight": True},
+                        {"text": "I was ", "highlight": False},
+                        {"text": "charged for a subscription", "highlight": True},
                         {"text": " que je n'ai jamais souscrit, ", "highlight": False},
-                        {"text": "rendez-moi mes fonds", "highlight": True},
+                        {"text": "refund my money", "highlight": True},
                         {"text": ".", "highlight": False},
                     ],
                     "meaning_en": '"I was charged for a subscription I never ordered, refund my money."',
@@ -157,8 +157,8 @@ class TextLabelingService:
                         {"label": "billing", "confidence": 0.05},
                     ],
                     "similar_tickets": [
-                        {"text": "remboursement demandé après prélèvement", "label": "REFUND"},
-                        {"text": "je veux être remboursé immédiatement", "label": "REFUND"},
+                        {"text": "refund requested after debit", "label": "REFUND"},
+                        {"text": "I want to be refunded immediately", "label": "REFUND"},
                     ],
                     "definition_title": "DEFINITION · BILLING VS REFUND",
                     "definition_text": "billing: invoice issues. refund: explicit money-back demand.",
@@ -374,9 +374,9 @@ class TextLabelingService:
         total_rows = latest_version.row_count or 100
         classes = ["positive", "neutral", "negative"]
         sample_texts = [
-            "Le service client a répondu rapidement à ma demande concernant la commande.",
-            "Impossible d'accéder à mon compte après plusieurs tentatives aujourd'hui.",
-            "Produit reçu en bon état mais avec deux jours de retard sur la date prévue.",
+            "Customer service responded quickly to my inquiry regarding the order.",
+            "Unable to access my account after several attempts today.",
+            "Product received in good condition but two days later than scheduled.",
         ]
 
         storage_path = getattr(latest_version, "storage_path", None)
@@ -556,7 +556,7 @@ class TextLabelingService:
         ticket_id = payload.get("ticket_id", "#52018")
         return {
             "status": "ok",
-            "message": f"Label '{chosen_label}' enregistré pour le ticket {ticket_id}",
+            "message": f"Label '{chosen_label}' saved for ticket {ticket_id}",
             "ticket_id": ticket_id,
             "chosen_label": chosen_label,
             "next_index": payload.get("next_index", 1),
@@ -566,7 +566,7 @@ class TextLabelingService:
         target_version = payload.get("target_version", "v4")
         return {
             "status": "ok",
-            "message": f"Version {target_version} créée avec succès et marquée comme BASELINE",
+            "message": f"Version {target_version} created successfully and marked as BASELINE",
             "version": target_version,
             "version_hash": f"{target_version}_{int(time.time() * 1000)}",
         }

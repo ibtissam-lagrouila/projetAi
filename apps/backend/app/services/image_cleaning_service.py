@@ -130,7 +130,7 @@ class ImageCleaningService:
     ) -> Dict[str, Any]:
         dataset = db.query(Dataset).filter(Dataset.id == dataset_id).first()
         if not dataset:
-            raise HTTPException(status_code=404, detail="Dataset non trouvé")
+            raise HTTPException(status_code=404, detail="Dataset not found")
 
         if version_hash:
             version = (
@@ -516,7 +516,7 @@ class ImageCleaningService:
         """Runs the recipe on a subset of up to 500 images without persisting."""
         dataset = db.query(Dataset).filter(Dataset.id == dataset_id).first()
         if not dataset:
-            raise HTTPException(status_code=404, detail="Dataset non trouvé")
+            raise HTTPException(status_code=404, detail="Dataset not found")
 
         return {
             "success": True,
@@ -525,7 +525,7 @@ class ImageCleaningService:
             "images_fixed": 418,
             "images_removed": 642,
             "estimated_health_score": 83,
-            "message": "Dry run terminé avec succès sur 500 images. Aucun fichier n'a été modifié."
+            "message": "Dry run completed successfully on 500 images. No file was modified."
         }
 
     def apply_cleaning_recipe(
@@ -538,7 +538,7 @@ class ImageCleaningService:
         t0 = time.time()
         dataset = db.query(Dataset).filter(Dataset.id == dataset_id).first()
         if not dataset:
-            raise HTTPException(status_code=404, detail="Dataset non trouvé")
+            raise HTTPException(status_code=404, detail="Dataset not found")
 
         version = (
             db.query(DatasetVersion)

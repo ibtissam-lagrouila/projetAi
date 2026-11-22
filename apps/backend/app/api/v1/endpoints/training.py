@@ -75,12 +75,12 @@ def stop_training_run(
     """Stops an active training run."""
     run = db.query(TrainingRun).filter(TrainingRun.id == run_id).first()
     if not run:
-        raise HTTPException(status_code=404, detail="Exécution introuvable.")
+        raise HTTPException(status_code=404, detail="Run not found.")
     if run.status == "running":
         run.status = "done"
         run.tag = "candidate"
         db.commit()
-    return {"success": True, "message": f"Exécution {run.run_name} arrêtée avec succès."}
+    return {"success": True, "message": f"Run {run.run_name} stopped successfully."}
 
 
 @router.post("/runs/{run_id}/evaluate-test")
@@ -100,7 +100,7 @@ def promote_run_to_production(
     """Promotes a candidate run to production, archiving previous production run."""
     run = db.query(TrainingRun).filter(TrainingRun.id == run_id).first()
     if not run:
-        raise HTTPException(status_code=404, detail="Exécution introuvable.")
+        raise HTTPException(status_code=404, detail="Run not found.")
 
     # Archive existing production runs on this dataset
     db.query(TrainingRun).filter(
@@ -110,7 +110,7 @@ def promote_run_to_production(
 
     run.tag = "production"
     db.commit()
-    return {"success": True, "message": f"Modèle {run.run_name} promu en production."}
+    return {"success": True, "message": f"Model {run.run_name} promoted to production."}
 
 
 @router.get("/{dataset_id}/compare", response_model=CompareResponse)

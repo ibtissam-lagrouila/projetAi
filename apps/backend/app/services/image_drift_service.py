@@ -49,7 +49,7 @@ class ImageDriftService:
     ) -> Dict[str, Any]:
         dataset = self._find_dataset(dataset_id, db)
         if not dataset:
-            raise HTTPException(status_code=404, detail="Dataset introuvable")
+            raise HTTPException(status_code=404, detail="Dataset not found")
 
         versions = (
             db.query(DatasetVersion)
@@ -58,7 +58,7 @@ class ImageDriftService:
             .all()
         )
         if not versions:
-            raise HTTPException(status_code=404, detail="Aucune version trouvée pour ce dataset")
+            raise HTTPException(status_code=404, detail="No version found for this dataset")
 
         name = dataset.name.lower()
         if "defect" in name or "product" in name:
@@ -769,20 +769,20 @@ class ImageDriftService:
 
     def save_settings(self, dataset_id: str, payload: Dict[str, Any], db: Session) -> Dict[str, Any]:
         logger.info(f"Saved image drift settings for {dataset_id}: {payload}")
-        return {"status": "success", "message": "Paramètres de dérive d'image enregistrés."}
+        return {"status": "success", "message": "Image drift settings saved."}
 
     def run_check(self, dataset_id: str, db: Session) -> Dict[str, Any]:
         return {
             "status": "success",
             "drift_score": "0.26",
             "status_label": "DRIFT",
-            "message": "Vérification de dérive image terminée : 2 caméras en dérive détectées."
+            "message": "Image drift check complete: 2 drifting cameras detected."
         }
 
     def adopt_reference(self, dataset_id: str, payload: Dict[str, Any], db: Session) -> Dict[str, Any]:
         return {
             "status": "success",
-            "message": "La caméra cam 6 a été adoptée comme nouvelle référence."
+            "message": "Camera cam 6 adopted as new reference."
         }
 
     def send_to_07(self, dataset_id: str, payload: Dict[str, Any], db: Session) -> Dict[str, Any]:
@@ -790,7 +790,7 @@ class ImageDriftService:
         return {
             "status": "success",
             "count": frames_count,
-            "message": f"{frames_count} images envoyées vers 07 Active learning."
+            "message": f"{frames_count} images sent to 07 Active learning."
         }
 
     def report_to_line(self, dataset_id: str, payload: Dict[str, Any], db: Session) -> Dict[str, Any]:
@@ -798,7 +798,7 @@ class ImageDriftService:
         return {
             "status": "success",
             "camera": camera,
-            "message": f"Rapport d'incident envoyé à l'équipe maintenance pour la {camera}."
+            "message": f"Incident report sent to maintenance team for {camera}."
         }
 
 

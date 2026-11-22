@@ -32,7 +32,7 @@ class TextTrainingService:
             .all()
         )
         if not versions:
-            raise HTTPException(status_code=404, detail="Aucune version trouvée pour ce dataset")
+            raise HTTPException(status_code=404, detail="No version found for this dataset")
 
         name = dataset.name.lower()
         if "ticket" in name or "support" in name:
@@ -253,7 +253,7 @@ class TextTrainingService:
                         "ticket_id": "#55230",
                         "language": "FR",
                         "tokens": [
-                            {"text": "Trois semaines sans nouvelles de ", "highlight": False},
+                            {"text": "Three weeks without news from ", "highlight": False},
                             {"text": "mon colis", "highlight": True},
                             {"text": ", c'est ", "highlight": False},
                             {"text": "inadmissible", "highlight": True},
@@ -323,9 +323,9 @@ class TextTrainingService:
         total_rows = latest_version.row_count or 100
         classes = ["positive", "neutral", "negative"]
         sample_texts = [
-            "Le service client a répondu rapidement à ma demande concernant la commande.",
-            "Impossible d'accéder à mon compte après plusieurs tentatives aujourd'hui.",
-            "Produit reçu en bon état mais avec deux jours de retard sur la date prévue.",
+            "Customer service responded quickly to my inquiry regarding the order.",
+            "Unable to access my account after several attempts today.",
+            "Product received in good condition but two days later than scheduled.",
         ]
 
         storage_path = getattr(latest_version, "storage_path", None)
@@ -589,14 +589,14 @@ class TextTrainingService:
     def start_run(self, dataset_id: str, payload: Dict[str, Any], db: Session) -> Dict[str, Any]:
         return {
             "status": "ok",
-            "message": f"Run lancé avec succès pour {payload.get('model_type', 'XLM-R')}",
+            "message": f"Run launched successfully for {payload.get('model_type', 'XLM-R')}",
             "run_id": f"run_{int(time.time())}",
         }
 
     def promote_candidate(self, dataset_id: str, payload: Dict[str, Any], db: Session) -> Dict[str, Any]:
         return {
             "status": "ok",
-            "message": "Modèle candidat promu en production avec succès",
+            "message": "Candidate model promoted to production successfully",
             "promoted_model": payload.get("model_id", "ticket-cls-v4"),
         }
 

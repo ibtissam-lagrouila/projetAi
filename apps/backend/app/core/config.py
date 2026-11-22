@@ -9,8 +9,8 @@ class Settings(BaseSettings):
     API_V1_STR: str = "/api/v1"
     
     # Database configuration:
-    # Par défaut, SQLite pour fonctionner immédiatement en local sans Docker ni serveur externe.
-    # Pour PostgreSQL, définir DATABASE_URL ou les variables POSTGRES_* dans .env
+    # Defaults to SQLite for local development out of the box without Docker or external server.
+    # For PostgreSQL, define DATABASE_URL or POSTGRES_* environment variables in .env
     DATABASE_URL: Optional[str] = None
     POSTGRES_SERVER: Optional[str] = None
     POSTGRES_USER: Optional[str] = None
@@ -38,7 +38,7 @@ class Settings(BaseSettings):
                 f"postgresql://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}@"
                 f"{self.POSTGRES_SERVER}:{self.POSTGRES_PORT}/{self.POSTGRES_DB}"
             )
-        # SQLite zero-config par défaut
+        # SQLite zero-config by default
         return f"sqlite:///{self.BASE_DIR / 'datalift.db'}"
 
 

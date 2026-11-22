@@ -219,7 +219,7 @@ export function ExportApiPage() {
       .catch((err) => {
         console.error('Failed to load Export/API state', err);
         setLoading(false);
-        showNotif('Erreur de chargement de la page Export / API', false);
+        showNotif('Error loading Export / API page', false);
       });
   }, [selectedId, showNotif]);
 
@@ -247,7 +247,7 @@ export function ExportApiPage() {
         const updated = await api.updateExportSettings(selectedId, patch);
         setState(updated);
       } catch (err) {
-        showNotif('Erreur de mise à jour des paramètres', false);
+        showNotif('Error updating settings', false);
       }
     },
     [selectedId, showNotif]
@@ -260,15 +260,15 @@ export function ExportApiPage() {
       const res = await api.deployToStaging(selectedId);
       showNotif(res.message, true);
     } catch {
-      showNotif('Déploiement vers staging échoué', false);
+      showNotif('Staging deployment failed', false);
     } finally {
       setIsDeploying(false);
     }
   }, [selectedId, isDeploying, showNotif]);
 
   const handleCopy = useCallback(
-    (text: string, label = 'Copié') => {
-      navigator.clipboard.writeText(text).then(() => showNotif(`${label} dans le presse-papiers`));
+    (text: string, label = 'Copied') => {
+      navigator.clipboard.writeText(text).then(() => showNotif(`${label} to clipboard`));
     },
     [showNotif]
   );
@@ -282,7 +282,7 @@ export function ExportApiPage() {
     return (
       <div style={{ ...styles.page, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         <div style={{ color: C.amber, fontFamily: 'monospace', fontSize: 13, letterSpacing: 1 }}>
-          CHARGEMENT DE LA PAGE EXPORT / API…
+          LOADING EXPORT / API PAGE…
         </div>
       </div>
     );
@@ -291,7 +291,7 @@ export function ExportApiPage() {
   if (!state) {
     return (
       <div style={{ ...styles.page, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <div style={{ color: C.muted }}>Sélectionnez un dataset pour afficher les options d'export et d'API.</div>
+        <div style={{ color: C.muted }}>Select a dataset to view export and API options.</div>
       </div>
     );
   }
@@ -343,7 +343,7 @@ export function ExportApiPage() {
             style={{ ...styles.card, padding: 28, maxWidth: 480, width: '90%', background: '#121316' }}
           >
             <div style={{ fontFamily: 'Georgia, serif', fontStyle: 'italic', fontSize: 20, marginBottom: 16 }}>
-              Historique des versions
+              Version history
             </div>
             {state.version_traffic.map((row) => (
               <div
@@ -369,7 +369,7 @@ export function ExportApiPage() {
               </div>
             ))}
             <button onClick={() => setShowVersionHistory(false)} style={{ ...styles.btnDark, marginTop: 18 }}>
-              Fermer
+              Close
             </button>
           </div>
         </div>
@@ -661,7 +661,7 @@ export function ExportApiPage() {
               <div style={{ padding: '10px 14px', display: 'flex', gap: 8 }}>
                 <button
                   style={styles.btnAmber}
-                  onClick={() => showNotif(`Téléchargement de ${h.dataset_name}@${curVer?.version_label}`)}
+                  onClick={() => showNotif(`Downloading ${h.dataset_name}@${curVer?.version_label}`)}
                 >
                   Download {h.dataset_name}@{curVer?.version_label}
                 </button>
@@ -895,7 +895,7 @@ export function ExportApiPage() {
           <button style={styles.btnDark} onClick={() => handleCopy(state.endpoint_url, 'URL')}>
             Copy
           </button>
-          <button style={styles.btnDark} onClick={() => showNotif('Spécification OpenAPI exportée')}>
+          <button style={styles.btnDark} onClick={() => showNotif('OpenAPI specification exported')}>
             OpenAPI spec
           </button>
           <button style={styles.btnDark} onClick={() => showNotif('Ouverture Swagger UI')}>
@@ -967,7 +967,7 @@ export function ExportApiPage() {
             <div style={{ ...styles.card, padding: 18, marginBottom: 16 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
                 <div style={{ fontFamily: 'Georgia, serif', fontStyle: 'italic', fontSize: 17 }}>API keys</div>
-                <button style={{ ...styles.btnDark, padding: '4px 10px', fontSize: 11 }} onClick={() => showNotif('Nouvelle clé créée')}>
+                <button style={{ ...styles.btnDark, padding: '4px 10px', fontSize: 11 }} onClick={() => showNotif('New key created')}>
                   Create key
                 </button>
               </div>
@@ -1050,7 +1050,7 @@ export function ExportApiPage() {
                       cursor: 'pointer',
                       fontSize: 9,
                     }}
-                    onClick={() => showNotif(`Webhook ${wh.event_name} basculé`)}
+                    onClick={() => showNotif(`Webhook ${wh.event_name} toggled`)}
                   >
                     {wh.enabled ? 'ON' : 'OFF'}
                   </span>

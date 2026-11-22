@@ -50,21 +50,21 @@ AUGMENTATION_METADATA_COLS = ["split", "is_synthetic", "origin", "parent_ids"]
 
 
 class AugmentationService:
-    """Service d'Augmentation de données pour l'étape 03 :
-    - Découpage stratifié / groupé Train / Val / Test (seul le Train est augmenté).
-    - Équilibrage de la cible avec plafond de 50% de données synthétiques par classe.
-    - SMOTE-NC déterministe avec traçabilité complète des parents (parent_ids).
-    - Traitement explicite et robuste des dates.
-    - Sous-échantillonnage aléatoire reproductible de la classe majoritaire.
-    - Bruit léger gaussien sur colonnes numériques des lignes générées avec bornage strict.
-    - Calcul de poids de classes pour l'étape Training.
-    - Contrôle exhaustif des 6 Guardrails réels avant enregistrement.
-    - Versioning immuable avec hash logique déterministe.
+    """Data Augmentation service for step 03:
+    - Stratified / grouped Train / Val / Test split (only Train is augmented).
+    - Target balancing with a 50% cap on synthetic data per class.
+    - Deterministic SMOTE-NC with full parent traceability (parent_ids).
+    - Explicit and robust date handling.
+    - Reproducible random undersampling of the majority class.
+    - Light Gaussian noise on numeric columns of generated rows with strict bounding.
+    - Class weight computation for the Training step.
+    - Exhaustive validation of all 6 real guardrails before saving.
+    - Immutable versioning with deterministic logical hash.
     """
 
     def calculate_logical_data_hash(self, df: pd.DataFrame) -> str:
-        """Calcule un hash SHA-256 déterministe basé sur le contenu logique des données
-        (valeurs, types et ordre fixe), indépendant des métadonnées du fichier Parquet.
+        """Computes a deterministic SHA-256 hash based on the logical data content
+        (values, types and fixed column order), independent of Parquet file metadata.
         """
         sorted_cols = sorted(df.columns.tolist())
         df_sorted_cols = df[sorted_cols].copy()
@@ -104,7 +104,7 @@ class AugmentationService:
 
     @staticmethod
     def _is_integer_column(series: pd.Series) -> bool:
-        """Détermine si une colonne numérique est ou doit être entière (ex: age, income)."""
+        """Determines if a numeric column is or should be integer (e.g. age, income)."""
         if pd.api.types.is_integer_dtype(series):
             return True
         col_name = str(series.name).lower() if series.name else ""
@@ -120,7 +120,7 @@ class AugmentationService:
         return False
 
     def detect_id_column(self, df: pd.DataFrame) -> Optional[str]:
-        """Détecte une éventuelle colonne d'identifiant (ex. customer_id, id, user_id)."""
+        """Detects a potential identifier column (e.g. customer_id, id, user_id)."""
         candidates = ["customer_id", "id", "client_id", "user_id", "id_client", "customerid"]
         for c in candidates:
             if c in df.columns:
@@ -131,7 +131,7 @@ class AugmentationService:
         return None
 
     def detect_date_columns(self, df: pd.DataFrame) -> List[str]:
-        """Détecte les colonnes de type date/datetime."""
+        """Detects date/datetime type columns."""
         date_cols = []
         for col in df.columns:
             if col in AUGMENTATION_METADATA_COLS:
@@ -139,7 +139,7 @@ class AugmentationService:
             if pd.api.types.is_datetime64_any_dtype(df[col]):
                 date_cols.append(col)
             elif df[col].dtype == "object":
-                # Vérifier si les valeurs non nulles sont convertibles en date
+                # Check if non-null values are convertible to date
                 sample = df[col].dropna().head(10)
                 if len(sample) > 0:
                     try:
@@ -155,13 +155,13 @@ class AugmentationService:
         split_config: SplitConfig,
         target_column: str,
     ) -> Tuple[pd.DataFrame, Dict[str, float]]:
-        """Effectue le découpage Train / Val / Test stratifié sur la cible,
-        avec prise en charge optionnelle d'un group_by (ex: customer_id).
-        Ajoute la colonne 'split' ('train', 'val', 'test').
+        """Performs stratified Train / Val / Test split on the target column,
+        with optional group_by support (e.g. customer_id).
+        Adds the 'split' column ('train', 'val', 'test').
         """
         stratify_col = split_config.stratify_column or target_column
         if stratify_col not in df.columns:
-            raise ValueError(f"Colonne de stratification '{stratify_col}' introuvable.")
+            raise ValueError(f"Stratification column '{stratify_col}' not found.")
 
         train_r = split_config.train_ratio
         val_r = split_config.val_ratio
@@ -177,15 +177,15 @@ class AugmentationService:
         # Identifier la classe rare
         vc = df[target_column].dropna().value_counts()
         if len(vc) < 2:
-            raise ValueError(f"La colonne cible '{target_column}' doit contenir au moins 2 classes.")
+            raise ValueError(f"Target column '{target_column}' must have at least 2 classes.")
         minority_class = vc.index[-1]
         total_rare_in_dataset = int((df[target_column] == minority_class).sum())
         total_dataset_rows = len(df)
 
         group_by = split_config.group_by_column
         if group_by and group_by in df.columns:
-            # Si chaque groupe est une ligne unique (ex: customer_id avec 1 ligne par client),
-            # le découpage stratifié direct garantit à la fois l'unicité stricte et la stratification parfaite.
+            # If each group is a unique row (e.g. customer_id with 1 row per customer),
+            # direct stratified split guarantees both strict uniqueness and perfect stratification.
             if df[group_by].nunique() == len(df):
                 split_series = pd.Series(index=df.index, dtype="object")
                 for cls_val in vc.index:
@@ -204,7 +204,7 @@ class AugmentationService:
                     split_series[te_idx] = "test"
                 df_result["split"] = split_series
             else:
-                # Groupes réels avec potentiellement plusieurs lignes par groupe
+                # Real groups potentially with multiple rows per group
                 groups = df.groupby(group_by)
                 group_keys = list(groups.groups.keys())
                 rng.shuffle(group_keys)
@@ -244,7 +244,7 @@ class AugmentationService:
                     cur_min[best_p] += m_cnt
                     cur_tot[best_p] += g_len
 
-                # 2. Allouer les groupes majoritaires pour atteindre la taille cible de chaque partition
+                # 2. Allocate majority groups to reach target split size
                 target_tot = {
                     "train": len(df) * train_r,
                     "val": len(df) * val_r,
@@ -265,21 +265,21 @@ class AugmentationService:
                 split_series[df[group_by].isin(assigned_groups["test"])] = "test"
                 df_result["split"] = split_series
 
-            # Vérification de la contrainte : au moins 3 exemples de la classe rare par partition
+            # Constraint verification: at least 3 rare class examples per split
             for s_name in ["train", "val", "test"]:
                 sub = df_result[(df_result["split"] == s_name) & (df_result[target_column] == minority_class)]
                 s_min_count = len(sub)
                 if s_min_count < 3:
                     raise ValueError(
-                        f"Le dataset entier ne contient que {total_rare_in_dataset} exemple(s) de la classe rare '{minority_class}' "
-                        f"(sur {total_dataset_rows} lignes au total). Avec group_by='{group_by}', le découpage produit une partition avec moins de 3 exemples "
-                        f"de la classe rare dans {s_name} ({s_min_count} trouvés, minimum requis : 3). "
-                        f"Que faire : (1) fournir un jeu de données avec plus d'exemples de la classe rare, "
-                        f"(2) retirer le group_by pour un split direct, ou "
-                        f"(3) choisir une autre colonne à prédire ayant des effectifs suffisants."
+                        f"The entire dataset contains only {total_rare_in_dataset} example(s) of minority class '{minority_class}' "
+                        f"(out of {total_dataset_rows} total rows). With group_by='{group_by}', the split produces a partition with fewer than 3 examples "
+                        f"of the rare class in {s_name} ({s_min_count} found, minimum required: 3). "
+                        f"What to do: (1) provide a dataset with more rare class examples, "
+                        f"(2) remove group_by for a direct split, or "
+                        f"(3) choose another target column with sufficient sample counts."
                     )
         else:
-            # Simple Stratified Split par permutations déterministes par classe
+            # Simple Stratified Split with deterministic permutations per class
             split_series = pd.Series(index=df.index, dtype="object")
 
             for cls_val in vc.index:
@@ -299,29 +299,29 @@ class AugmentationService:
 
             df_result["split"] = split_series
 
-            # Vérifier au moins 3 exemples dans le train, et au moins 1 dans val et test
+            # Check at least 3 examples in train, and at least 1 in val and test
             train_sub = df_result[(df_result["split"] == "train") & (df_result[target_column] == minority_class)]
             if len(train_sub) < 3:
                 raise ValueError(
-                    f"Le dataset entier ne contient que {total_rare_in_dataset} exemple(s) de la classe rare '{minority_class}' "
-                    f"(sur {total_dataset_rows} lignes au total). Le découpage stratifié produit moins de 3 exemples de la classe rare dans le train "
-                    f"({len(train_sub)} trouvés, minimum requis : 3 pour SMOTE-NC). "
-                    f"Que faire : (1) fournir un jeu de données avec plus de données pour cette classe, "
-                    f"(2) ajuster les ratios de découpage (ex. augmenter le train), ou "
-                    f"(3) choisir une autre colonne à prédire ayant des effectifs suffisants."
+                    f"The entire dataset contains only {total_rare_in_dataset} example(s) of minority class '{minority_class}' "
+                    f"(out of {total_dataset_rows} total rows). Stratified split produced fewer than 3 examples of minority class in train "
+                    f"({len(train_sub)} found, minimum required: 3 for SMOTE-NC). "
+                    f"What to do: (1) provide a dataset with more data for this class, "
+                    f"(2) adjust split ratios (e.g. increase train ratio), or "
+                    f"(3) choose another target column with sufficient sample counts."
                 )
             for s_name in ["val", "test"]:
                 sub = df_result[(df_result["split"] == s_name) & (df_result[target_column] == minority_class)]
                 if len(sub) < 1:
                     raise ValueError(
-                        f"Le dataset entier ne contient que {total_rare_in_dataset} exemple(s) de la classe rare '{minority_class}' "
-                        f"(sur {total_dataset_rows} lignes au total), laissant 0 exemple dans {s_name}. "
-                        f"Que faire : (1) fournir plus de données pour cette classe, "
-                        f"(2) ajuster les ratios de découpage, ou "
-                        f"(3) choisir une autre colonne à prédire ayant des effectifs suffisants."
+                        f"The entire dataset contains only {total_rare_in_dataset} example(s) of minority class '{minority_class}' "
+                        f"(out of {total_dataset_rows} total rows), leaving 0 examples in {s_name}. "
+                        f"What to do: (1) provide more data for this class, "
+                        f"(2) adjust split ratios, or "
+                        f"(3) choose another target column with sufficient sample counts."
                     )
 
-        # Calcul des ratios réels obtenus
+        # Calculate actual obtained ratios
         total_len = len(df_result)
         actual_ratios = {
             "train": round(float((df_result["split"] == "train").sum() / total_len), 3),
@@ -329,7 +329,7 @@ class AugmentationService:
             "test": round(float((df_result["split"] == "test").sum() / total_len), 3),
         }
 
-        # Initialiser les métadonnées de lignage pour les lignes existantes
+        # Initialize lineage metadata for existing rows
         df_result["is_synthetic"] = False
         df_result["origin"] = "real"
         df_result["parent_ids"] = None
@@ -337,8 +337,8 @@ class AugmentationService:
         return df_result, actual_ratios
 
     def calculate_target_balance_score(self, series: pd.Series) -> int:
-        """Calcule le score d'équilibre de la cible sur [0, 100] via l'entropie de Shannon normalisée,
-        identique à la formule documentée du Profiling.
+        """Computes the target balance score on [0, 100] via normalized Shannon entropy,
+        identical to the documented Profiling formula.
         """
         clean = series.dropna()
         if len(clean) == 0:
@@ -359,13 +359,13 @@ class AugmentationService:
         balance_config: TargetBalanceConfig,
         techniques: TechniquesConfig,
     ) -> Dict[str, Any]:
-        """Exécute l'intégralité du pipeline d'augmentation (utilisé de manière identique par preview et apply).
-        Retourne le DataFrame enrichi ainsi que les métadonnées détaillées et les guardrails.
+        """Executes the complete augmentation pipeline (used identically by preview and apply).
+        Returns the enriched DataFrame along with detailed metadata and guardrails.
         """
         if target_column not in df.columns:
-            raise ValueError(f"Colonne cible '{target_column}' introuvable.")
+            raise ValueError(f"Target column '{target_column}' not found.")
 
-        # 1. Découpage stratifié initial (Val et Test restent 100% réels et verrouillés)
+        # 1. Initial stratified split (Val and Test remain 100% real and locked)
         df_split, actual_ratios = self.perform_stratified_split(df, split_config, target_column)
 
         train_mask = df_split["split"] == "train"
@@ -379,7 +379,7 @@ class AugmentationService:
         initial_train_rows = len(df_train)
         vc_train = df_train[target_column].value_counts()
         if len(vc_train) < 2:
-            raise ValueError(f"Le jeu d'entraînement doit comporter au moins 2 classes pour la cible '{target_column}'.")
+            raise ValueError(f"Training set must have at least 2 classes for target '{target_column}'.")
 
         majority_class = vc_train.index[0]
         minority_class = vc_train.index[-1]
@@ -389,17 +389,17 @@ class AugmentationService:
         balance_score_before = self.calculate_target_balance_score(df_train[target_column])
         minority_pct_before = round((n_min_real / initial_train_rows) * 100.0, 1)
 
-        # Exclusion mutuelle des guardrails : Pas de rééchantillonnage + poids de classes en même temps
+        # Step execution
         if techniques.class_weights_enabled and (techniques.smote_nc_enabled or techniques.undersample_enabled):
             raise ValueError(
-                "Guardrail violé (Pas de double correction) : "
-                "Vous ne pouvez pas activer simultanément le rééchantillonnage (SMOTE/sous-échantillonnage) "
-                "et les poids de classes. Choisissez l'une ou l'autre technique."
+                "Guardrail violated (No double correction): "
+                "You cannot simultaneously enable resampling (SMOTE/undersampling) "
+                "and class weights. Choose one or the other technique."
             )
 
-        # Vérification des valeurs manquantes si SMOTE est activé
+        # Step execution
         if techniques.smote_nc_enabled:
-            # Vérifier les colonnes de features du train
+            # Step execution
             feature_cols = [c for c in df_train.columns if c not in AUGMENTATION_METADATA_COLS and c != target_column]
             missing_cols = {}
             for col in feature_cols:
@@ -410,14 +410,14 @@ class AugmentationService:
                     missing_cols[col] = null_count
 
             if missing_cols:
-                cols_str = ", ".join(f"'{k}' ({v} manquants)" for k, v in missing_cols.items())
+                cols_str = ", ".join(f"'{k}' ({v} missing)" for k, v in missing_cols.items())
                 raise ValueError(
-                    f"SMOTE-NC ne peut pas être appliqué car le jeu de données contient des valeurs manquantes "
-                    f"dans les colonnes suivantes : {cols_str}. "
-                    "Veuillez d'abord nettoyer ces colonnes à l'étape 02 Cleaning (/cleaning)."
+                    f"SMOTE-NC cannot be applied because the dataset contains missing values "
+                    f"in the following columns: {cols_str}. "
+                    "Please first clean these columns in step 02 Cleaning (/cleaning)."
                 )
 
-        # Calcul du ratio cible souhaité
+        # Step execution
         target_mode = balance_config.mode
         if target_mode == "keep":
             target_ratio = n_min_real / initial_train_rows
@@ -430,7 +430,7 @@ class AugmentationService:
         else:
             target_ratio = balance_config.custom_target_ratio or (n_min_real / initial_train_rows)
 
-        # Logique d'équilibrage avec plafond de 50% de synthétiques dans la classe rare
+        # Step execution
         # Plafond : n_synth_max = n_min_real (ainsi n_synth / (n_min_real + n_synth) <= 50%)
         id_col = self.detect_id_column(df_train)
         date_cols = self.detect_date_columns(df_train)
@@ -439,7 +439,7 @@ class AugmentationService:
         n_maj_to_keep = n_maj_real
 
         if target_mode != "keep" and not techniques.class_weights_enabled:
-            # Combien de synthétiques nécessaires pour atteindre target_ratio sans sous-échantillonnage ?
+            # Step execution
             # (n_min + S) / (n_maj + n_min + S) = r  =>  S = (r * n_maj - (1-r) * n_min) / (1-r)
             if (1.0 - target_ratio) > 0:
                 raw_s = (target_ratio * n_maj_real - (1.0 - target_ratio) * n_min_real) / (1.0 - target_ratio)
@@ -448,14 +448,14 @@ class AugmentationService:
                 ideal_synth = n_maj_real - n_min_real
 
             if techniques.smote_nc_enabled:
-                # Plafond strict : au maximum n_min_real synthétiques créées
+                # Step execution
                 n_synth_to_generate = min(ideal_synth, n_min_real)
             else:
                 n_synth_to_generate = 0
 
             final_minority_rows = n_min_real + n_synth_to_generate
 
-            # Si l'objectif n'est pas encore atteint et undersample_enabled, sous-échantillonner la majorité
+            # Step execution
             if techniques.undersample_enabled and target_ratio > 0:
                 # final_minority_rows / (n_maj_kept + final_minority_rows) = target_ratio
                 # n_maj_kept = final_minority_rows * (1 - target_ratio) / target_ratio
@@ -464,7 +464,7 @@ class AugmentationService:
             else:
                 n_maj_to_keep = n_maj_real
 
-        # Exécution de SMOTE-NC
+        # Step execution
         df_generated = pd.DataFrame()
         parent_pairs_list: List[Tuple[Any, Any]] = []
 
@@ -473,11 +473,11 @@ class AugmentationService:
             k = techniques.smote_k_neighbors
             if len(df_minority_train) < k + 1:
                 raise ValueError(
-                    f"SMOTE-NC requiert au moins {k + 1} exemples de la classe rare dans le train (k={k}), "
-                    f"mais seulement {len(df_minority_train)} sont disponibles. Réduisez k ou ajustez le split."
+                    f"SMOTE-NC requires at least {k + 1} rare class examples in train (k={k}), "
+                    f"but only {len(df_minority_train)} are available. Reduce k or adjust the split."
                 )
 
-            # Identification des types de colonnes
+            # Column type identification
             exclude_feature_cols = set(AUGMENTATION_METADATA_COLS + [target_column])
             if id_col:
                 exclude_feature_cols.add(id_col)
@@ -492,7 +492,7 @@ class AugmentationService:
                 else:
                     cat_cols.append(col)
 
-            # Préparation des matrices pour la recherche des k voisins (standardisation des variables numériques)
+            # Step execution
             scaler = StandardScaler()
             if num_cols:
                 scaled_num = scaler.fit_transform(df_minority_train[num_cols])
@@ -500,7 +500,7 @@ class AugmentationService:
                 scaled_num = np.empty((len(df_minority_train), 0))
 
             if cat_cols:
-                # One-hot encoding simple pour le calcul de distance
+                # Simple one-hot encoding for distance calculation
                 encoded_cat = pd.get_dummies(df_minority_train[cat_cols], drop_first=False).to_numpy(dtype=float)
             else:
                 encoded_cat = np.empty((len(df_minority_train), 0))
@@ -514,11 +514,11 @@ class AugmentationService:
             nn_model.fit(knn_features)
             distances, indices = nn_model.kneighbors(knn_features)
 
-            # Génération déterministe avec RandomState
+            # Step execution
             gen_rng = np.random.RandomState(split_config.random_seed + 100)
             generated_rows = []
 
-            # Récupérer les identifiants réels des parents dans le train
+            # Step execution
             if id_col:
                 parent_identifiers = df_minority_train[id_col].tolist()
             else:
@@ -541,7 +541,7 @@ class AugmentationService:
                 lambda_coef = gen_rng.uniform(0.0, 1.0)
                 new_row: Dict[str, Any] = {}
 
-                # 1. Variables numériques : interpolation sur les valeurs brutes d'origine
+                # Step execution
                 for nc in num_cols:
                     val_1 = float(row_base[nc])
                     val_2 = float(row_neighbor[nc])
@@ -555,7 +555,7 @@ class AugmentationService:
                     else:
                         interp_val = round(float(interp_val), 2)
 
-                    # Bornage strict aux min/max observés dans le train
+                    # Step execution
                     min_obs = df_train[nc].min()
                     max_obs = df_train[nc].max()
                     if is_int:
@@ -564,7 +564,7 @@ class AugmentationService:
                         interp_val = max(min_obs, min(max_obs, interp_val))
                     new_row[nc] = interp_val
 
-                # 2. Variables catégorielles : modalité choisie parmi les voisins réels (invariants)
+                # Step execution
                 for cc in cat_cols:
                     new_row[cc] = row_base[cc] if lambda_coef < 0.5 else row_neighbor[cc]
 
@@ -588,14 +588,14 @@ class AugmentationService:
                     except Exception:
                         new_row[dc] = row_base[dc]
 
-                # 4. Colonne identifiant : nouveau format SYN-XXXXXX
+                # 4. Identifier column: new format SYN-XXXXXX
                 if id_col:
                     new_row[id_col] = f"SYN-{g_idx + 1:06d}"
 
-                # 5. Cible : obligatoirement la classe rare
+                # 5. Target: strictly minority class
                 new_row[target_column] = minority_class
 
-                # 6. Métadonnées de lignage
+                # Step execution
                 new_row["split"] = "train"
                 new_row["is_synthetic"] = True
                 new_row["origin"] = "smote"
@@ -605,7 +605,7 @@ class AugmentationService:
 
             df_generated = pd.DataFrame(generated_rows)
 
-            # Application du bruit léger sur colonnes numériques des lignes générées uniquement
+            # Step execution
             if techniques.light_noise_enabled and num_cols:
                 noise_rng = np.random.RandomState(split_config.random_seed + 200)
                 strength = techniques.noise_strength_pct / 100.0
@@ -623,7 +623,7 @@ class AugmentationService:
                             noisy_vals = np.round(noisy_vals, 2)
                         df_generated[nc] = noisy_vals
 
-        # Sous-échantillonnage aléatoire de la classe majoritaire
+        # Step execution
         df_majority_train = df_train[df_train[target_column] == majority_class].copy()
         rows_undersampled = 0
         if n_maj_to_keep < n_maj_real and techniques.undersample_enabled:
@@ -634,24 +634,24 @@ class AugmentationService:
         else:
             df_majority_train_kept = df_majority_train
 
-        # Reconstruction du train augmenté
+        # Step execution
         df_minority_train = df_train[df_train[target_column] == minority_class].copy()
         if not df_generated.empty:
             df_train_final = pd.concat([df_majority_train_kept, df_minority_train, df_generated], ignore_index=True)
         else:
             df_train_final = pd.concat([df_majority_train_kept, df_minority_train], ignore_index=True)
 
-        # Calcul des poids de classes si demandé
+        # Step execution
         class_weights_dict = None
         if techniques.class_weights_enabled:
             classes = np.unique(df_train[target_column])
             weights = compute_class_weight(class_weight="balanced", classes=classes, y=df_train[target_column])
             class_weights_dict = {str(c): round(float(w), 3) for c, w in zip(classes, weights)}
 
-        # Assemblage final du dataset (Train augmenté + Val intact + Test intact)
+        # Step execution
         df_final = pd.concat([df_train_final, df_val, df_test], ignore_index=True)
 
-        # Respect des types dans df_final : entiers pour age/income, 2 décimales pour charges
+        # Step execution
         for nc in num_cols:
             if self._is_integer_column(df_train[nc]):
                 try:
@@ -664,46 +664,46 @@ class AugmentationService:
                 except Exception:
                     pass
 
-        # Calcul des scores et métriques post-augmentation
+        # Step execution
         final_train_rows = len(df_train_final)
         final_min_count = int((df_train_final[target_column] == minority_class).sum())
         minority_pct_after = round((final_min_count / max(1, final_train_rows)) * 100.0, 1)
         balance_score_after = self.calculate_target_balance_score(df_train_final[target_column])
 
         # ----------------------------------------------------
-        # Validation des 6 Guardrails réels
+        # Step execution
         # ----------------------------------------------------
         guardrails: List[GuardrailResult] = []
 
-        # Guardrail 1 : Test et validation jamais augmentés ni modifiés
+        # Step execution
         val_test_size_ok = (len(df_val) == len(df_split[val_mask])) and (len(df_test) == len(df_split[test_mask]))
         val_test_no_synthetic = (df_val["is_synthetic"].sum() == 0) and (df_test["is_synthetic"].sum() == 0)
-        # Vérifier qu'aucune ligne du train n'est dupliquée dans le val ou test
+        # Step execution
         train_indices_set = set(df_train_final.index)
         g1_passed = bool(val_test_size_ok and val_test_no_synthetic)
         guardrails.append(
             GuardrailResult(
                 key="test_and_val_never_augmented",
-                label="Jeu de test et validation jamais augmentés",
+                label="Test and validation sets never augmented",
                 passed=g1_passed,
-                description=f"{len(df_test):,} lignes de test et {len(df_val):,} lignes de val restent 100% réelles",
+                description=f"{len(df_test):,} test rows and {len(df_val):,} val rows remain 100% real",
                 details={"test_rows": len(df_test), "val_rows": len(df_val)},
             )
         )
 
-        # Guardrail 2 : Plafond de 50% de synthétiques par classe respecté
+        # Step execution
         g2_passed = bool(len(df_generated) <= n_min_real)
         guardrails.append(
             GuardrailResult(
                 key="max_50_pct_synthetic_per_class",
-                label="Plafond max 50% de synthétiques par classe",
+                label="Max 50% synthetic cap per class",
                 passed=g2_passed,
-                description=f"{len(df_generated):,} synthétiques générées pour {n_min_real:,} réelles (max 50% de la classe)",
+                description=f"{len(df_generated):,} synthetic generated for {n_min_real:,} real (max 50% of class)",
                 details={"synthetic_generated": len(df_generated), "real_minority": n_min_real},
             )
         )
 
-        # Guardrail 3 : Tag d'origine sur chaque ligne générée
+        # Step execution
         if not df_generated.empty:
             g3_passed = bool(
                 (df_generated["is_synthetic"] == True).all()
@@ -715,14 +715,14 @@ class AugmentationService:
         guardrails.append(
             GuardrailResult(
                 key="origin_tag_on_every_generated_row",
-                label="Tag d'origine et parents sur chaque ligne générée",
+                label="Origin tag and parents on each generated row",
                 passed=g3_passed,
-                description="origin = smote · parent_ids = les deux identifiants réels parents",
+                description="origin = smote · parent_ids = both real parent ids",
                 details={"tagged_rows": len(df_generated)},
             )
         )
 
-        # Guardrail 4 : Modalités catégorielles valides (aucune modalité inventée)
+        # Step execution
         g4_passed = True
         if not df_generated.empty:
             for cc in cat_cols:
@@ -734,9 +734,9 @@ class AugmentationService:
         guardrails.append(
             GuardrailResult(
                 key="categories_stay_valid",
-                label="Validité des catégories (invariants)",
+                label="Category validity (invariants)",
                 passed=g4_passed,
-                description="SMOTE-NC n'invente aucune catégorie non présente dans les données réelles",
+                description="SMOTE-NC invents no category absent from real data",
                 details={"categories_checked": cat_cols},
             )
         )
@@ -755,7 +755,7 @@ class AugmentationService:
                 key="parents_from_train_only",
                 label="Parents de SMOTE-NC issus uniquement du Train",
                 passed=g5_passed,
-                description="Tous les voisins et parent_ids proviennent exclusivement du sous-ensemble Train",
+                description="All neighbors and parent_ids originate exclusively from Train subset",
                 details={"parents_validated": len(parent_pairs_list)},
             )
         )
@@ -767,15 +767,15 @@ class AugmentationService:
                 key="no_double_correction",
                 label="Pas de double correction",
                 passed=g6_passed,
-                description="Rééchantillonnage ou poids de classes, jamais les deux simultanément",
+                description="Resampling or class weights, never both simultaneously",
                 details={"class_weights": techniques.class_weights_enabled, "resampling": techniques.smote_nc_enabled},
             )
         )
 
-        # Si un guardrail critique échoue, lever une exception claire
+        # Step execution
         for g in guardrails:
             if not g.passed:
-                raise ValueError(f"Contrôle de sécurité échoué ({g.label}) : {g.description}")
+                raise ValueError(f"Security check failed ({g.label}): {g.description}")
 
         def _format_cell_value(col: str, val: Any) -> Any:
             if pd.isna(val):
@@ -794,7 +794,7 @@ class AugmentationService:
                     return val
             return val
 
-        # Échantillon de prévisualisation (2 réels, 2 smote si dispo)
+        # Step execution
         sample_preview: List[Dict[str, Any]] = []
         real_samples = df_minority_train.head(2).to_dict(orient="records")
         for r in real_samples:
@@ -809,7 +809,7 @@ class AugmentationService:
                 s_dict["origin_display"] = f"smote · {s.get('parent_ids', '')}"
                 sample_preview.append(s_dict)
 
-        # Recette ordonnée au format JSON
+        # Step execution
         recipe = {
             "version": "1.0",
             "stage": "03_AUGMENTATION",
@@ -858,7 +858,7 @@ class AugmentationService:
             "guardrails": [g.model_dump() for g in guardrails],
         }
 
-        # Distribution pour les barres graphiques
+        # Distribution for chart bars
         balance_distribution = {
             "majority": {
                 "label": str(majority_class),
@@ -905,7 +905,7 @@ class AugmentationService:
         parquet_path: Path,
         request: AugmentationPreviewRequest,
     ) -> AugmentationPreviewResponse:
-        """Simule l'augmentation sur le fichier Parquet sans rien enregistrer."""
+        """Simulates augmentation on the Parquet file without saving anything."""
         table = pq.read_table(parquet_path)
         df = table.to_pandas()
 
@@ -944,12 +944,12 @@ class AugmentationService:
         source_version: DatasetVersion,
         request: AugmentationApplyRequest,
     ) -> Dict[str, Any]:
-        """Applique l'augmentation, sauvegarde le Parquet de façon atomique,
-        crée la DatasetVersion immuable (v3) et la Transformation, et calcule le profil.
+        """Applies augmentation, atomically saves the Parquet artifact,
+        creates the immutable DatasetVersion (v3) + Transformation, and computes the profile.
         """
         source_path = Path(source_version.storage_path)
         if not source_path.exists():
-            raise FileNotFoundError(f"Fichier Parquet source introuvable: {source_path}")
+            raise FileNotFoundError(f"Source Parquet file not found: {source_path}")
 
         table = pq.read_table(source_path)
         df = table.to_pandas()
@@ -968,16 +968,16 @@ class AugmentationService:
         rows_undersampled = pipeline_res["rows_undersampled"]
         recipe = pipeline_res["recipe"]
 
-        # Détection no-op : si aucune ligne générée, aucune sous-échantillonnée et pas de poids de classes
+        # Step execution
         if rows_generated == 0 and rows_undersampled == 0 and not request.techniques.class_weights_enabled:
-            # Même si un split a été créé, si aucune transformation d'équilibrage n'a eu lieu et mode keep
+            # Step execution
             if request.balance_config.mode == "keep":
-                raise ValueError("Aucune donnée modifiée (0 ligne générée, 0 sous-échantillonnée). Aucune nouvelle version créée.")
+                raise ValueError("No data modified (0 rows generated, 0 undersampled). No new version created.")
 
-        # Calcul du hash logique déterministe
+        # Step execution
         data_hash = self.calculate_logical_data_hash(df_augmented)
 
-        # Générer le hash de version de lignage
+        # Step execution
         new_version_hash = lineage_service.generate_version_hash(
             dataset_id=source_version.dataset_id,
             parent_version_hash=source_version.version_hash,
@@ -990,7 +990,7 @@ class AugmentationService:
         target_path = storage_service.get_version_parquet_path(source_version.dataset_id, new_version_hash)
         target_path.parent.mkdir(parents=True, exist_ok=True)
 
-        # Assurer l'intégrité des types de colonnes (notamment dates) avant conversion PyArrow
+        # Step execution
         if source_version.schema_metadata and "columns" in source_version.schema_metadata:
             for c_info in source_version.schema_metadata["columns"]:
                 c_name = c_info.get("name")
@@ -1013,7 +1013,7 @@ class AugmentationService:
         file_size = target_path.stat().st_size
         total_rows = len(df_augmented)
 
-        # Création de la DatasetVersion
+        # Step execution
         new_version = DatasetVersion(
             dataset_id=source_version.dataset_id,
             parent_version_id=source_version.id,
@@ -1039,7 +1039,7 @@ class AugmentationService:
         db.commit()
         db.refresh(new_version)
 
-        # Déduire le nom de fichier d'origine via le lignage
+        # Step execution
         original_filename = None
         curr = source_version
         while curr:
@@ -1057,7 +1057,7 @@ class AugmentationService:
         if not original_filename:
             original_filename = f"{source_version.dataset.name}.csv" if source_version.dataset else "dataset.csv"
 
-        # Profils avant / après
+        # Step execution
         before_profile = profiling_service.get_or_create_profile(
             dataset_id=str(source_version.dataset_id),
             version_hash=source_version.version_hash,
@@ -1098,14 +1098,14 @@ class AugmentationService:
         model_type: str = "logistic_regression",
         seeds: Optional[List[int]] = None,
     ) -> AugmentationComparisonResponse:
-        """Phase 3 - Comparaison des performances « Est-ce que ça aide ? » :
-        - Évalue un modèle simple (Régression Logistique ou Forêt Aléatoire) sur 5 graines aléatoires.
-        - Entraîne le modèle de référence sur les lignes réelles du train de la v3 (split = train, is_synthetic = false).
-        - Entraîne le modèle augmenté sur l'ensemble du train de la v3 (split = train).
-        - Évalue les deux modèles exclusivement sur le même jeu de test réel (split = test).
-        - Pré-traitement scikit-learn ajusté uniquement sur le train (fit sur train, transform sur test).
-        - Exclut rigoureusement split, is_synthetic, origin, parent_ids et identifiants des variables explicatives.
-        - Retourne moyennes et écarts-types pour Rappel, Précision et Score F1 sur la classe rare.
+        """Phase 3 - Model performance comparison "Does it help?":
+        - Evaluates a model (Logistic Regression or Random Forest) over 5 random seeds.
+        - Trains baseline model on real train rows of v3 (split = train, is_synthetic = false).
+        - Trains augmented model on full train set of v3 (split = train).
+        - Evaluates both models exclusively on the same real test set (split = test).
+        - Scikit-learn preprocessor fitted strictly on train.
+        - Rigorously excludes split, is_synthetic, origin, parent_ids, and IDs from features.
+        - Returns mean and standard deviations for Recall, Precision and F1 on the rare class.
         """
         if seeds is None or len(seeds) == 0:
             seeds = [42, 43, 44, 45, 46]
@@ -1122,11 +1122,11 @@ class AugmentationService:
         minority_class = pipeline_res.get("minority_class_raw", pipeline_res.get("minority_class_label"))
         minority_label = pipeline_res.get("minority_class_label", str(minority_class))
 
-        # 1. Sous-ensembles de données
-        # IMPORTANT (Spécification Phase 3) :
-        # - La référence (baseline) utilise les lignes réelles du train de la v3 (split = train, is_synthetic = false), jamais un nouveau split de la v2.
-        # - Le modèle augmenté utilise l'ensemble du train de la v3 (split = train).
-        # - L'évaluation des deux s'effectue exclusivement sur le même jeu de test réel (split = test).
+        # Step execution
+        # Step execution
+        # Step execution
+        # Step execution
+        # Step execution
         df_base_train = df_final[(df_final["split"] == "train") & (~df_final["is_synthetic"])].copy()
         df_aug_train = df_final[df_final["split"] == "train"].copy()
         df_test = df_final[df_final["split"] == "test"].copy()
@@ -1134,7 +1134,7 @@ class AugmentationService:
         # 2. Identification des variables explicatives
         exclude_cols = set([target_column] + AUGMENTATION_METADATA_COLS)
 
-        # Détection de colonnes d'identifiant à exclure
+        # Step execution
         for c in df_final.columns:
             if c in exclude_cols:
                 continue
@@ -1145,9 +1145,9 @@ class AugmentationService:
 
         feature_cols = [c for c in df_final.columns if c not in exclude_cols]
         if not feature_cols:
-            raise ValueError("Aucune variable explicative disponible pour entraîner le modèle de comparaison.")
+            raise ValueError("No feature columns available to train comparison model.")
 
-        # Transformation sécurisée des variables (dates en timestamps, types homogènes)
+        # Step execution
         def _prepare_features(sub_df: pd.DataFrame) -> pd.DataFrame:
             feat_df = pd.DataFrame(index=sub_df.index)
             for c in feature_cols:
@@ -1197,7 +1197,7 @@ class AugmentationService:
             transformers.append((
                 "cat",
                 Pipeline([
-                    ("imputer", SimpleImputer(strategy="constant", fill_value="manquant")),
+                    ("imputer", SimpleImputer(strategy="constant", fill_value="missing")),
                     ("onehot", OneHotEncoder(handle_unknown="ignore", sparse_output=False)),
                 ]),
                 cat_features,
@@ -1205,7 +1205,7 @@ class AugmentationService:
 
         preprocessor_base = ColumnTransformer(transformers=transformers)
 
-        # 3. Boucle sur les 5 graines
+        # 3. Loop over 5 seeds
         base_recalls: List[float] = []
         base_precisions: List[float] = []
         base_f1s: List[float] = []
@@ -1217,7 +1217,7 @@ class AugmentationService:
         cw = "balanced" if techniques.class_weights_enabled else None
 
         for s in seeds:
-            # Modèle Baseline (Train réel v3 sans données synthétiques)
+            # Step execution
             prep_b = clone(preprocessor_base)
             if model_type == "random_forest":
                 clf_b = RandomForestClassifier(n_estimators=50, max_depth=6, random_state=s)
@@ -1232,7 +1232,7 @@ class AugmentationService:
             base_precisions.append(float(precision_score(y_test, pred_b, pos_label=1, zero_division=0.0) * 100.0))
             base_f1s.append(float(f1_score(y_test, pred_b, pos_label=1, zero_division=0.0) * 100.0))
 
-            # Modèle Augmenté (Train v3 complet avec SMOTE-NC / Undersampling / Poids)
+            # Step execution
             prep_a = clone(preprocessor_base)
             if model_type == "random_forest":
                 clf_a = RandomForestClassifier(n_estimators=50, max_depth=6, random_state=s, class_weight=cw)
@@ -1247,7 +1247,7 @@ class AugmentationService:
             aug_precisions.append(float(precision_score(y_test, pred_a, pos_label=1, zero_division=0.0) * 100.0))
             aug_f1s.append(float(f1_score(y_test, pred_a, pos_label=1, zero_division=0.0) * 100.0))
 
-        # 4. Agréger moyennes et écarts-types
+        # Step execution
         baseline_metrics = ModelComparisonMetrics(
             recall=ComparisonMetricResult(
                 mean=round(float(np.mean(base_recalls)), 1),
@@ -1293,16 +1293,16 @@ class AugmentationService:
         # Avertissement / Signalement statistique si petit jeu de test
         if test_total < 60 or test_positives < 20:
             warning_disclaimer = (
-                f"* Sur un petit jeu de test ({test_total} exemples réels dont {test_positives} positifs), "
-                f"les écarts observés peuvent être soumis aux aléas statistiques d'échantillonnage."
+                f"* On a small test set ({test_total} real examples including {test_positives} positives), "
+                f"observed differences may be subject to statistical sampling variations."
             )
         else:
             warning_disclaimer = (
-                f"* Évaluation réalisée sur le jeu de test réel ({test_total} exemples dont {test_positives} positifs), "
-                f"répétée sur {len(seeds)} graines aléatoires."
+                f"* Evaluation conducted on real test set ({test_total} examples including {test_positives} positives), "
+                f"repeated across {len(seeds)} random seeds."
             )
 
-        model_label = "Régression logistique" if model_type == "logistic_regression" else "Forêt aléatoire"
+        model_label = "Logistic Regression" if model_type == "logistic_regression" else "Random Forest"
 
         return AugmentationComparisonResponse(
             model_type=model_type,

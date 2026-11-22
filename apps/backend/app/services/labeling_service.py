@@ -53,7 +53,7 @@ class LabelingService:
         """Resolves dataset and its current or baseline version."""
         dataset = db.query(Dataset).filter(Dataset.id == dataset_id).first()
         if not dataset:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Jeu de données introuvable.")
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Dataset not found.")
 
         # Find current version or baseline or latest
         version = None
@@ -72,7 +72,7 @@ class LabelingService:
         if not version:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail="Aucune version trouvée pour ce jeu de données.",
+                detail="No version found for this dataset.",
             )
 
         return dataset, version
@@ -177,7 +177,7 @@ class LabelingService:
         dataset, version = self.get_active_version(dataset_id, db)
         file_path = Path(version.storage_path)
         if not file_path.exists():
-            raise HTTPException(status_code=404, detail="Fichier Parquet introuvable.")
+            raise HTTPException(status_code=404, detail="Parquet file not found.")
 
         df = pq.read_table(file_path).to_pandas()
         target_col, pos_label, neg_label, available_targets = self.detect_target_and_classes(df, version)
@@ -228,7 +228,7 @@ class LabelingService:
         rule_conflict_mask = pd.Series(False, index=df.index)
         for c in df.columns:
             if c != target_col and pd.api.types.is_string_dtype(df[c]):
-                has_cancel = df[c].str.contains("cancel|résil|dispute|litige|fermeture|impayé|retard", case=False, na=False)
+                has_cancel = df[c].str.contains("cancel|resil|dispute|litigation|closure|unpaid|delay", case=False, na=False)
                 rule_conflict_mask = rule_conflict_mask | (has_cancel & is_neg)
 
         # Check duplicate IDs with conflicting targets
@@ -284,38 +284,38 @@ class LabelingService:
         queues = [
             QueueMetric(
                 id="suspected_errors",
-                title="ERREURS SUSPECTÉES",
+                title="SUSPECTED ERRORS",
                 count=suspected_count,
-                description=f"Le label dit '{neg_label}', le modèle est sûr à {int(threshold*100)}%+ que c'est '{pos_label}' · ou l'inverse",
+                description=f"The label says '{neg_label}', the model is {int(threshold*100)}%+ que c'est '{pos_label}' · ou l'inverse",
                 done_count=done_suspected,
-                button_label="Continuer" if done_suspected > 0 else "Démarrer",
+                button_label="Continue" if done_suspected > 0 else "Start",
                 is_active=True,
             ),
             QueueMetric(
                 id="rule_conflicts",
-                title="CONFLITS DE RÈGLES",
+                title="RULE CONFLICTS",
                 count=rule_conflicts_count,
-                description=f"Une date d'annulation ou litige est renseigné mais {target_col} = '{neg_label}' · corrigeable en masse",
+                description=f"A cancellation or dispute date is set but {target_col} = '{neg_label}' · can be bulk-fixed",
                 done_count=done_rules,
-                button_label="Démarrer",
+                button_label="Start",
                 is_active=False,
             ),
             QueueMetric(
                 id="missing_target",
-                title="CIBLE MANQUANTE",
+                title="MISSING TARGET",
                 count=missing_count,
-                description=f"{target_col} est vide · souvent trop récent pour savoir : marquer 'pas encore'",
+                description=f"{target_col} is empty · often too recent to tell: mark 'not yet'",
                 done_count=done_missing,
-                button_label="Démarrer",
+                button_label="Start",
                 is_active=False,
             ),
             QueueMetric(
                 id="to_review",
-                title="À RÉVISER",
+                title="TO REVIEW",
                 count=to_review_count,
-                description="Changements en attente d'une seconde validation avant d'être comptabilisés",
+                description="Changes pending second reviewer validation before being recorded",
                 done_count=0,
-                button_label="Réviser",
+                button_label="Review",
                 is_active=False,
             ),
         ]
@@ -410,7 +410,7 @@ class LabelingService:
             conflict_mask = pd.Series(False, index=df.index)
             for c in df.columns:
                 if c != target_col and pd.api.types.is_string_dtype(df[c]):
-                    has_cancel = df[c].str.contains("cancel|résil|dispute|litige|fermeture|impayé|retard", case=False, na=False)
+                    has_cancel = df[c].str.contains("cancel|resil|dispute|litigation|closure|unpaid|delay", case=False, na=False)
                     conflict_mask = conflict_mask | (has_cancel & is_neg)
             if id_col:
                 dups = df[df.duplicated(subset=[id_col], keep=False)]
@@ -455,7 +455,7 @@ class LabelingService:
         row_series = df.iloc[row_idx]
 
         # Customer / Row ID
-        cust_id_val = str(row_series[id_col]) if id_col and id_col in row_series else f"Ligne {row_idx}"
+        cust_id_val = str(row_series[id_col]) if id_col and id_col in row_series else f"Row {row_idx}"
         curr_label_val = str(row_series[target_col]) if pd.notna(row_series[target_col]) else "vide"
         prob_pos = float(probas[row_idx]) if row_idx < len(probas) else 0.5
         model_pred = pos_label if prob_pos >= 0.5 else neg_label
@@ -473,7 +473,7 @@ class LabelingService:
             is_pos_driver = False
 
             # Semantic highlighting
-            if any(term in str(val).lower() for term in ["cancel", "résil", "dispute", "none", "retard", "litige"]):
+            if any(term in str(val).lower() for term in ["cancel", "resil", "dispute", "none", "delay", "litigation"]):
                 is_contra = True
             elif any(term in col_name.lower() for term in ["call", "charge", "support", "ticket"]) and pd.api.types.is_numeric_dtype(df[col_name]):
                 try:
@@ -501,7 +501,7 @@ class LabelingService:
                 distances, indices = nbrs.kneighbors(X_mat[row_idx : row_idx + 1])
                 for dist, n_idx in zip(distances[0][1:], indices[0][1:]):
                     n_row = df.iloc[n_idx]
-                    n_id = str(n_row[id_col]) if id_col and id_col in n_row else f"Ligne {n_idx}"
+                    n_id = str(n_row[id_col]) if id_col and id_col in n_row else f"Row {n_idx}"
                     n_lbl = str(n_row[target_col]) if pd.notna(n_row[target_col]) else "—"
                     sim = max(0.5, round(float(1.0 / (1.0 + dist)), 2))
                     nearest_customers.append(
@@ -512,10 +512,10 @@ class LabelingService:
 
         # Customer History timeline
         history: List[CustomerEvent] = [
-            CustomerEvent(date="12 juil.", event="Signé · contrat mensuel", is_highlighted=False),
-            CustomerEvent(date="03 sept.", event="Dernière facture payée", is_highlighted=False),
+            CustomerEvent(date="12 Jul", event="Signed · monthly contract", is_highlighted=False),
+            CustomerEvent(date="03 Sep", event="Last invoice paid", is_highlighted=False),
             CustomerEvent(date="18 sept.", event="Appel support · tarif", is_highlighted=False),
-            CustomerEvent(date="02 oct.", event="Demande de résiliation", is_highlighted=True),
+            CustomerEvent(date="02 Oct", event="Cancellation request", is_highlighted=True),
             CustomerEvent(date="03 nov.", event=f"Export CRM · {target_col} = {curr_label_val}", is_highlighted=False),
         ]
 
@@ -529,10 +529,10 @@ class LabelingService:
             if len(matching) > 1:
                 matching_indices = matching.index.tolist()
                 bulk_pattern = BulkPattern(
-                    description=f"{len(matching_indices)} autres lignes : {c_col} = '{val_c}' + {target_col} = '{curr_label_val}'",
+                    description=f"{len(matching_indices)} other rows: {c_col} = '{val_c}' + {target_col} = '{curr_label_val}'",
                     matching_count=len(matching_indices),
                     matching_row_indices=matching_indices[:50],
-                    rule_summary=f"Appliquer le label '{pos_label}' à toutes les lignes avec {c_col} = '{val_c}'",
+                    rule_summary=f"Apply label '{pos_label}' to all rows with {c_col} = '{val_c}'",
                 )
 
         # Check existing decision in DB
@@ -589,7 +589,7 @@ class LabelingService:
         target_col, pos_label, neg_label, _ = self.detect_target_and_classes(df, version)
 
         if row_index < 0 or row_index >= len(df):
-            raise HTTPException(status_code=400, detail="Index de ligne hors limites.")
+            raise HTTPException(status_code=400, detail="Row index out of bounds.")
 
         prev_val = str(df.iloc[row_index][target_col]) if pd.notna(df.iloc[row_index][target_col]) else "vide"
 
@@ -609,7 +609,7 @@ class LabelingService:
         if decision == "change" and not (reason and reason.strip()):
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Un motif est obligatoire pour modifier un label (Garde-fou : pas de bascule silencieuse).",
+                detail="A reason is required to change a label (Guardrail: no silent flip).",
             )
 
         # Existing record
@@ -627,7 +627,7 @@ class LabelingService:
             change.decision = decision
             change.previous_label = prev_val
             change.new_label = str(effective_new_label)
-            change.reason = reason or "Vérification manuelle"
+            change.reason = reason or "Manual verification"
             change.queue_name = queue_id
             change.created_at = datetime.now(timezone.utc)
         else:
@@ -639,7 +639,7 @@ class LabelingService:
                 previous_label=prev_val,
                 new_label=str(effective_new_label),
                 decision=decision,
-                reason=reason or "Vérification manuelle",
+                reason=reason or "Manual verification",
                 author="—",
                 reviewed=(decision != "unsure"),
                 queue_name=queue_id,
@@ -661,7 +661,7 @@ class LabelingService:
     ) -> int:
         """Applies a bulk label fix to a collection of rows matching a pattern."""
         if not reason or not reason.strip():
-            raise HTTPException(status_code=400, detail="Un motif est requis pour une correction en masse.")
+            raise HTTPException(status_code=400, detail="A reason is required for a bulk fix.")
 
         dataset, version = self.get_active_version(dataset_id, db)
         file_path = Path(version.storage_path)
@@ -678,7 +678,7 @@ class LabelingService:
         for idx in row_indices:
             if 0 <= idx < len(df):
                 prev_val = str(df.iloc[idx][target_col]) if pd.notna(df.iloc[idx][target_col]) else "vide"
-                cid = str(df.iloc[idx][id_col]) if id_col and id_col in df.columns else f"Ligne {idx}"
+                cid = str(df.iloc[idx][id_col]) if id_col and id_col in df.columns else f"Row {idx}"
 
                 change = (
                     db.query(LabelChange)
@@ -761,7 +761,7 @@ class LabelingService:
                     row_id=ch.row_identifier,
                     before=ch.previous_label or "vide",
                     after=ch.new_label,
-                    reason=ch.reason or "Modifié par analyste",
+                    reason=ch.reason or "Modified by analyst",
                     author=ch.author,
                     timestamp=ch.created_at.strftime("%H:%M"),
                 )
@@ -770,32 +770,32 @@ class LabelingService:
         checks = [
             LabelCheckItem(
                 id="cancel_date_conflict",
-                title="Date de résiliation renseignée mais churned = non",
-                subtitle="règle métier transformable en auto-fix",
+                title="Cancellation date set but churned = no",
+                subtitle="business rule convertible to auto-fix",
                 count_or_status=str(status_resp.rule_conflicts_count),
                 count=status_resp.rule_conflicts_count,
                 action_type="fix",
             ),
             LabelCheckItem(
                 id="dup_customer_conflict",
-                title="Même client, deux labels différents",
-                subtitle=f"l'identifiant '{id_col or 'id'}' apparaît plusieurs fois avec des labels contradictoires",
+                title="Same customer, two different labels",
+                subtitle=f"identifier '{id_col or 'id'}' appears multiple times with contradictory labels",
                 count_or_status=str(dup_conflict_count),
                 count=dup_conflict_count,
                 action_type="fix",
             ),
             LabelCheckItem(
                 id="changed_back_and_forth",
-                title="Label modifié d'avant en arrière",
-                subtitle="deux personnes en désaccord sur la même ligne",
+                title="Label modified back and forth",
+                subtitle="two reviewers disagree on the same row",
                 count_or_status="0",
                 count=0,
                 action_type="fix",
             ),
             LabelCheckItem(
                 id="target_share_shift",
-                title="Part des churners a fortement bougé",
-                subtitle="8.0 % → 8.6 % après corrections · attendu",
+                title="Churner share changed significantly",
+                subtitle="8.0 % → 8.6 % after corrections · expected",
                 count_or_status="ok",
                 count=None,
                 action_type="view",
@@ -807,43 +807,43 @@ class LabelingService:
         guardrails = [
             GuardrailItem(
                 id="g_reason",
-                title="Un motif pour chaque changement",
-                subtitle="Pas de bascule de label silencieuse",
+                title="A reason for every change",
+                subtitle="No silent label flipping",
                 passed=not has_silent_changes,
                 is_warning=False,
             ),
             GuardrailItem(
                 id="g_test_set",
-                title="Le jeu de test requiert 2 réviseurs",
-                subtitle="Suggestion du modèle masquée ici",
+                title="Test set requires 2 reviewers",
+                subtitle="Model suggestion hidden here",
                 passed=True,
                 is_warning=False,
             ),
             GuardrailItem(
                 id="g_bulk",
-                title="Aperçu obligatoire des corrections en masse",
-                subtitle="Rien n'est appliqué sans vérification préalable",
+                title="Mandatory preview for bulk fixes",
+                subtitle="Nothing applied without prior verification",
                 passed=True,
                 is_warning=False,
             ),
             GuardrailItem(
                 id="g_smote",
-                title="Lignes SMOTE recalculées",
-                subtitle="Un parent corrigé régénère ses enfants synthétiques",
+                title="Recalculated SMOTE rows",
+                subtitle="Corrected parent regenerates synthetic children",
                 passed=True,
                 is_warning=False,
             ),
             GuardrailItem(
                 id="g_not_yet",
-                title="Lignes 'pas encore' exclues de l'entraînement",
-                subtitle="Conservées et revérifiées le mois suivant",
+                title="'Not yet' rows excluded from training",
+                subtitle="Retained and re-checked the following month",
                 passed=True,
                 is_warning=False,
             ),
             GuardrailItem(
                 id="g_source",
-                title="Corriger aussi la source",
-                subtitle=f"{status_resp.rule_conflicts_count} conflits de règles proviennent de l'export CRM",
+                title="Also fix the source",
+                subtitle=f"{status_resp.rule_conflicts_count} rule conflicts originate from CRM export",
                 passed=False,
                 is_warning=True,
             ),
@@ -875,7 +875,7 @@ class LabelingService:
         dataset, version = self.get_active_version(dataset_id, db)
         file_path = Path(version.storage_path)
         if not file_path.exists():
-            raise HTTPException(status_code=404, detail="Fichier source introuvable.")
+            raise HTTPException(status_code=404, detail="Source file not found.")
 
         df = pq.read_table(file_path).to_pandas()
         target_col, _, _, _ = self.detect_target_and_classes(df, version)
@@ -889,7 +889,7 @@ class LabelingService:
         if not db_changes:
             raise HTTPException(
                 status_code=400,
-                detail="Aucune modification de labellisation à enregistrer.",
+                detail="No labeling modifications to save.",
             )
 
         # Apply changes
@@ -924,7 +924,7 @@ class LabelingService:
             "changes_count": changes_applied,
             "change_log_sample": change_log[:50],
             "rerun_augmentation": rerun_augmentation,
-            "description": description or f"Labellisation manuelle et par règles : {changes_applied} modifications",
+            "description": description or f"Manual and rule-based labeling: {changes_applied} modifications",
         }
 
         new_hash = lineage_service.generate_version_hash(
@@ -978,7 +978,7 @@ class LabelingService:
             row_count=len(df),
             changes_applied=changes_applied,
             augmented=rerun_augmentation,
-            message=f"Version {new_label} enregistrée avec succès ({changes_applied} modifications).",
+            message=f"Version {new_label} saved successfully ({changes_applied} modifications).",
         )
 
 

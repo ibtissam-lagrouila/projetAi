@@ -106,7 +106,7 @@ export const ImageTrainingPage: React.FC = () => {
           setSelectedDatasetId(preferred.id);
         }
       } catch (err: any) {
-        setError('Erreur de chargement des jeux de données: ' + (err.message || 'inconnu'));
+        setError('Error loading datasets: ' + (err.message || 'unknown'));
       }
     }
     loadDatasets();
@@ -154,7 +154,7 @@ export const ImageTrainingPage: React.FC = () => {
           }
         }
       } catch (err: any) {
-        setError('Impossible de charger les données d\'entraînement: ' + (err.message || 'inconnu'));
+        setError('Unable to load training data: ' + (err.message || 'unknown'));
       } finally {
         setLoading(false);
       }
@@ -191,11 +191,11 @@ export const ImageTrainingPage: React.FC = () => {
         runsOn,
         augmentations,
       });
-      setNotification(`✓ ${res.message || 'Entraînement lancé avec succès !'}`);
+      setNotification(`✓ ${res.message || 'Training launched successfully!'}`);
       setTimeout(() => setNotification(null), 4000);
       fetchData(selectedDatasetId, runFilter, selectedRunId);
     } catch (err: any) {
-      setError('Erreur au lancement: ' + (err.message || 'inconnu'));
+      setError('Error au lancement: ' + (err.message || 'unknown'));
     }
   };
 
@@ -205,11 +205,11 @@ export const ImageTrainingPage: React.FC = () => {
       const res = await api.startImageShadowMode(selectedDatasetId, {
         device: 'Line 2 mini PC',
       });
-      setNotification(`✓ ${res.message || 'Shadow mode activé'}`);
+      setNotification(`✓ ${res.message || 'Shadow mode enabled'}`);
       setShowShadowModal(false);
       setTimeout(() => setNotification(null), 4000);
     } catch (err: any) {
-      setError('Erreur shadow mode: ' + (err.message || 'inconnu'));
+      setError('Error shadow mode: ' + (err.message || 'unknown'));
     }
   };
 
@@ -240,7 +240,7 @@ export const ImageTrainingPage: React.FC = () => {
   if (loading && !data) {
     return (
       <div style={{ backgroundColor: C.bg, minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', color: C.textMuted, fontFamily: 'monospace' }}>
-        <span>Chargement du pipeline d'entraînement YOLO...</span>
+        <span>Loading YOLO training pipeline...</span>
       </div>
     );
   }
@@ -248,13 +248,13 @@ export const ImageTrainingPage: React.FC = () => {
   if (error && !data) {
     return (
       <div style={{ backgroundColor: C.bg, minHeight: '100vh', padding: '3rem', color: C.red, fontFamily: 'monospace' }}>
-        <p style={{ fontSize: '1.2rem', marginBottom: '1rem' }}>Erreur d'accès aux données :</p>
+        <p style={{ fontSize: '1.2rem', marginBottom: '1rem' }}>Data access error :</p>
         <p style={{ marginBottom: '1.5rem' }}>{error}</p>
         <button
           onClick={() => selectedDatasetId && fetchData(selectedDatasetId, runFilter)}
           style={{ padding: '0.5rem 1rem', backgroundColor: C.amber, color: '#000', fontWeight: 'bold', borderRadius: '4px', border: 'none', cursor: 'pointer' }}
         >
-          Réessayer
+          Retry
         </button>
       </div>
     );
@@ -326,7 +326,7 @@ export const ImageTrainingPage: React.FC = () => {
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
           <span style={{ fontSize: '0.72rem', color: C.textMuted, fontFamily: 'monospace', letterSpacing: '0.1em' }}>
-            JEU DE DONNÉES :
+            DATASET :
           </span>
           <select
             value={selectedDatasetId}
@@ -528,7 +528,7 @@ export const ImageTrainingPage: React.FC = () => {
                   <option value="YOLO11-n · lightweight">YOLO11-n · lightweight</option>
                   <option value="YOLO11-m · medium">YOLO11-m · medium</option>
                   <option value="YOLO11-l · high accuracy">YOLO11-l · high accuracy</option>
-                  <option value="RT-DETR-l · transformer">RT-DETR-l · transformer</option>
+                  <option value="RT-DETR-l · transform">RT-DETR-l · transform</option>
                 </select>
               </div>
 
@@ -712,7 +712,7 @@ export const ImageTrainingPage: React.FC = () => {
                   type="button"
                   onClick={() => handleCopyCommand(data?.new_run_config?.command || 'datalift train defects@v4 --config yolo11s.yaml')}
                   style={{ background: 'none', border: 'none', color: C.textMuted, cursor: 'pointer', padding: 0 }}
-                  title="Copier"
+                  title="Copy"
                 >
                   {copiedCmd ? <Check size={13} color={C.green} /> : <Copy size={13} />}
                 </button>
@@ -746,14 +746,14 @@ export const ImageTrainingPage: React.FC = () => {
                 <div style={{ display: 'flex', gap: '0.65rem' }}>
                   <button
                     type="button"
-                    onClick={() => setNotification('Configuration enregistrée comme modèle réutilisable')}
+                    onClick={() => setNotification('Configuration saved as reusable model')}
                     style={{ flex: 1, backgroundColor: 'transparent', color: C.text, border: `1px solid ${C.borderLight}`, padding: '0.45rem', borderRadius: '4px', fontSize: '0.72rem', fontFamily: 'monospace', cursor: 'pointer' }}
                   >
                     Save as template
                   </button>
                   <button
                     type="button"
-                    onClick={() => setNotification('Planification des entraînements...')}
+                    onClick={() => setNotification('Scheduling training runs...')}
                     style={{ background: 'none', border: 'none', color: C.textMuted, fontSize: '0.72rem', fontFamily: 'monospace', cursor: 'pointer' }}
                   >
                     Schedule...
@@ -991,21 +991,21 @@ export const ImageTrainingPage: React.FC = () => {
             <div style={{ display: 'flex', gap: '0.5rem' }}>
               <button
                 type="button"
-                onClick={() => setNotification('Entraînement interrompu')}
+                onClick={() => setNotification('Training interrompu')}
                 style={{ flex: 1, backgroundColor: 'transparent', border: `1px solid ${C.borderLight}`, color: C.red, padding: '0.45rem', borderRadius: '4px', fontSize: '0.72rem', fontFamily: 'monospace', cursor: 'pointer' }}
               >
                 Stop
               </button>
               <button
                 type="button"
-                onClick={() => setNotification('Ouverture des logs GPU...')}
+                onClick={() => setNotification('Opening GPU logs...')}
                 style={{ flex: 1, backgroundColor: 'transparent', border: `1px solid ${C.borderLight}`, color: C.text, padding: '0.45rem', borderRadius: '4px', fontSize: '0.72rem', fontFamily: 'monospace', cursor: 'pointer' }}
               >
                 Open logs
               </button>
               <button
                 type="button"
-                onClick={() => setNotification('Notification configurée dès la fin du run')}
+                onClick={() => setNotification('Notification set upon run completion')}
                 style={{ flex: 1.3, backgroundColor: 'transparent', border: `1px solid ${C.borderLight}`, color: C.text, padding: '0.45rem', borderRadius: '4px', fontSize: '0.72rem', fontFamily: 'monospace', cursor: 'pointer', whiteSpace: 'nowrap' }}
               >
                 Notify me when done
@@ -1433,7 +1433,7 @@ export const ImageTrainingPage: React.FC = () => {
                       cursor: 'pointer',
                       marginBottom: '0.85rem',
                     }}
-                    title="Cliquer pour afficher en grand côte à côte"
+                    title="Click to view side-by-side enlarged"
                   >
                     <div style={{ width: '130px', height: '65px', backgroundColor: '#373c44', borderRadius: '3px', position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                       {(idx === 0 || idx === 2) && <div style={{ width: '45px', height: '2px', backgroundColor: '#111', transform: 'rotate(-10deg)' }} />}
@@ -1449,7 +1449,7 @@ export const ImageTrainingPage: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => {
-                    if (errItem.action_target === '07') setNotification(`✓ ${errItem.image_id} ajouté au pool Active Learning (07)`);
+                    if (errItem.action_target === '07') setNotification(`✓ ${errItem.image_id} added to Active Learning pool (07)`);
                     else navigate('/labeling');
                   }}
                   style={{
@@ -1641,7 +1641,7 @@ export const ImageTrainingPage: React.FC = () => {
                   type="button"
                   onClick={() => handleCopyCommand(compareSec?.replay_command || 'datalift train --replay yolo-defects-v4')}
                   style={{ background: 'none', border: 'none', color: C.textMuted, cursor: 'pointer', padding: 0 }}
-                  title="Copier"
+                  title="Copy"
                 >
                   {copiedCmd ? <Check size={13} color={C.green} /> : <Copy size={13} />}
                 </button>
@@ -1764,12 +1764,12 @@ export const ImageTrainingPage: React.FC = () => {
         <div style={{ position: 'fixed', inset: 0, zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(0,0,0,0.85)', padding: '1rem' }}>
           <div style={{ width: '100%', maxWidth: '650px', backgroundColor: C.cardElevated, border: `1px solid ${C.borderLight}`, borderRadius: '8px', padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <h3 style={{ fontFamily: 'Newsreader, Georgia, serif', fontStyle: 'italic', fontSize: '1.25rem', color: '#f4f4f6', margin: 0 }}>Comparaison des runs YOLO</h3>
+              <h3 style={{ fontFamily: 'Newsreader, Georgia, serif', fontStyle: 'italic', fontSize: '1.25rem', color: '#f4f4f6', margin: 0 }}>YOLO Run Comparison</h3>
               <button onClick={() => setShowCompareModal(false)} style={{ background: 'none', border: 'none', color: C.textMuted, cursor: 'pointer' }}><X size={18} /></button>
             </div>
 
             <div style={{ fontSize: '0.75rem', fontFamily: 'monospace', color: C.textMuted }}>
-              Runs sélectionnés : {selectedForCompare.join(', ')}
+              Selected runs: {selectedForCompare.join(', ')}
             </div>
 
             <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.75rem', fontFamily: 'monospace', border: `1px solid ${C.border}` }}>
@@ -1809,7 +1809,7 @@ export const ImageTrainingPage: React.FC = () => {
                 onClick={() => setShowCompareModal(false)}
                 style={{ backgroundColor: 'transparent', border: `1px solid ${C.borderLight}`, color: C.text, padding: '0.45rem 1rem', borderRadius: '4px', fontSize: '0.75rem', fontFamily: 'monospace', cursor: 'pointer' }}
               >
-                Fermer
+                Close
               </button>
             </div>
           </div>
@@ -1821,13 +1821,13 @@ export const ImageTrainingPage: React.FC = () => {
         <div style={{ position: 'fixed', inset: 0, zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(0,0,0,0.85)', padding: '1rem' }}>
           <div style={{ width: '100%', maxWidth: '480px', backgroundColor: C.cardElevated, border: `1px solid ${C.borderLight}`, borderRadius: '8px', padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <h3 style={{ fontFamily: 'Newsreader, Georgia, serif', fontStyle: 'italic', fontSize: '1.25rem', color: '#f4f4f6', margin: 0 }}>Évaluation sur le Test Set Verrouillé</h3>
+              <h3 style={{ fontFamily: 'Newsreader, Georgia, serif', fontStyle: 'italic', fontSize: '1.25rem', color: '#f4f4f6', margin: 0 }}>Evaluation on Locked Test Set</h3>
               <button onClick={() => setShowTestModal(false)} style={{ background: 'none', border: 'none', color: C.textMuted, cursor: 'pointer' }}><X size={18} /></button>
             </div>
 
             <div style={{ fontSize: '0.78rem', fontFamily: 'monospace', color: C.textMuted, lineHeight: 1.5 }}>
-              <p style={{ margin: '0 0 0.5rem 0' }}>⚠️ Le test set est verrouillé à 1,776 images étiquetées uniquement par des humains.</p>
-              <p style={{ margin: 0 }}>Chaque évaluation sur le test set est auditée et comptabilisée pour prévenir le surapprentissage.</p>
+              <p style={{ margin: '0 0 0.5rem 0' }}>⚠️ Test set is locked at 1,776 images labeled exclusively by humans.</p>
+              <p style={{ margin: 0 }}>Each evaluation on test set is audited and recorded to prevent overfitting.</p>
             </div>
 
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.65rem', paddingTop: '0.5rem' }}>
@@ -1835,17 +1835,17 @@ export const ImageTrainingPage: React.FC = () => {
                 onClick={() => setShowTestModal(false)}
                 style={{ backgroundColor: 'transparent', border: `1px solid ${C.borderLight}`, color: C.text, padding: '0.45rem 1rem', borderRadius: '4px', fontSize: '0.75rem', fontFamily: 'monospace', cursor: 'pointer' }}
               >
-                Annuler
+                Cancel
               </button>
               <button
                 onClick={() => {
                   setShowTestModal(false);
-                  setNotification('✓ Évaluation test set lancée : hash vérifié et conforme');
+                  setNotification('✓ Test set evaluation launched: hash verified and passed');
                   setTimeout(() => setNotification(null), 4000);
                 }}
                 style={{ backgroundColor: C.amber, color: '#000', fontWeight: 'bold', border: 'none', padding: '0.45rem 1rem', borderRadius: '4px', fontSize: '0.75rem', fontFamily: 'monospace', cursor: 'pointer' }}
               >
-                Confirmer l'évaluation
+                Confirm evaluation
               </button>
             </div>
           </div>
@@ -1857,13 +1857,13 @@ export const ImageTrainingPage: React.FC = () => {
         <div style={{ position: 'fixed', inset: 0, zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(0,0,0,0.85)', padding: '1rem' }}>
           <div style={{ width: '100%', maxWidth: '480px', backgroundColor: C.cardElevated, border: `1px solid ${C.borderLight}`, borderRadius: '8px', padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <h3 style={{ fontFamily: 'Newsreader, Georgia, serif', fontStyle: 'italic', fontSize: '1.25rem', color: '#f4f4f6', margin: 0 }}>Démarrer le Shadow Mode</h3>
+              <h3 style={{ fontFamily: 'Newsreader, Georgia, serif', fontStyle: 'italic', fontSize: '1.25rem', color: '#f4f4f6', margin: 0 }}>Start Shadow Mode</h3>
               <button onClick={() => setShowShadowModal(false)} style={{ background: 'none', border: 'none', color: C.textMuted, cursor: 'pointer' }}><X size={18} /></button>
             </div>
 
             <div style={{ fontSize: '0.78rem', fontFamily: 'monospace', color: C.textMuted, lineHeight: 1.5 }}>
-              <p style={{ margin: '0 0 0.5rem 0' }}>Le modèle candidat <strong style={{ color: C.amber }}>yolo-defects-v4</strong> sera déployé en mode miroir sur le Mini PC de la Ligne 2.</p>
-              <p style={{ margin: 0 }}>Il traitera les flux caméras en temps réel en parallèle du modèle v3 en production sans impacter les décisions de tri.</p>
+              <p style={{ margin: '0 0 0.5rem 0' }}>Candidate model <strong style={{ color: C.amber }}>yolo-defects-v4</strong> will be deployed in mirror mode on Line 2 Mini PC.</p>
+              <p style={{ margin: 0 }}>It will process live camera streams in real time alongside production model v3 without impacting sorting decisions.</p>
             </div>
 
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.65rem', paddingTop: '0.5rem' }}>
@@ -1871,13 +1871,13 @@ export const ImageTrainingPage: React.FC = () => {
                 onClick={() => setShowShadowModal(false)}
                 style={{ backgroundColor: 'transparent', border: `1px solid ${C.borderLight}`, color: C.text, padding: '0.45rem 1rem', borderRadius: '4px', fontSize: '0.75rem', fontFamily: 'monospace', cursor: 'pointer' }}
               >
-                Annuler
+                Cancel
               </button>
               <button
                 onClick={handleStartShadow}
                 style={{ backgroundColor: C.amber, color: '#000', fontWeight: 'bold', border: 'none', padding: '0.45rem 1rem', borderRadius: '4px', fontSize: '0.75rem', fontFamily: 'monospace', cursor: 'pointer' }}
               >
-                Activer le Shadow Mode
+                Enable Shadow Mode
               </button>
             </div>
           </div>
@@ -1913,7 +1913,7 @@ export const ImageTrainingPage: React.FC = () => {
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.25rem' }}>
               <div style={{ backgroundColor: '#090a0c', border: `1px solid ${C.border}`, borderRadius: '6px', padding: '1rem' }}>
-                <div style={{ fontSize: '0.72rem', fontFamily: 'monospace', color: C.textMuted, marginBottom: '0.5rem' }}>VÉRITÉ TERRAIN (SOLID BOX)</div>
+                <div style={{ fontSize: '0.72rem', fontFamily: 'monospace', color: C.textMuted, marginBottom: '0.5rem' }}>GROUND TRUTH (SOLID BOX)</div>
                 <div style={{ height: '200px', backgroundColor: '#1b1d22', borderRadius: '4px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                   <div style={{ width: '220px', height: '120px', backgroundColor: '#373c44', borderRadius: '4px', position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                     <div style={{ width: '80px', height: '2px', backgroundColor: '#111', transform: 'rotate(-12deg)' }} />
@@ -1923,7 +1923,7 @@ export const ImageTrainingPage: React.FC = () => {
               </div>
 
               <div style={{ backgroundColor: '#090a0c', border: `1px solid ${C.border}`, borderRadius: '6px', padding: '1rem' }}>
-                <div style={{ fontSize: '0.72rem', fontFamily: 'monospace', color: C.textMuted, marginBottom: '0.5rem' }}>PRÉDICTION (DASHED BOX)</div>
+                <div style={{ fontSize: '0.72rem', fontFamily: 'monospace', color: C.textMuted, marginBottom: '0.5rem' }}>PREDICTION (DASHED BOX)</div>
                 <div style={{ height: '200px', backgroundColor: '#1b1d22', borderRadius: '4px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                   <div style={{ width: '220px', height: '120px', backgroundColor: '#373c44', borderRadius: '4px', position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                     <div style={{ width: '80px', height: '2px', backgroundColor: '#111', transform: 'rotate(-12deg)' }} />
@@ -1936,12 +1936,12 @@ export const ImageTrainingPage: React.FC = () => {
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', paddingTop: '0.5rem' }}>
               <button
                 onClick={() => {
-                  setNotification(`✓ ${selectedErrorForModal.image_id} envoyé à Active Learning (07)`);
+                  setNotification(`✓ ${selectedErrorForModal.image_id} sent to Active Learning (07)`);
                   setSelectedErrorForModal(null);
                 }}
                 style={{ backgroundColor: 'transparent', border: `1px solid ${C.borderLight}`, color: C.text, padding: '0.45rem 1rem', borderRadius: '4px', fontSize: '0.75rem', fontFamily: 'monospace', cursor: 'pointer' }}
               >
-                Envoyer vers 07 Active Learning
+                Send to 07 Active Learning
               </button>
               <button
                 onClick={() => {
@@ -1950,7 +1950,7 @@ export const ImageTrainingPage: React.FC = () => {
                 }}
                 style={{ backgroundColor: C.amber, color: '#000', fontWeight: 'bold', border: 'none', padding: '0.45rem 1rem', borderRadius: '4px', fontSize: '0.75rem', fontFamily: 'monospace', cursor: 'pointer' }}
               >
-                Corriger dans 05 Labeling →
+                Fix in 05 Labeling →
               </button>
             </div>
           </div>

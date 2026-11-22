@@ -7,7 +7,7 @@ from app.schemas.version import DatasetVersionRead
 
 class DatasetBase(BaseModel):
     name: str = Field(..., min_length=1, max_length=255, description="Nom unique du dataset")
-    description: Optional[str] = Field(None, description="Description ou objectif pour les modèles IA")
+    description: Optional[str] = Field(None, description="Description or objective for AI models")
 
 
 class DatasetCreate(DatasetBase):

@@ -33,7 +33,7 @@ def create_dataset(dataset_in: DatasetCreate, db: Session = Depends(get_db)):
     if existing:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Un dataset avec le nom '{dataset_in.name}' existe déjà.",
+            detail=f"A dataset named '{dataset_in.name}' already exists.",
         )
     dataset = Dataset(name=dataset_in.name, description=dataset_in.description)
     db.add(dataset)
@@ -77,7 +77,7 @@ def get_dataset(dataset_id: UUID, db: Session = Depends(get_db)):
     if not dataset:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Dataset non trouvé.",
+            detail="Dataset not found.",
         )
     
     return DatasetDetail(
@@ -99,7 +99,7 @@ def delete_dataset(dataset_id: UUID, db: Session = Depends(get_db)):
     if not dataset:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Dataset non trouvé.",
+            detail="Dataset not found.",
         )
     db.delete(dataset)
     db.commit()
@@ -119,13 +119,13 @@ async def upload_csv_for_dataset(
     if not dataset:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Dataset non trouvé.",
+            detail="Dataset not found.",
         )
 
     if not file.filename or not file.filename.lower().endswith((".csv", ".tsv", ".txt")):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Le fichier fourni doit être au format CSV (.csv, .tsv, .txt).",
+            detail="File must be CSV format (.csv, .tsv, .txt).",
         )
 
     start_time = time.time()
@@ -133,7 +133,7 @@ async def upload_csv_for_dataset(
     if not csv_bytes:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Le fichier CSV uploadé est vide.",
+            detail="The uploaded CSV file is empty.",
         )
 
     try:
@@ -141,7 +141,7 @@ async def upload_csv_for_dataset(
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail=f"Erreur de conversion CSV vers Parquet: {str(e)}",
+            detail=f"CSV to Parquet conversion error: {str(e)}",
         )
 
     data_hash = parquet_service.calculate_bytes_hash(parquet_bytes)
@@ -215,7 +215,7 @@ async def upload_csv_for_dataset(
                 pass
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Erreur lors de l'enregistrement de la version: {str(exc)}",
+            detail=f"Error saving version: {str(exc)}",
         )
 
 
@@ -233,21 +233,21 @@ async def upload_raw_csv_and_create_dataset(
     if not cleaned_name:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Le nom du dataset ne peut pas être vide.",
+            detail="Dataset name cannot be empty.",
         )
 
     existing = db.query(Dataset).filter(Dataset.name == cleaned_name).first()
     if existing:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Un dataset avec le nom '{cleaned_name}' existe déjà.",
+            detail=f"A dataset named '{cleaned_name}' already exists.",
         )
 
     # 1. Validate file extension before modifying the database
     if not file.filename or not file.filename.lower().endswith((".csv", ".tsv", ".txt")):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Le fichier fourni doit être au format CSV (.csv, .tsv, .txt).",
+            detail="File must be CSV format (.csv, .tsv, .txt).",
         )
 
     # 2. Read and validate CSV content
@@ -255,7 +255,7 @@ async def upload_raw_csv_and_create_dataset(
     if not csv_bytes:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Le fichier CSV uploadé est vide.",
+            detail="The uploaded CSV file is empty.",
         )
 
     # 3. Test conversion to Parquet BEFORE creating the dataset in the database
@@ -264,7 +264,7 @@ async def upload_raw_csv_and_create_dataset(
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail=f"Erreur de conversion CSV vers Parquet: {str(e)}",
+            detail=f"CSV to Parquet conversion error: {str(e)}",
         )
 
     # 4. Atomic database transaction: create Dataset + initial DatasetVersion + Transformation
@@ -329,7 +329,7 @@ async def upload_raw_csv_and_create_dataset(
                 pass
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Échec lors de la création atomique du dataset et de sa version: {str(exc)}",
+            detail=f"Failed to atomically create dataset and version: {str(exc)}",
         )
 
     return get_dataset(dataset_id=dataset.id, db=db)
@@ -340,7 +340,7 @@ def get_dataset_lineage(dataset_id: UUID, db: Session = Depends(get_db)):
     """Returns the DAG lineage graph of versions for a dataset."""
     dataset = db.query(Dataset).filter(Dataset.id == dataset_id).first()
     if not dataset:
-        raise HTTPException(status_code=404, detail="Dataset non trouvé.")
+        raise HTTPException(status_code=404, detail="Dataset not found.")
     return versioning_service.get_lineage_graph(dataset, db)
 
 
@@ -349,7 +349,7 @@ def get_dataset_versioning_header(dataset_id: UUID, db: Session = Depends(get_db
     """Returns top KPI metrics for dataset versioning page."""
     dataset = db.query(Dataset).filter(Dataset.id == dataset_id).first()
     if not dataset:
-        raise HTTPException(status_code=404, detail="Dataset non trouvé.")
+        raise HTTPException(status_code=404, detail="Dataset not found.")
     return versioning_service.get_versioning_header(dataset, db)
 
 
@@ -358,10 +358,10 @@ def update_current_version(dataset_id: UUID, payload: CurrentVersionUpdate, db: 
     """Sets current active version of dataset without modifying data."""
     dataset = db.query(Dataset).filter(Dataset.id == dataset_id).first()
     if not dataset:
-        raise HTTPException(status_code=404, detail="Dataset non trouvé.")
+        raise HTTPException(status_code=404, detail="Dataset not found.")
     version = db.query(DatasetVersion).filter(DatasetVersion.dataset_id == dataset_id, DatasetVersion.version_hash == payload.version_hash).first()
     if not version:
-        raise HTTPException(status_code=404, detail=f"Version '{payload.version_hash}' introuvable pour ce dataset.")
+        raise HTTPException(status_code=404, detail=f"Version '{payload.version_hash}' not found for this dataset.")
     versioning_service.set_current_version(dataset, version, db)
     return {"success": True, "current_version_hash": version.version_hash}
 
@@ -371,10 +371,10 @@ def update_baseline_version(dataset_id: UUID, payload: BaselineVersionUpdate, db
     """Sets baseline reference version of dataset."""
     dataset = db.query(Dataset).filter(Dataset.id == dataset_id).first()
     if not dataset:
-        raise HTTPException(status_code=404, detail="Dataset non trouvé.")
+        raise HTTPException(status_code=404, detail="Dataset not found.")
     version = db.query(DatasetVersion).filter(DatasetVersion.dataset_id == dataset_id, DatasetVersion.version_hash == payload.version_hash).first()
     if not version:
-        raise HTTPException(status_code=404, detail=f"Version '{payload.version_hash}' introuvable pour ce dataset.")
+        raise HTTPException(status_code=404, detail=f"Version '{payload.version_hash}' not found for this dataset.")
     versioning_service.set_baseline_version(dataset, version, db)
     return {"success": True, "baseline_version_hash": version.version_hash}
 

@@ -73,7 +73,7 @@ class TextCleaningService:
     ) -> Dict[str, Any]:
         dataset = db.query(Dataset).filter(Dataset.id == dataset_id).first()
         if not dataset:
-            raise HTTPException(status_code=404, detail="Dataset non trouvé")
+            raise HTTPException(status_code=404, detail="Dataset not found")
 
         if version_hash:
             version = (
@@ -213,7 +213,7 @@ class TextCleaningService:
             })
         if not enc_rows:
             enc_rows = [
-                {"doc": "#00012", "before": "Produit cassÃ© lors du transport", "after": "Produit cassé lors du transport", "highlight": "cassé", "lang": "fr"},
+                {"doc": "#00012", "before": "Produit cassÃ© lors du transport", "after": "Produit broken lors du transport", "highlight": "broken", "lang": "fr"},
                 {"doc": "#00034", "before": "DÃ©jÃ  signalÃ© hier", "after": "Déjà signalé hier", "highlight": "Déjà", "lang": "fr"},
             ]
 
@@ -305,12 +305,12 @@ class TextCleaningService:
                 "rank": "06",
                 "is_later": True,
                 "badge": "LATER" if has_labels else "N/A",
-                "title": "Balance labels · billing is 41% of tickets" if has_labels else "Aucune étiquette à équilibrer",
-                "subtitle": "Moved to Augmentation: paraphrasing and resampling run on the training split" if has_labels else "Ce fichier ne contient pas d'étiquettes à rééquilibrer",
+                "title": "Balance labels · billing is 41% of tickets" if has_labels else "No labels to balance",
+                "subtitle": "Moved to Augmentation: paraphrasing and resampling run on the training split" if has_labels else "This file does not contain labels to rebalance",
                 "param_label": "HANDLED IN",
-                "param_value": "03 Augmentation" if has_labels else "Non requis",
-                "options": ["03 Augmentation"] if has_labels else ["Non requis"],
-                "count_label": "Next step" if has_labels else "0 étiquette",
+                "param_value": "03 Augmentation" if has_labels else "Not required",
+                "options": ["03 Augmentation"] if has_labels else ["Not required"],
+                "count_label": "Next step" if has_labels else "0 labels",
                 "enabled": False,
                 "status": "Preview →",
             },
@@ -381,7 +381,7 @@ class TextCleaningService:
                 "label_balance": {
                     "value": label_balance_val if has_labels else 100,
                     "label": "Label balance",
-                    "subtitle": "Improves in 03 Augmentation, on the training split only" if has_labels else "Aucune étiquette (retiré du score de santé)",
+                    "subtitle": "Improves in 03 Augmentation, on the training split only" if has_labels else "No labels (excluded from health score)",
                 },
             },
             "action_banner": {
@@ -509,8 +509,8 @@ class TextCleaningService:
                         },
                         {
                             "doc": "#31907",
-                            "before": "Contact: s.alaoui@···.ma pour la facture",
-                            "after": "Contact: [EMAIL] pour la facture",
+                            "before": "Contact: s.alaoui@···.ma for invoice",
+                            "after": "Contact: [EMAIL] for invoice",
                             "highlight": "[EMAIL]",
                             "lang": "fr",
                         },
@@ -530,22 +530,22 @@ class TextCleaningService:
                         {
                             "doc": "#22917",
                             "before": "Le produit est cassÃ© à la livraison, je veux un remboursement.",
-                            "after": "Le produit est cassé à la livraison, je veux un remboursement.",
-                            "highlight": "cassé",
+                            "after": "The product arrived broken upon delivery, I want a refund.",
+                            "highlight": "broken",
                             "lang": "fr",
                         },
                         {
                             "doc": "#14890",
                             "before": "ProblÃ¨me de connexion dÃ©jÃ  signalÃ©.",
-                            "after": "Problème de connexion déjà signalé.",
-                            "highlight": "Problème",
+                            "after": "Connection issue already reported.",
+                            "highlight": "Issue",
                             "lang": "fr",
                         },
                         {
                             "doc": "#05112",
                             "before": "Paiement refusÃ© sans raison.",
-                            "after": "Paiement refusé sans raison.",
-                            "highlight": "refusé",
+                            "after": "Payment rejected without reason.",
+                            "highlight": "rejected",
                             "lang": "fr",
                         },
                     ],
@@ -556,21 +556,21 @@ class TextCleaningService:
                     "rows": [
                         {
                             "doc": "#10842",
-                            "before": "Bonjour, je n'ai toujours pas reçu ma commande.",
-                            "after": "Bonjour, je n'ai toujours pas reçu ma commande.",
+                            "before": "Hello, I still have not received my order.",
+                            "after": "Hello, I still have not received my order.",
                             "badge": "KEPT",
                             "lang": "fr",
                         },
                         {
                             "doc": "#11094",
-                            "before": "Bonjour, je n'ai toujours pas reçu ma commande.",
+                            "before": "Hello, I still have not received my order.",
                             "after": "[REMOVED] Exact duplicate message sent 4 min later",
                             "badge": "REMOVED",
                             "lang": "fr",
                         },
                         {
                             "doc": "#12401",
-                            "before": "Bonjour, je n'ai toujours pas reçu ma commande.",
+                            "before": "Hello, I still have not received my order.",
                             "after": "[REMOVED] Exact duplicate message sent 12 min later",
                             "badge": "REMOVED",
                             "lang": "fr",
@@ -610,14 +610,14 @@ class TextCleaningService:
                     "rows": [
                         {
                             "doc": "#17892 (part 1)",
-                            "before": "Ticket #17892 (840 tokens): Bonjour, suite à notre appel...",
+                            "before": "Ticket #17892 (840 tokens): Hello, following our phone call...",
                             "after": "Chunk 1/2 (tokens 0-512) · keeps label: billing",
                             "badge": "CHUNK 1",
                             "lang": "fr",
                         },
                         {
                             "doc": "#17892 (part 2)",
-                            "before": "...détails de facturation du mois dernier avec...",
+                            "before": "...billing details from last month with...",
                             "after": "Chunk 2/2 (tokens 448-840, 64 token overlap) · keeps label: billing",
                             "badge": "CHUNK 2",
                             "lang": "fr",
@@ -657,7 +657,7 @@ class TextCleaningService:
         """Runs the recipe on a subset of up to 2,000 texts without persisting."""
         dataset = db.query(Dataset).filter(Dataset.id == dataset_id).first()
         if not dataset:
-            raise HTTPException(status_code=404, detail="Dataset non trouvé")
+            raise HTTPException(status_code=404, detail="Dataset not found")
 
         # Returns summary diffs
         return {
@@ -667,7 +667,7 @@ class TextCleaningService:
             "texts_edited": 96,
             "texts_removed": 74,
             "estimated_health_score": 92,
-            "message": "Dry run terminé avec succès sur 2 000 textes. Aucun changement n'a été enregistré."
+            "message": "Dry run completed successfully on 2,000 texts. No changes were saved."
         }
 
     def apply_cleaning_recipe(
@@ -680,7 +680,7 @@ class TextCleaningService:
         t0 = time.time()
         dataset = db.query(Dataset).filter(Dataset.id == dataset_id).first()
         if not dataset:
-            raise HTTPException(status_code=404, detail="Dataset non trouvé")
+            raise HTTPException(status_code=404, detail="Dataset not found")
 
         version = (
             db.query(DatasetVersion)

@@ -40,13 +40,13 @@ export const DatasetList: React.FC<DatasetListProps> = ({
         <div className="card" style={{ textAlign: 'center', padding: '2.5rem 1.5rem' }}>
           <Database size={32} color="var(--border)" style={{ margin: '0 auto 0.75rem auto' }} />
           <h3 className="font-serif" style={{ fontSize: '1.05rem', fontWeight: 500, marginBottom: '0.25rem' }}>
-            Aucun dataset enregistré
+            No dataset registered
           </h3>
           <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)', marginBottom: '1.25rem' }}>
-            Importez un fichier CSV pour créer un dataset et générer son premier Parquet.
+            Import a CSV file to create a dataset and generate its first Parquet.
           </p>
           <button className="btn btn-primary" onClick={() => onOpenUpload()}>
-            <Plus size={14} /> Importer un CSV
+            <Plus size={14} /> Import CSV
           </button>
         </div>
       ) : (
@@ -83,7 +83,7 @@ export const DatasetList: React.FC<DatasetListProps> = ({
 
                     <div style={{ display: 'flex', gap: '0.85rem', fontSize: '0.72rem', color: 'var(--text-muted)' }}>
                       <span>
-                        {new Date(ds.updated_at).toLocaleDateString('fr-FR')}
+                        {new Date(ds.updated_at).toLocaleDateString('en-US')}
                       </span>
                       {ds.latest_version && (
                         <span className="font-mono" style={{ color: 'var(--amber)' }}>
@@ -97,10 +97,10 @@ export const DatasetList: React.FC<DatasetListProps> = ({
                     <button
                       className="btn btn-danger"
                       style={{ padding: '0.35rem 0.5rem', borderRadius: 4 }}
-                      title="Supprimer le dataset"
+                      title="Delete dataset"
                       onClick={(e) => {
                         e.stopPropagation();
-                        if (confirm(`Supprimer définitivement le dataset "${ds.name}" et toutes ses versions Parquet ?`)) {
+                        if (confirm(`Permanently delete dataset "${ds.name}" and all its Parquet versions?`)) {
                           onDeleteDataset(ds.id);
                         }
                       }}

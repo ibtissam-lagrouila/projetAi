@@ -102,7 +102,7 @@ export const TextDriftPage: React.FC = () => {
           setSelectedDatasetId(preferred.id);
         }
       } catch (err: any) {
-        setError('Erreur de chargement des jeux de données textuels: ' + (err.message || 'inconnu'));
+        setError('Error loading text datasets: ' + (err.message || 'unknown'));
       }
     }
     loadDatasets();
@@ -151,7 +151,7 @@ export const TextDriftPage: React.FC = () => {
         setSelectedSignalId(res.signals[1]?.id || res.signals[0].id);
       }
     } catch (err: any) {
-      setError('Erreur lors du chargement des données de drift texte: ' + (err.message || 'inconnu'));
+      setError('Error loading text drift data: ' + (err.message || 'unknown'));
     } finally {
       setLoading(false);
     }
@@ -176,10 +176,10 @@ export const TextDriftPage: React.FC = () => {
         send_slack: sendSlack,
         send_webhook: sendWebhook,
       });
-      setNotification('✓ Paramètres de dérive sauvegardés avec succès.');
+      setNotification('✓ Drift settings saved successfully.');
       setTimeout(() => setNotification(null), 3500);
     } catch (err: any) {
-      setError('Erreur lors de la sauvegarde: ' + (err.message || 'inconnu'));
+      setError('Error saving: ' + (err.message || 'unknown'));
     }
   };
 
@@ -187,11 +187,11 @@ export const TextDriftPage: React.FC = () => {
     if (!selectedDatasetId) return;
     try {
       const res = await api.runTextDriftCheck(selectedDatasetId);
-      setNotification(`✓ Vérification terminée: score global = ${res.drift_score} (${res.status_label}).`);
+      setNotification(`✓ Check completed: global score = ${res.drift_score} (${res.status_label}).`);
       setTimeout(() => setNotification(null), 4000);
       fetchData(selectedDatasetId);
     } catch (err: any) {
-      setError("Erreur lors de l'exécution du test: " + (err.message || 'inconnu'));
+      setError("Error executing test: " + (err.message || 'unknown'));
     }
   };
 
@@ -199,13 +199,13 @@ export const TextDriftPage: React.FC = () => {
     if (!selectedDatasetId) return;
     try {
       await api.sendTextDriftClusterTo07(selectedDatasetId, { cluster_id: clusterName, count: 148 });
-      setNotification(`✓ ${clusterName} (148 tickets) envoyé vers 07 Active learning.`);
+      setNotification(`✓ ${clusterName} (148 tickets) sent to 07 Active learning.`);
       setTimeout(() => {
         setNotification(null);
         navigate('/active-learning');
       }, 1400);
     } catch (err: any) {
-      setError("Erreur lors de l'envoi vers 07: " + (err.message || 'inconnu'));
+      setError("Error sending to 07: " + (err.message || 'unknown'));
     }
   };
 
@@ -214,11 +214,11 @@ export const TextDriftPage: React.FC = () => {
     try {
       await api.adoptTextDriftReference(selectedDatasetId);
       setShowAdoptModal(false);
-      setNotification('✓ Fenêtre en direct adoptée comme nouvelle référence.');
+      setNotification('✓ Live window adopted as new baseline.');
       setTimeout(() => setNotification(null), 3500);
       fetchData(selectedDatasetId);
     } catch (err: any) {
-      setError("Erreur lors de l'adoption: " + (err.message || 'inconnu'));
+      setError("Error during adoption: " + (err.message || 'unknown'));
     }
   };
 
@@ -244,7 +244,7 @@ export const TextDriftPage: React.FC = () => {
         labels: data?.selected_cluster?.labels || ['Billing', 'Refund', 'Deliver…', 'Account', 'Other', 'cl. 23'],
         trainBars: data?.selected_cluster?.train_bars || [65, 72, 82, 42, 85, 0],
         liveBars: data?.selected_cluster?.live_bars || [68, 70, 80, 62, 88, 34],
-        text: data?.selected_cluster?.frequent_words || 'Frequent words: code OTP, mise à jour, application, ma tdkhlch. The model spreads these tickets over account and other with low confidence. It may need its own label.',
+        text: data?.selected_cluster?.frequent_words || 'Frequent words: OTP code, update, application, ma tdkhlch. The model spreads these tickets over account and other with low confidence. It may need its own label.',
         badge: 'DRIFT',
         badgeColor: '#ef4444',
         subtitle: 'EMBEDDINGS · DISTANCE',
@@ -257,7 +257,7 @@ export const TextDriftPage: React.FC = () => {
         labels: data?.selected_cluster?.labels || ['Billing', 'Refund', 'Deliver…', 'Account', 'Other', 'cl. 23'],
         trainBars: data?.selected_cluster?.train_bars || [65, 72, 82, 42, 85, 0],
         liveBars: data?.selected_cluster?.live_bars || [68, 70, 80, 62, 88, 34],
-        text: data?.selected_cluster?.frequent_words || 'Frequent words: code OTP, mise à jour, application, ma tdkhlch. The model spreads these tickets over account and other with low confidence. It may need its own label.',
+        text: data?.selected_cluster?.frequent_words || 'Frequent words: OTP code, update, application, ma tdkhlch. The model spreads these tickets over account and other with low confidence. It may need its own label.',
         badge: selectedSignal.status,
         badgeColor: selectedSignal.status_type === 'red' ? '#ef4444' : selectedSignal.status_type === 'amber' ? C.amber : '#9ca3af',
         subtitle: `${selectedSignal.kind.toUpperCase()} · ${selectedSignal.test.toUpperCase()}`,
@@ -410,7 +410,7 @@ export const TextDriftPage: React.FC = () => {
         }}
       >
         <span style={{ fontSize: '0.75rem', fontFamily: 'monospace', color: C.textMuted, textTransform: 'uppercase' }}>
-          Jeu de données :
+          Dataset :
         </span>
         <select
           value={selectedDatasetId}
@@ -440,7 +440,7 @@ export const TextDriftPage: React.FC = () => {
         </select>
         {loading && (
           <span style={{ fontSize: '0.72rem', fontFamily: 'monospace', color: C.amber }}>
-            Chargement des données...
+            Loading data...
           </span>
         )}
       </div>
@@ -2002,7 +2002,7 @@ export const TextDriftPage: React.FC = () => {
               <button
                 type="button"
                 onClick={() => {
-                  setNotification('✓ Rapport de dérive exporté avec succès (format PDF / JSON).');
+                  setNotification('✓ Drift report exported successfully (PDF / JSON format).');
                   setTimeout(() => setNotification(null), 3500);
                 }}
                 style={{
@@ -2388,7 +2388,7 @@ export const TextDriftPage: React.FC = () => {
                 type="button"
                 onClick={() => {
                   setShowNewLabelModal(false);
-                  setNotification(`✓ Nouveau label « ${newLabelInput} » proposé. Envoyer vers 07 Active learning.`);
+                  setNotification(`✓ New label "${newLabelInput}" proposed. Send to 07 Active learning.`);
                   setTimeout(() => setNotification(null), 3500);
                 }}
                 style={{

@@ -8,7 +8,7 @@ const SegmentedGauge: React.FC<{ value: number | null }> = ({ value }) => {
   const totalBlocks = 20;
   if (value === null) {
     return (
-      <div className="segmented-bar" title="Aucune colonne cible sélectionnée">
+      <div className="segmented-bar" title="No target column selected">
         {Array.from({ length: totalBlocks }).map((_, i) => (
           <div key={i} className="segment-block" />
         ))}
@@ -60,7 +60,7 @@ export const ProfilingPage: React.FC = () => {
         setLoading(false);
       }
     } catch (err) {
-      console.error('Erreur chargement datasets:', err);
+      console.error('Error loading datasets:', err);
       setLoading(false);
     }
   };
@@ -80,7 +80,7 @@ export const ProfilingPage: React.FC = () => {
         setLoading(false);
       }
     } catch (err) {
-      console.error('Erreur chargement versions:', err);
+      console.error('Error loading versions:', err);
       setLoading(false);
     }
   };
@@ -91,7 +91,7 @@ export const ProfilingPage: React.FC = () => {
       const profileData = await api.getVersionProfile(hash);
       setProfile(profileData);
     } catch (err) {
-      console.error('Erreur calcul profil:', err);
+      console.error('Error calculating profile:', err);
     } finally {
       setProfileLoading(false);
       setLoading(false);
@@ -118,15 +118,15 @@ export const ProfilingPage: React.FC = () => {
       const updatedProfile = await api.updateVersionTarget(selectedVersionHash, newTarget);
       setProfile(updatedProfile);
     } catch (err) {
-      console.error('Erreur mise à jour de la cible:', err);
+      console.error('Error updating target:', err);
     } finally {
       setProfileLoading(false);
     }
   };
 
   const handleFindingAction = (item: any) => {
-    // Si c'est un problème de déséquilibre sur la variable cible, rediriger vers l'étape 03 Augmentation
-    if (item.title?.includes('Déséquilibre') || item.action_type === 'options') {
+    // Target imbalance issue: redirect to Step 03 Augmentation
+    if (item.title?.includes('Imbalance') || item.action_type === 'options') {
       const targetParam = item.column ? `&target=${encodeURIComponent(item.column)}` : '';
       navigate(`/augmentation?dataset=${selectedDatasetId}&version=${selectedVersionHash}${targetParam}`, {
         state: {
@@ -163,7 +163,7 @@ export const ProfilingPage: React.FC = () => {
       case 'NUMERIC':
         return profile.columns.filter((c) => c.detected_type === 'nombre');
       case 'CATEGORY':
-        return profile.columns.filter((c) => ['catégorie', 'cible', 'date'].includes(c.detected_type));
+        return profile.columns.filter((c) => ['category', 'target', 'date'].includes(c.detected_type));
       case 'ALL':
       default:
         return profile.columns;
@@ -204,7 +204,7 @@ export const ProfilingPage: React.FC = () => {
     return (
       <div style={{ textAlign: 'center', padding: '5rem 2rem', color: 'var(--text-muted)' }}>
         <RefreshCw className="animate-spin" size={26} style={{ margin: '0 auto 1rem auto', color: 'var(--amber)' }} />
-        <p className="font-mono" style={{ fontSize: '0.85rem' }}>Analyse et calcul du profil de données...</p>
+        <p className="font-mono" style={{ fontSize: '0.85rem' }}>Analyzing and calculating data profile...</p>
       </div>
     );
   }
@@ -214,22 +214,22 @@ export const ProfilingPage: React.FC = () => {
       <div style={{ padding: '3rem', maxWidth: '800px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.6rem' }}>
           <span className="font-mono" style={{ fontSize: '0.75rem', color: 'var(--amber)', letterSpacing: '0.08em' }}>
-            ÉTAPE 01 • PROFILAGE
+            STEP 01 • PROFILING
           </span>
         </div>
         <h1 className="font-serif" style={{ fontSize: '2.4rem', fontWeight: 500, marginBottom: '0.8rem' }}>
-          Profilage des Données
+          Data Profiling
         </h1>
         <div className="card" style={{ textAlign: 'center', padding: '4rem 2rem', marginTop: '1.5rem' }}>
           <Database size={36} color="var(--border)" style={{ margin: '0 auto 1rem auto' }} />
           <h3 className="font-serif" style={{ fontSize: '1.2rem', fontWeight: 500, marginBottom: '0.5rem' }}>
-            Aucun jeu de données enregistré
+            No dataset registered
           </h3>
           <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', marginBottom: '1.5rem', maxWidth: '480px', margin: '0 auto 1.5rem auto' }}>
-            Importez d'abord un fichier CSV dans l'étape <strong>Versioning</strong> pour que Datalift génère son diagnostic d'intégrité.
+            First upload a CSV file in <strong>Versioning</strong> so Datalift can generate its integrity report.
           </p>
           <Link to="/versioning" className="btn btn-primary">
-            Aller à l'étape Versioning
+            Go to Versioning step
           </Link>
         </div>
       </div>
@@ -272,7 +272,7 @@ export const ProfilingPage: React.FC = () => {
             >
               {versions.map((v, i) => (
                 <option key={v.id} value={v.version_hash}>
-                  #{v.version_hash.slice(0, 8)} {i === 0 ? '(Dernière)' : ''} — {(v.row_count ?? 0).toLocaleString()} lignes
+                  #{v.version_hash.slice(0, 8)} {i === 0 ? '(Latest)' : ''} — {(v.row_count ?? 0).toLocaleString()} rows
                 </option>
               ))}
             </select>
@@ -283,7 +283,7 @@ export const ProfilingPage: React.FC = () => {
           {profileLoading && (
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', fontSize: '0.75rem', color: 'var(--amber)' }}>
               <RefreshCw className="animate-spin" size={13} />
-              <span className="font-mono">Diagnostic en cours...</span>
+              <span className="font-mono">Diagnosing...</span>
             </div>
           )}
           <button
@@ -292,7 +292,7 @@ export const ProfilingPage: React.FC = () => {
             style={{ fontSize: '0.78rem', padding: '0.45rem 1rem' }}
             onClick={() => navigate(`/cleaning?dataset=${selectedDatasetId}&version=${selectedVersionHash}`)}
           >
-            <span>Passer au Nettoyage</span>
+            <span>Continue to cleaning</span>
             <ArrowRight size={14} />
           </button>
         </div>
@@ -320,7 +320,7 @@ export const ProfilingPage: React.FC = () => {
                     ROWS
                   </div>
                   <div className="font-mono" style={{ fontSize: '1.45rem', fontWeight: 500, color: 'var(--text-main)' }}>
-                    {summary?.total_rows != null ? summary.total_rows.toLocaleString('fr-FR') : '0'}
+                    {summary?.total_rows != null ? summary.total_rows.toLocaleString('en-US') : '0'}
                   </div>
                 </div>
 
@@ -362,9 +362,9 @@ export const ProfilingPage: React.FC = () => {
                       cursor: 'pointer',
                       outline: 'none',
                     }}
-                    title="Choisir la colonne cible pour l'évaluation de l'équilibre des classes"
+                    title="Select target column for class balance evaluation"
                   >
-                    <option value="" style={{ background: '#121214', color: '#71717a' }}>Non définie</option>
+                    <option value="" style={{ background: '#121214', color: '#71717a' }}>Not defined</option>
                     {columnsList.map((c) => (
                       <option key={c.name} value={c.name} style={{ background: '#121214', color: '#f4f4f6' }}>
                         {c.name} ({c.detected_type})
@@ -389,7 +389,7 @@ export const ProfilingPage: React.FC = () => {
 
               {/* 5 barres de sous-scores */}
               <div className="subscores-container">
-                {/* 1. Complétude */}
+                {/* 1. Completeness */}
                 <div className="subscore-row">
                   <span className="subscore-label">Completeness</span>
                   <SegmentedGauge value={subScores?.completeness ?? null} />
@@ -398,7 +398,7 @@ export const ProfilingPage: React.FC = () => {
                   </span>
                 </div>
 
-                {/* 2. Unicité */}
+                {/* 2. Uniqueness */}
                 <div className="subscore-row">
                   <span className="subscore-label">Uniqueness</span>
                   <SegmentedGauge value={subScores?.uniqueness ?? null} />
@@ -407,7 +407,7 @@ export const ProfilingPage: React.FC = () => {
                   </span>
                 </div>
 
-                {/* 3. Validité */}
+                {/* 3. Validity */}
                 <div className="subscore-row">
                   <span className="subscore-label">Validity</span>
                   <SegmentedGauge value={subScores?.validity ?? null} />
@@ -416,7 +416,7 @@ export const ProfilingPage: React.FC = () => {
                   </span>
                 </div>
 
-                {/* 4. Cohérence */}
+                {/* 4. Consistency */}
                 <div className="subscore-row">
                   <span className="subscore-label">Consistency</span>
                   <SegmentedGauge value={subScores?.consistency ?? null} />
@@ -425,7 +425,7 @@ export const ProfilingPage: React.FC = () => {
                   </span>
                 </div>
 
-                {/* 5. Équilibre des classes */}
+                {/* 5. Class balance */}
                 <div className="subscore-row">
                   <span className="subscore-label">Class balance</span>
                   <SegmentedGauge value={subScores?.class_balance ?? null} />
@@ -437,20 +437,20 @@ export const ProfilingPage: React.FC = () => {
             </div>
           </div>
 
-          {/* Section: Ce qui demande votre attention (Image 2) */}
+          {/* Section: What needs your attention */}
           <div className="findings-section">
             <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', borderBottom: '1px solid var(--border)', paddingBottom: '0.75rem', marginBottom: '0.5rem' }}>
               <h2 className="font-serif" style={{ fontSize: '1.75rem', fontWeight: 500, color: 'var(--text-main)' }}>
-                Ce qui demande votre attention
+                What needs your attention
               </h2>
               <div className="font-mono" style={{ fontSize: '0.72rem', color: 'var(--text-muted)', letterSpacing: '0.08em' }}>
-                {findings.length} PROBLÈMES • PAR IMPACT
+                {findings.length} ISSUES • BY IMPACT
               </div>
             </div>
 
             {findings.length === 0 ? (
               <div style={{ padding: '2rem 0', color: 'var(--text-muted)', fontSize: '0.85rem' }}>
-                Aucune anomalie critique détectée dans ce jeu de données.
+                No critical anomaly detected in this dataset.
               </div>
             ) : (
               <div>
@@ -482,7 +482,7 @@ export const ProfilingPage: React.FC = () => {
                         type="button"
                         className="finding-action-btn font-mono"
                         onClick={() => handleFindingAction(item)}
-                        title={`Ouvrir dans l’étape Cleaning (${item.action_label})`}
+                        title={`Open in Cleaning step (${item.action_label})`}
                       >
                         {item.action_label}
                       </button>
@@ -497,7 +497,7 @@ export const ProfilingPage: React.FC = () => {
           <div style={{ marginTop: '1rem' }}>
             <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', borderBottom: '1px solid var(--border)', paddingBottom: '0.75rem', marginBottom: '1.5rem' }}>
               <h2 className="font-serif" style={{ fontSize: '1.75rem', fontWeight: 500, color: 'var(--text-main)' }}>
-                Colonnes
+                Columns
               </h2>
 
               {/* Filter Tabs matching mock */}
@@ -544,11 +544,11 @@ export const ProfilingPage: React.FC = () => {
             <div className="columns-grid">
               {filteredColumns.map((col) => (
                 <div key={col.name} className={`column-card ${col.is_flagged ? 'flagged' : ''}`}>
-                  {/* Coin orange sur colonnes à problème */}
+                  {/* Orange corner on flagged columns */}
                   {col.is_flagged && (
                     <div
                       className="column-card-corner"
-                      title={col.flag_reasons?.join(' • ') || 'Problème détecté'}
+                      title={col.flag_reasons?.join(' • ') || 'Issue detected'}
                     />
                   )}
 
@@ -576,7 +576,7 @@ export const ProfilingPage: React.FC = () => {
                             }}
                             title={
                               bar.is_outlier
-                                ? `Outliers (IQR) : ${bar.count} valeurs au-delà de ${bar.bin_start}`
+                                ? `Outliers (IQR) : ${bar.count} values beyond ${bar.bin_start}`
                                 : bar.label
                                 ? `${bar.label} : ${bar.count}`
                                 : `[${bar.bin_start} - ${bar.bin_end}] : ${bar.count}`
@@ -598,7 +598,7 @@ export const ProfilingPage: React.FC = () => {
                         missing {col.null_percentage}%
                       </span>
                       <span className="font-mono">
-                        unique {col.unique_percentage < 100 ? `${col.unique_percentage}%` : col.unique_count.toLocaleString('fr-FR')}
+                        unique {col.unique_percentage < 100 ? `${col.unique_percentage}%` : col.unique_count.toLocaleString('en-US')}
                       </span>
                     </div>
 
@@ -609,7 +609,7 @@ export const ProfilingPage: React.FC = () => {
                       </div>
                     ) : (
                       <div className="font-mono" style={{ fontSize: '0.68rem', color: 'var(--text-faint)' }}>
-                        {col.stats ? `moy: ${col.stats.mean}` : 'Intégrité vérifiée'}
+                        {col.stats ? `moy: ${col.stats.mean}` : 'Integrity verified'}
                       </div>
                     )}
                   </div>
@@ -619,7 +619,7 @@ export const ProfilingPage: React.FC = () => {
 
             {filteredColumns.length === 0 && (
               <div style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-muted)' }}>
-                <p className="font-mono" style={{ fontSize: '0.85rem' }}>Aucune colonne ne correspond au filtre sélectionné.</p>
+                <p className="font-mono" style={{ fontSize: '0.85rem' }}>No column matches selected filter.</p>
               </div>
             )}
           </div>

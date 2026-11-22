@@ -36,19 +36,19 @@ def test_text_profiling_on_test_texte(db_session: Session):
         f"Attendu 9 lignes vides ignorées, obtenu: {profile['kpis'].get('empty_lines_ignored')}"
     )
 
-    # 3. File size: displayed in Ko (24 Ko)
-    assert "Ko" in profile["kpis"]["size"], f"Taille attendue en Ko, obtenu: {profile['kpis']['size']}"
-    assert profile["kpis"]["size"] == "24 Ko", f"Taille attendue 24 Ko, obtenu: {profile['kpis']['size']}"
+    # 3. File size: displayed in KB (24 KB)
+    assert "KB" in profile["kpis"]["size"] or "Ko" in profile["kpis"]["size"]
+    assert profile["kpis"]["size"] in ["24 KB", "24 Ko"]
 
-    # 4. Labels: no label column, no 'general' class invented, 'Aucune'
-    assert profile["labels"]["has_labels"] is False, "Le jeu de données ne doit pas avoir d'étiquettes"
-    assert profile["labels"]["classes_count"] == 0, "Le nombre de classes doit être 0"
-    assert profile["kpis"]["labels"] in [0, "0", "Aucune"], f"Label KPI inattendu: {profile['kpis']['labels']}"
-    assert len(profile["labels"]["bars"]) == 0, "La liste des étiquettes doit être vide"
+    # 4. Labels: no label column, no 'general' class invented, 'None'
+    assert profile["labels"]["has_labels"] is False, "Dataset must not have labels"
+    assert profile["labels"]["classes_count"] == 0, "Classes count must be 0"
+    assert profile["kpis"]["labels"] in [0, "0", "None", "Aucune"], f"Label KPI inattendu: {profile['kpis']['labels']}"
+    assert len(profile["labels"]["bars"]) == 0, "Labels list must be empty"
 
     # Health score subscores: label balance must be excluded (only 4 bars)
     health_bar_labels = [b["label"].lower() for b in profile["health"]["bars"]]
-    assert not any("étiquette" in lbl or "label" in lbl for lbl in health_bar_labels), (
+    assert not any("label" in lbl.lower() for lbl in health_bar_labels), (
         "Le sous-score d'équilibre des étiquettes ne doit pas figurer dans le score de santé"
     )
     assert len(profile["health"]["bars"]) == 4, f"Attendu 4 barres de santé, obtenu: {len(profile['health']['bars'])}"
@@ -72,31 +72,31 @@ def test_text_profiling_on_test_texte(db_session: Session):
     # Expected: ~85% French, 8 English, 3 Spanish (4 occurrences), 3 Arabic, 0 mixed
     slices = {s["name"]: s for s in profile["languages"]["slices"]}
 
-    assert "Français" in slices, "Le français doit être détecté"
-    fr_pct = slices["Français"]["pct"]
+    assert "French" in slices, "French must be detected"
+    fr_pct = slices["French"]["pct"]
     assert 80 <= fr_pct <= 90, f"Pourcentage de français attendu ~85%, obtenu: {fr_pct}%"
 
-    assert "Anglais" in slices, "L'anglais doit être détecté"
-    assert slices["Anglais"]["count"] == 8, f"Attendu exactement 8 textes anglais, obtenu: {slices['Anglais']['count']}"
+    assert "English" in slices, "English must be detected"
+    assert slices["English"]["count"] == 8, f"Attendu exactement 8 textes anglais, obtenu: {slices['English']['count']}"
 
-    assert "Arabe" in slices, "L'arabe doit être détecté"
-    assert slices["Arabe"]["count"] == 3, f"Attendu exactement 3 textes arabes, obtenu: {slices['Arabe']['count']}"
+    assert "Arabic" in slices, "Arabic must be detected"
+    assert slices["Arabic"]["count"] == 3, f"Attendu exactement 3 textes arabes, obtenu: {slices['Arabic']['count']}"
 
-    assert "Espagnol" in slices, "L'espagnol doit être détecté"
-    assert slices["Espagnol"]["count"] in [3, 4], f"Attendu 3 ou 4 textes espagnols, obtenu: {slices['Espagnol']['count']}"
+    assert "Spanish" in slices, "Spanish must be detected"
+    assert slices["Spanish"]["count"] in [3, 4], f"Attendu 3 ou 4 textes espagnols, obtenu: {slices['Spanish']['count']}"
 
     # Darija should NOT be invented
     assert "Darija" not in slices, "Darija ne doit pas être inventé si le détecteur ne le gère pas"
 
     # Mixed documents: 0 in this corpus
-    assert "Aucun document mixte" in profile["languages"]["mixed_text"] or "0" in profile["languages"]["mixed_text"]
+    assert "No mixed documents" in profile["languages"]["mixed_text"] or "0" in profile["languages"]["mixed_text"] or "Aucun" in profile["languages"]["mixed_text"]
 
     # 7. Quotes:
     # Should highlight personal data (email / phone) and broken encoding
     quotes = profile["quotes"]
     tags = [q["tag"] for q in quotes]
-    assert "DONNÉES PERSONNELLES" in tags, "Une citation avec données personnelles doit être présente"
-    assert "ENCODAGE" in tags, "Une citation avec problème d'encodage doit être présente"
+    assert "PERSONAL DATA" in tags, "Quote with personal data must be present"
+    assert "ENCODING" in tags, "Quote with encoding issue must be present"
     assert not any("LABEL" in t or "ÉTIQUETTE" in t for t in tags), (
         "Aucune alerte LABEL MAY BE WRONG ne doit être présente pour des données sans étiquette"
     )
@@ -108,4 +108,4 @@ def test_text_profiling_on_test_texte(db_session: Session):
 
     # 8. Length histogram classes
     assert len(profile["length"]["histogram_details"]) > 0
-    assert "mots" in profile["length"]["histogram_details"][0]["label"]
+    assert "words" in profile["length"]["histogram_details"][0]["label"]

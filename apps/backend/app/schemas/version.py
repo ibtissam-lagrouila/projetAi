@@ -32,7 +32,7 @@ class BaselineVersionUpdate(BaseModel):
 
 
 class BranchCreate(BaseModel):
-    branch_name: Optional[str] = "brouillon"
+    branch_name: Optional[str] = "draft"
     description: Optional[str] = None
 
 
@@ -63,7 +63,7 @@ class DatasetVersionRead(DatasetVersionBase):
 
 
 class DatasetVersionDetail(DatasetVersionRead):
-    sample_rows: Optional[List[Dict[str, Any]]] = Field(default_factory=list, description="Aperçu des premières lignes")
+    sample_rows: Optional[List[Dict[str, Any]]] = Field(default_factory=list, description="Preview of the first rows")
 
 
 class DistributionShiftItem(BaseModel):
@@ -97,7 +97,7 @@ class CompareResponse(BaseModel):
     removed_summary: str
     target_column: Optional[str] = None
     target_evolution: Optional[str] = None  # "9,2 % → 30 %"
-    target_evolution_details: Optional[str] = None  # "Sur 'churned' = oui (sur split=train)"
+    target_evolution_details: Optional[str] = None  # "On 'churned' = yes (on split=train)"
     test_set_status: str  # "identical", "modified", "not_applicable"
     test_set_message: str
     test_set_rows: Optional[int] = None

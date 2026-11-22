@@ -33,7 +33,7 @@ export const UploadModal: React.FC<UploadModalProps> = ({
       const selected = e.target.files[0];
       const lowerName = selected.name.toLowerCase();
       if (!lowerName.endsWith('.csv') && !lowerName.endsWith('.tsv') && !lowerName.endsWith('.txt')) {
-        setError('Format invalide. Seuls les fichiers CSV (.csv, .tsv, .txt) sont acceptés.');
+        setError('Invalid format. Only CSV files (.csv, .tsv, .txt) are accepted.');
         return;
       }
       setFile(selected);
@@ -47,7 +47,7 @@ export const UploadModal: React.FC<UploadModalProps> = ({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!file) {
-      setError('Veuillez sélectionner un fichier CSV à uploader.');
+      setError('Please select a CSV file to upload.');
       return;
     }
 
@@ -58,7 +58,7 @@ export const UploadModal: React.FC<UploadModalProps> = ({
       if (isNewDataset) {
         const trimmedName = newDatasetName.trim();
         if (!trimmedName) {
-          setError('Veuillez renseigner un nom pour le nouveau dataset.');
+          setError('Please enter a name for the new dataset.');
           setLoading(false);
           return;
         }
@@ -66,7 +66,7 @@ export const UploadModal: React.FC<UploadModalProps> = ({
         onSuccess(createdDataset.id);
       } else {
         if (!datasetId) {
-          setError('Veuillez sélectionner un dataset existant.');
+          setError('Please select an existing dataset.');
           setLoading(false);
           return;
         }
@@ -75,7 +75,7 @@ export const UploadModal: React.FC<UploadModalProps> = ({
       }
       onClose();
     } catch (err: any) {
-      let message = "Erreur lors de l'upload et de la conversion en Parquet.";
+      let message = "Error during upload and Parquet conversion.";
       const detail = err.response?.data?.detail;
       if (typeof detail === 'string') {
         message = detail;
@@ -98,7 +98,7 @@ export const UploadModal: React.FC<UploadModalProps> = ({
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1.25rem 1.5rem', borderBottom: '1px solid var(--border)' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
             <Upload size={20} color="#6366f1" />
-            <h3 style={{ fontSize: '1.1rem', fontWeight: 600 }}>Ingestion CSV vers Parquet</h3>
+            <h3 style={{ fontSize: '1.1rem', fontWeight: 600 }}>CSV to Parquet Ingestion</h3>
           </div>
           <button onClick={onClose} style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}>
             <X size={20} />
@@ -121,7 +121,7 @@ export const UploadModal: React.FC<UploadModalProps> = ({
             }}>
               <AlertCircle size={18} style={{ flexShrink: 0, marginTop: 2, color: '#f43f5e' }} />
               <div>
-                <strong style={{ display: 'block', marginBottom: 2 }}>Erreur d'ingestion :</strong>
+                <strong style={{ display: 'block', marginBottom: 2 }}>Error d'ingestion :</strong>
                 <span>{error}</span>
               </div>
             </div>
@@ -149,7 +149,7 @@ export const UploadModal: React.FC<UploadModalProps> = ({
 
           {!isNewDataset ? (
             <div className="form-group">
-              <label>Sélectionner le dataset cible</label>
+              <label>Select target dataset</label>
               <select value={datasetId} onChange={(e) => setDatasetId(e.target.value)}>
                 {datasets.map((ds) => (
                   <option key={ds.id} value={ds.id}>
@@ -161,7 +161,7 @@ export const UploadModal: React.FC<UploadModalProps> = ({
           ) : (
             <>
               <div className="form-group">
-                <label>Nom du dataset *</label>
+                <label>Dataset name *</label>
                 <input
                   type="text"
                   placeholder="ex: fraud_detection_raw"
@@ -174,7 +174,7 @@ export const UploadModal: React.FC<UploadModalProps> = ({
                 <label>Description (optionnel)</label>
                 <textarea
                   rows={2}
-                  placeholder="Objectif, source des données, équipe IA..."
+                  placeholder="Objective, data source, AI team..."
                   value={newDatasetDescription}
                   onChange={(e) => setNewDatasetDescription(e.target.value)}
                 />
@@ -183,7 +183,7 @@ export const UploadModal: React.FC<UploadModalProps> = ({
           )}
 
           <div className="form-group">
-            <label>Fichier CSV source</label>
+            <label>Source CSV file</label>
             <div
               style={{
                 border: '2px dashed var(--border)',
@@ -207,13 +207,13 @@ export const UploadModal: React.FC<UploadModalProps> = ({
                   <FileText size={32} color="#10b981" />
                   <span style={{ fontWeight: 600 }}>{file.name}</span>
                   <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                    {(file.size / 1024).toFixed(1)} KB — Prêt à convertir
+                    {(file.size / 1024).toFixed(1)} KB — Ready to convert
                   </span>
                 </div>
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem' }}>
                   <Upload size={32} color="#6366f1" />
-                  <span style={{ fontWeight: 500 }}>Cliquez pour choisir un CSV ou glissez-déposez</span>
+                  <span style={{ fontWeight: 500 }}>Click to choose a CSV or drag and drop</span>
                   <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Conversion automatique en Parquet (Snappy)</span>
                 </div>
               )}
@@ -222,7 +222,7 @@ export const UploadModal: React.FC<UploadModalProps> = ({
 
           <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '1.5rem' }}>
             <button type="button" className="btn btn-secondary" onClick={onClose} disabled={loading}>
-              Annuler
+              Cancel
             </button>
             <button type="submit" className="btn btn-primary" disabled={loading}>
               {loading ? 'Conversion Parquet...' : 'Uploader & Versionner'}

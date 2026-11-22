@@ -63,7 +63,7 @@ class TrainingService:
         """Resolves dataset and its current or latest version."""
         dataset = db.query(Dataset).filter(Dataset.id == dataset_id).first()
         if not dataset:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Jeu de données introuvable.")
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Dataset not found.")
 
         version = None
         if dataset.current_version_id:
@@ -81,7 +81,7 @@ class TrainingService:
         if not version:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail="Aucune version trouvée pour ce jeu de données.",
+                detail="No version found for this dataset.",
             )
 
         return dataset, version
@@ -93,7 +93,7 @@ class TrainingService:
         dataset, version = self.get_active_version(dataset_id, db)
         file_path = Path(version.storage_path)
         if not file_path.exists():
-            raise HTTPException(status_code=404, detail="Fichier Parquet introuvable.")
+            raise HTTPException(status_code=404, detail="Parquet file not found.")
 
         df = pq.read_table(file_path).to_pandas()
         target_col, pos_label, neg_label, available_targets = labeling_service.detect_target_and_classes(df, version)
@@ -113,7 +113,7 @@ class TrainingService:
         left_out_count = max(not_yet_in_db, excluded_in_df)
 
         splits_summary = (
-            f"Splits de l'étape 04 : 70 / 15 / 15 • train {train_count:,} • val {val_count:,} • test {test_count:,}"
+            f"Step 04 splits: 70 / 15 / 15 • train {train_count:,} • val {val_count:,} • test {test_count:,}"
         )
 
         # 2. Test set hash
@@ -154,13 +154,13 @@ class TrainingService:
                 is_id = c.lower() in self.ID_COLS or c.lower().endswith("_id")
                 is_leak = c in leak_cols
                 if is_id:
-                    treatment = "ignorée • identifiant"
+                    treatment = "ignored • identifier"
                 elif is_leak:
-                    treatment = "supprimée • fuite de la cible"
+                    treatment = "removed • target leakage"
                 elif pd.api.types.is_numeric_dtype(df[c]):
-                    treatment = "normalisée • centrage-réduction"
+                    treatment = "normalized • mean-std scaling"
                 else:
-                    treatment = "encodage cible • ajusté sur le train seul"
+                    treatment = "target encoding • fitted on train only"
 
                 features_config.append(
                     FeatureItemConfig(
@@ -187,7 +187,7 @@ class TrainingService:
 
         return TrainingConfigResponse(
             dataset_version=f"{dataset.name}@{version_label} · courante",
-            train_view="Réel + smote · partition train uniquement",
+            train_view="Real + smote · train partition only",
             splits_summary=splits_summary,
             left_out_count=left_out_count,
             available_models=["Logistic · baseline", "XGBoost", "LightGBM", "CatBoost", "Random forest", "Petit MLP"],
@@ -484,7 +484,7 @@ class TrainingService:
             total_trials=40,
             execution_time_seconds=360.0,
             cpu_hours=0.2,
-            error_message="mémoire saturée, essai 4",
+            error_message="out of memory, attempt 4",
         )
         db.add(run_cat)
 
@@ -547,29 +547,29 @@ class TrainingService:
         ]
 
         guardrails = [
-            {"id": "g1", "title": "Jeu de test ouvert uniquement pour promouvoir", "subtitle": "Chaque ouverture est comptabilisée sur l'exécution", "passed": True},
-            {"id": "g2", "title": "Même empreinte de test pour comparer", "subtitle": "Sinon les exécutions sont marquées non comparables", "passed": True},
-            {"id": "g3", "title": "Lignes synthétiques dans le train seul", "subtitle": "SMOTE n'atteint jamais val ni test", "passed": True},
+            {"id": "g1", "title": "Test set opened only for promotion", "subtitle": "Each opening is counted on the run", "passed": True},
+            {"id": "g2", "title": "Same test fingerprint for comparison", "subtitle": "Otherwise runs are marked non-comparable", "passed": True},
+            {"id": "g3", "title": "Synthetic rows in train only", "subtitle": "SMOTE never reaches val or test", "passed": True},
             {
                 "id": "g4",
-                "title": "Contrôle des fuites avant chaque run",
-                "subtitle": f"Fuite détectée : {', '.join(leak_cols)} supprimée" if leak_cols else "Aucune variable de fuite détectée",
+                "title": "Leakage check before each run",
+                "subtitle": f"Leakage detected: {', '.join(leak_cols)} removed" if leak_cols else "No leakage variable detected",
                 "passed": len(leak_cols) == 0,
                 "is_warning": len(leak_cols) > 0,
             },
-            {"id": "g5", "title": "Une baseline dans chaque expérimentation", "subtitle": "Mêmes partitions, même métrique", "passed": True},
-            {"id": "g6", "title": "Chaque exécution est rejouable", "subtitle": "données + config + code + graine + environnement", "passed": True},
-            {"id": "g7", "title": "Budget de calcul respecté", "subtitle": "Les exécutions s'arrêtent à la limite du projet", "passed": True},
+            {"id": "g5", "title": "One baseline per experiment", "subtitle": "Same partitions, same metric", "passed": True},
+            {"id": "g6", "title": "Each run is replayable", "subtitle": "data + config + code + seed + environment", "passed": True},
+            {"id": "g7", "title": "Compute budget respected", "subtitle": "Runs stop at the project limit", "passed": True},
             {
                 "id": "g8",
-                "title": "La production est toujours sur la version précédente",
-                "subtitle": f"La {version_label} a corrigé {labels_fixed} labels · réentraînement suggéré" if labels_fixed > 0 else "Modèle en phase avec la dernière version de données",
+                "title": "Production always on the previous version",
+                "subtitle": f"{version_label} corrected {labels_fixed} labels · retraining suggested" if labels_fixed > 0 else "Model in sync with the latest data version",
                 "passed": labels_fixed == 0,
                 "is_warning": labels_fixed > 0,
             },
         ]
 
-        prod_date = prod_run.created_at.strftime("%d %b") if prod_run and prod_run.created_at else "08 nov."
+        prod_date = prod_run.created_at.strftime("%d %b") if prod_run and prod_run.created_at else "08 Nov"
 
         return TrainingHeaderSummary(
             dataset_id=str(dataset.id),
@@ -632,7 +632,7 @@ class TrainingService:
         """Returns deep evaluation details for Section 3 Evaluate, completely calculated from actual dataset rows."""
         run = db.query(TrainingRun).filter(TrainingRun.id == run_id).first()
         if not run:
-            raise HTTPException(status_code=404, detail="Exécution d'entraînement introuvable.")
+            raise HTTPException(status_code=404, detail="Training run not found.")
 
         # Determine real row counts from actual Parquet file
         file_path = Path(run.version.storage_path) if run.version else None
@@ -731,17 +731,17 @@ class TrainingService:
             # Find candidate misclassifications
             val_df = df[df["split"] == "val"] if "split" in df.columns else df.head(val_rows)
             for idx, row in val_df.head(4).iterrows():
-                row_id = str(row[id_col]) if id_col and id_col in row else f"Ligne #{idx}"
+                row_id = str(row[id_col]) if id_col and id_col in row else f"Row #{idx}"
                 lbl = str(row[target_col])
                 is_pos = (lbl == str(pos_label))
                 prob = 0.91 if not is_pos else 0.12
                 why = (
-                    f"Valeur cible '{lbl}', mais les variables prédisent fortement {pos_label}."
+                    f"Target value '{lbl}', but predictors strongly point to {pos_label}."
                     if not is_pos else
-                    f"Label '{lbl}', mais absence de signaux prédictifs discriminants."
+                    f"Label '{lbl}', but no discriminating predictive signals found."
                 )
                 cat = "false_alarms" if not is_pos else "missed_churners"
-                act = "Envoyer vers 05 · erreurs suspectées" if not is_pos else "Ajouter au pool actif 07"
+                act = "Send to step 05 · suspected errors" if not is_pos else "Add to active pool step 07"
                 errors.append(
                     ErrorToInspect(
                         customer_id=row_id,
@@ -754,9 +754,9 @@ class TrainingService:
                 )
 
         recent_logs = [
-            "14:52 essai 22 · max_depth 6 · eta 0.05 · terminé",
-            "14:53 essai 23 · max_depth 8 · eta 0.03 · démarré",
-            "14:53 essai 21 élagué · sous la médiane au tour 120",
+            "14:52 attempt 22 · max_depth 6 · eta 0.05 · done",
+            "14:53 attempt 23 · max_depth 8 · eta 0.03 · started",
+            "14:53 attempt 21 pruned · below median at round 120",
         ]
 
         version_label = versioning_service.get_version_label(run.version) if run.version else "v4"
@@ -793,7 +793,7 @@ class TrainingService:
         """Unlocks the test set for the specified run and records test evaluation."""
         run = db.query(TrainingRun).filter(TrainingRun.id == run_id).first()
         if not run:
-            raise HTTPException(status_code=404, detail="Exécution introuvable.")
+            raise HTTPException(status_code=404, detail="Run not found.")
 
         run.test_eval_count += 1
         if not run.metrics_test:
@@ -806,7 +806,7 @@ class TrainingService:
         db.commit()
         return {
             "success": True,
-            "message": f"Évaluation sur le jeu de test déverrouillée (ouverture n°{run.test_eval_count}).",
+            "message": f"Test set evaluation unlocked (opening #{run.test_eval_count}).",
             "test_eval_count": run.test_eval_count,
             "metrics": run.metrics_test,
         }
@@ -840,8 +840,8 @@ class TrainingService:
             LabelChange.dataset_id == dataset.id,
             LabelChange.decision == "change",
         ).count()
-        cand_version_desc = f"v4 · {labels_fixed} labels corrigés" if labels_fixed > 0 else "v4 · version courante"
-        change_fixes = f"+{labels_fixed} corrections" if labels_fixed > 0 else "identique"
+        cand_version_desc = f"v4 · {labels_fixed} labels corrected" if labels_fixed > 0 else "v4 · current version"
+        change_fixes = f"+{labels_fixed} corrections" if labels_fixed > 0 else "identical"
 
         # Metrics diff
         prod_rec = prod.metrics_test.get("recall", 0.82) if prod and prod.metrics_test else (prod.metrics_val.get("recall", 0.82) if prod else 0.82)
@@ -855,13 +855,13 @@ class TrainingService:
         sign_prec = "+" if diff_prec >= 0 else ""
 
         # Slices comparison
-        worst_slice_name = "Pire segment"
+        worst_slice_name = "Worst slice"
         prod_slice_score = "55 %"
         cand_slice_score = "62 %"
         diff_slice = "+7.0 %"
         if cand and cand.slices_metrics:
             weakest = min(cand.slices_metrics, key=lambda s: s.get("recall_yes", 1.0))
-            worst_slice_name = f"Pire segment ({weakest.get('segment')})"
+            worst_slice_name = f"Worst slice ({weakest.get('segment')})"
             cand_slice_val = weakest.get("recall_yes", 0.62)
             prod_slice_val = max(0.0, cand_slice_val - 0.07)
             cand_slice_score = f"{int(cand_slice_val * 100)} %"
@@ -875,13 +875,13 @@ class TrainingService:
         sign_cost = "+" if diff_cost > 0 else ""
 
         table = [
-            CompareRow(metric_name="Empreinte du jeu de test", prod_val=test_hash, cand_val=test_hash, change="✓ identique", is_positive=True),
-            CompareRow(metric_name="Entraîné sur", prod_val="v3", cand_val=cand_version_desc, change=change_fixes, is_positive=True),
-            CompareRow(metric_name="Rappel · oui", prod_val=f"{prod_rec:.2f}", cand_val=f"{cand_rec:.2f}", change=f"{sign_rec}{diff_rec} %", is_positive=diff_rec >= 0),
-            CompareRow(metric_name="Précision · oui", prod_val=f"{prod_prec:.2f}", cand_val=f"{cand_prec:.2f}", change=f"{sign_prec}{diff_prec} %", is_positive=diff_prec >= 0),
+            CompareRow(metric_name="Test set fingerprint", prod_val=test_hash, cand_val=test_hash, change="✓ identical", is_positive=True),
+            CompareRow(metric_name="Trained on", prod_val="v3", cand_val=cand_version_desc, change=change_fixes, is_positive=True),
+            CompareRow(metric_name="Recall · yes", prod_val=f"{prod_rec:.2f}", cand_val=f"{cand_rec:.2f}", change=f"{sign_rec}{diff_rec} %", is_positive=diff_rec >= 0),
+            CompareRow(metric_name="Precision · yes", prod_val=f"{prod_prec:.2f}", cand_val=f"{cand_prec:.2f}", change=f"{sign_prec}{diff_prec} %", is_positive=diff_prec >= 0),
             CompareRow(metric_name=worst_slice_name, prod_val=prod_slice_score, cand_val=cand_slice_score, change=diff_slice, is_positive=True),
-            CompareRow(metric_name="Coût mensuel au seuil optimal", prod_val=f"{int(prod_cost):,} MAD", cand_val=f"{int(cand_cost):,} MAD", change=f"{sign_cost}{diff_cost:,} MAD", is_positive=diff_cost <= 0),
-            CompareRow(metric_name="Temps d'inférence · 1k lignes", prod_val="12 ms", cand_val="14 ms", change="+2 ms", is_positive=False),
+            CompareRow(metric_name="Monthly cost at optimal threshold", prod_val=f"{int(prod_cost):,} MAD", cand_val=f"{int(cand_cost):,} MAD", change=f"{sign_cost}{diff_cost:,} MAD", is_positive=diff_cost <= 0),
+            CompareRow(metric_name="Inference time · 1k rows", prod_val="12 ms", cand_val="14 ms", change="+2 ms", is_positive=False),
         ]
 
         checklist = PromotionChecklist(

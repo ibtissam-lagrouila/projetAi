@@ -106,7 +106,7 @@ export const ImageExportApiPage: React.FC = () => {
           setSelectedDatasetId(preferred.id);
         }
       } catch (err: any) {
-        setError('Erreur de chargement des jeux de données image: ' + (err.message || 'inconnu'));
+        setError('Error loading image datasets: ' + (err.message || 'unknown'));
       }
     }
     loadDatasets();
@@ -152,7 +152,7 @@ export const ImageExportApiPage: React.FC = () => {
         setSelectedVersion(cur.version);
       }
     } catch (err: any) {
-      setError('Erreur lors du chargement des données export image: ' + (err.message || 'inconnu'));
+      setError('Error loading image export data: ' + (err.message || 'unknown'));
     } finally {
       setLoading(false);
     }
@@ -167,7 +167,7 @@ export const ImageExportApiPage: React.FC = () => {
   // Handlers
   const handleCopy = (text: string, label: string) => {
     navigator.clipboard.writeText(text);
-    setNotification(`✓ ${label} copié dans le presse-papiers.`);
+    setNotification(`✓ ${label} copied to clipboard.`);
     setTimeout(() => setNotification(null), 3000);
   };
 
@@ -179,10 +179,10 @@ export const ImageExportApiPage: React.FC = () => {
         format: selectedFormat,
         options: exportOptions,
       });
-      setNotification(`✓ ${res.filename} téléchargé (${res.message}).`);
+      setNotification(`✓ ${res.filename} downloaded (${res.message}).`);
       setTimeout(() => setNotification(null), 4000);
     } catch (err: any) {
-      setError('Erreur lors du téléchargement: ' + (err.message || 'inconnu'));
+      setError('Error downloading: ' + (err.message || 'unknown'));
     }
   };
 
@@ -192,10 +192,10 @@ export const ImageExportApiPage: React.FC = () => {
       const res = await api.buildImageModelPackage(selectedDatasetId, {
         format: selectedModelFormat,
       });
-      setNotification(`✓ Package ${selectedModelFormat} compilé avec succès (${res.package_id}).`);
+      setNotification(`✓ Package ${selectedModelFormat} compiled successfully (${res.package_id}).`);
       setTimeout(() => setNotification(null), 4000);
     } catch (err: any) {
-      setError('Erreur lors de la compilation: ' + (err.message || 'inconnu'));
+      setError('Error compiling: ' + (err.message || 'unknown'));
     }
   };
 
@@ -206,11 +206,11 @@ export const ImageExportApiPage: React.FC = () => {
         device: 'Line 2 · 1 device',
       });
       setShowShadowModal(false);
-      setNotification(`✓ Mode shadow activé sur Line 2 (${res.message}).`);
+      setNotification(`✓ Shadow mode activated on Line 2 (${res.message}).`);
       setTimeout(() => setNotification(null), 4000);
       fetchState(selectedDatasetId);
     } catch (err: any) {
-      setError('Erreur lors du démarrage shadow: ' + (err.message || 'inconnu'));
+      setError('Error starting shadow mode: ' + (err.message || 'unknown'));
     }
   };
 
@@ -222,11 +222,11 @@ export const ImageExportApiPage: React.FC = () => {
         scope: newKeyScope,
       });
       setShowCreateKeyModal(false);
-      setNotification(`✓ Nouvelle clé API créée : ${res.key}`);
+      setNotification(`✓ New API key created: ${res.key}`);
       setTimeout(() => setNotification(null), 5000);
       fetchState(selectedDatasetId);
     } catch (err: any) {
-      setError('Erreur création clé API: ' + (err.message || 'inconnu'));
+      setError('Error creating API key: ' + (err.message || 'unknown'));
     }
   };
 
@@ -238,11 +238,11 @@ export const ImageExportApiPage: React.FC = () => {
         events: Object.keys(webhookToggles).filter((k) => webhookToggles[k]),
       });
       setShowAddWebhookModal(false);
-      setNotification(`✓ Webhook enregistré pour ${res.url}`);
+      setNotification(`✓ Webhook registered for ${res.url}`);
       setTimeout(() => setNotification(null), 4000);
       fetchState(selectedDatasetId);
     } catch (err: any) {
-      setError('Erreur ajout webhook: ' + (err.message || 'inconnu'));
+      setError('Error adding webhook: ' + (err.message || 'unknown'));
     }
   };
 
@@ -250,11 +250,11 @@ export const ImageExportApiPage: React.FC = () => {
     if (!selectedDatasetId) return;
     try {
       await api.rollbackImageModel(selectedDatasetId, { target_version: targetVersion });
-      setNotification(`✓ Rollback vers ${targetVersion} appliqué.`);
+      setNotification(`✓ Rollback to ${targetVersion} applied.`);
       setTimeout(() => setNotification(null), 4000);
       fetchState(selectedDatasetId);
     } catch (err: any) {
-      setError('Erreur lors du rollback: ' + (err.message || 'inconnu'));
+      setError('Error during rollback: ' + (err.message || 'unknown'));
     }
   };
 
@@ -341,7 +341,7 @@ export const ImageExportApiPage: React.FC = () => {
         }}
       >
         <span style={{ fontSize: '0.75rem', fontFamily: 'monospace', color: C.textMuted, textTransform: 'uppercase' }}>
-          Jeu de données :
+          Dataset :
         </span>
         <select
           value={selectedDatasetId}
@@ -371,7 +371,7 @@ export const ImageExportApiPage: React.FC = () => {
         </select>
         {loading && (
           <span style={{ fontSize: '0.72rem', fontFamily: 'monospace', color: C.amber }}>
-            Chargement des données d'export image...
+            Loading image export data...
           </span>
         )}
       </div>
@@ -1095,7 +1095,7 @@ export const ImageExportApiPage: React.FC = () => {
               <button
                 type="button"
                 onClick={() => {
-                  setNotification('✓ Model card téléchargée (yolo-defects-v4-card.md).');
+                  setNotification('✓ Model card downloaded (yolo-defects-v4-card.md).');
                   setTimeout(() => setNotification(null), 3500);
                 }}
                 style={{
@@ -1777,7 +1777,7 @@ export const ImageExportApiPage: React.FC = () => {
                         if (row.action_key.includes('rollback')) handleRollback('v2');
                         else if (row.action_key.includes('extend')) setShowShadowModal(true);
                         else {
-                          setNotification(`✓ Action ${row.action_label} effectuée.`);
+                          setNotification(`✓ Action ${row.action_label} executed.`);
                           setTimeout(() => setNotification(null), 3000);
                         }
                       }}

@@ -79,7 +79,7 @@ export const TextVersioningPage: React.FC = () => {
         setSelectedDatasetId(preferred.id);
       }
     } catch (err: any) {
-      setError('Erreur lors du chargement des datasets: ' + (err.message || 'inconnue'));
+      setError('Error loading datasets: ' + (err.message || 'unknown'));
     }
   }, [selectedDatasetId]);
 
@@ -99,7 +99,7 @@ export const TextVersioningPage: React.FC = () => {
       setCompareTo(res.compare.selected_to || 'v2 · clean');
       setActiveViewId(res.views[0]?.id || 'all');
     } catch (err: any) {
-      setError('Erreur lors du chargement du versioning texte: ' + (err.message || 'inconnue'));
+      setError('Error loading text versioning: ' + (err.message || 'unknown'));
     } finally {
       setLoading(false);
     }
@@ -133,7 +133,7 @@ export const TextVersioningPage: React.FC = () => {
       a.download = `dataset_card_${data.dataset_name.replace(/[^a-zA-Z0-9_-]/g, '_')}.json`;
       a.click();
       URL.revokeObjectURL(url);
-      showNotif('Dataset card exportée avec succès !');
+      showNotif('Dataset card exported successfully !');
     };
 
     window.addEventListener('datalift:export-text-dataset-card', handleExport);
@@ -179,9 +179,9 @@ export const TextVersioningPage: React.FC = () => {
     if (!selectedDatasetId || !data) return;
     try {
       await api.tagTextVersionProduction(selectedDatasetId, activeVersionId);
-      showNotif(`Version ${activeVersionId} marquée comme PRODUCTION.`, true);
+      showNotif(`Version ${activeVersionId} tagged as PRODUCTION.`, true);
     } catch (err: any) {
-      showNotif('Erreur lors du marquage: ' + (err.message || 'inconnue'), false);
+      showNotif('Error tagging version: ' + (err.message || 'unknown'), false);
     }
   };
 
@@ -190,10 +190,10 @@ export const TextVersioningPage: React.FC = () => {
     if (!selectedDatasetId || !data) return;
     try {
       await api.restoreTextVersion(selectedDatasetId, versionId);
-      showNotif(`Version ${versionId} restaurée comme baseline active.`, true);
+      showNotif(`Version ${versionId} restored as active baseline.`, true);
       fetchData(selectedDatasetId);
     } catch (err: any) {
-      showNotif('Erreur lors de la restauration: ' + (err.message || 'inconnue'), false);
+      showNotif('Error restoring version: ' + (err.message || 'unknown'), false);
     }
   };
 
@@ -202,7 +202,7 @@ export const TextVersioningPage: React.FC = () => {
       <div style={{ backgroundColor: C.bg, minHeight: '100vh', padding: '3rem', color: C.text }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', color: C.amber }}>
           <RefreshCw className="animate-spin" size={20} />
-          <span style={{ fontFamily: 'monospace', fontSize: '0.9rem' }}>Chargement du versioning texte...</span>
+          <span style={{ fontFamily: 'monospace', fontSize: '0.9rem' }}>Loading text versioning...</span>
         </div>
       </div>
     );
@@ -220,7 +220,7 @@ export const TextVersioningPage: React.FC = () => {
           className="btn btn-secondary font-mono"
           style={{ fontSize: '0.8rem' }}
         >
-          Réessayer
+          Retry
         </button>
       </div>
     );
@@ -271,7 +271,7 @@ export const TextVersioningPage: React.FC = () => {
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
           <span style={{ fontSize: '0.7rem', color: C.textMuted, fontFamily: 'monospace', letterSpacing: '0.1em' }}>
-            JEU DE DONNÉES :
+            DATASET :
           </span>
           <select
             value={selectedDatasetId}
@@ -685,7 +685,7 @@ export const TextVersioningPage: React.FC = () => {
                 </button>
                 <button
                   type="button"
-                  onClick={() => showNotif(`Nouvelle branche créée à partir de ${activeVersionId}.`)}
+                  onClick={() => showNotif(`New branch created from ${activeVersionId}.`)}
                   style={{
                     backgroundColor: 'transparent',
                     border: `1px solid ${C.borderLight}`,
@@ -720,7 +720,7 @@ export const TextVersioningPage: React.FC = () => {
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 <button
                   type="button"
-                  onClick={() => showNotif('Téléchargement du dataset initié.')}
+                  onClick={() => showNotif('Dataset download initiated.')}
                   style={{
                     backgroundColor: 'transparent',
                     border: `1px solid ${C.borderLight}`,
@@ -1111,7 +1111,7 @@ export const TextVersioningPage: React.FC = () => {
             })}
             <button
               type="button"
-              onClick={() => showNotif('Ajout de filtre de vue personnalisé.')}
+              onClick={() => showNotif('Custom view filter addition.')}
               style={{
                 backgroundColor: 'transparent',
                 color: C.muted,

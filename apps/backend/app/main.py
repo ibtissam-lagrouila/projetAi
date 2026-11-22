@@ -16,7 +16,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(
     title=settings.PROJECT_NAME,
     version=settings.VERSION,
-    description="Datalift - Plateforme de gestion et versioning immuable de données pour équipes IA",
+    description="Datalift — Immutable Data Preparation & ML Governance Engine for AI Teams",
     lifespan=lifespan,
 )
 
@@ -45,7 +45,7 @@ def health_check():
 @app.get("/", tags=["Root"])
 def root():
     return {
-        "message": "Bienvenue sur l'API Datalift",
+        "message": "Welcome to Datalift API",
         "docs_url": "/docs",
         "version": settings.VERSION,
     }

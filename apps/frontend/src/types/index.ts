@@ -67,7 +67,7 @@ export interface ColumnStats {
 
 export interface ColumnProfile {
   name: string;
-  detected_type: 'id' | 'nombre' | 'catégorie' | 'date' | 'cible' | string;
+  detected_type: 'id' | 'numeric' | 'category' | 'date' | 'target' | 'text' | 'numeric' | 'category' | 'target' | string;
   null_count: number;
   null_percentage: number;
   unique_count: number;

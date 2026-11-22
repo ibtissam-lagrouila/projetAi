@@ -313,7 +313,7 @@ export const ImageProfilingPage: React.FC = () => {
         setLoading(false);
       }
     } catch (err) {
-      console.error('Erreur chargement datasets images:', err);
+      console.error('Error loading image datasets:', err);
       setLoading(false);
     }
   };
@@ -331,7 +331,7 @@ export const ImageProfilingPage: React.FC = () => {
         loadProfile(datasetId);
       }
     } catch (err) {
-      console.error('Erreur chargement versions:', err);
+      console.error('Error loading versions:', err);
       loadProfile(datasetId);
     }
   };
@@ -342,8 +342,8 @@ export const ImageProfilingPage: React.FC = () => {
       const data = await api.getImageProfile(datasetId, hash);
       setProfile(data);
     } catch (err) {
-      console.error('Erreur calcul profil image:', err);
-      showNotif("Erreur lors de l'analyse du dataset d'images", false);
+      console.error('Error calculating image profile:', err);
+      showNotif("Error analyzing image dataset", false);
     } finally {
       setLoading(false);
     }
@@ -363,14 +363,14 @@ export const ImageProfilingPage: React.FC = () => {
       setUploading(true);
       const newProfile = await api.uploadImageArchive(file);
       setProfile(newProfile);
-      showNotif(`Dataset « ${file.name} » importé et analysé avec succès !`, true);
+      showNotif(`Dataset « ${file.name} » imported and analyzed successfully!`, true);
       const freshDs = await api.getDatasets();
       setDatasets(freshDs);
       setSelectedDatasetId(newProfile.dataset_id);
       localStorage.setItem('datalift_selected_dataset_id', newProfile.dataset_id);
     } catch (err) {
       console.error('Upload image failed:', err);
-      showNotif("Échec de l'import du fichier d'images", false);
+      showNotif("Failed to import image archive", false);
     } finally {
       setUploading(false);
       if (fileInputRef.current) fileInputRef.current.value = '';
@@ -393,7 +393,7 @@ export const ImageProfilingPage: React.FC = () => {
       >
         <RefreshCw className="animate-spin" size={30} style={{ color: C.amber }} />
         <span style={{ fontFamily: 'monospace', fontSize: 13, letterSpacing: 1.5 }}>
-          CHARGEMENT DU PROFIL D'IMAGES…
+          LOADING IMAGE PROFILE…
         </span>
       </div>
     );
@@ -429,7 +429,7 @@ export const ImageProfilingPage: React.FC = () => {
             }}
           >
             <Upload size={14} />
-            <span>{uploading ? 'Importation…' : "Importer un dataset d'images (.zip)"}</span>
+            <span>{uploading ? 'Importation…' : "Import an image dataset (.zip)"}</span>
           </button>
         </div>
 
@@ -447,10 +447,10 @@ export const ImageProfilingPage: React.FC = () => {
         >
           <Upload size={36} style={{ color: C.amber, margin: '0 auto 16px' }} />
           <h3 style={{ fontFamily: 'Georgia, serif', fontStyle: 'italic', fontSize: 24, margin: '0 0 8px', color: C.text }}>
-            Importer un dataset d'images
+            Import an image dataset
           </h3>
           <p style={{ color: C.muted, fontSize: 13, maxWidth: 440, margin: '0 auto 20px' }}>
-            Glissez-déposez ou cliquez pour importer votre archive .zip (dossiers de classes ou images) pour lancer le profilage de qualité et détection.
+            Drag and drop or click to upload your .zip archive (class folders or images) to start quality profiling and detection.
           </p>
           <button
             style={{
@@ -464,7 +464,7 @@ export const ImageProfilingPage: React.FC = () => {
               cursor: 'pointer',
             }}
           >
-            Parcourir les fichiers
+            Browse files
           </button>
         </div>
       </div>
@@ -576,11 +576,11 @@ export const ImageProfilingPage: React.FC = () => {
             }}
           >
             <Upload size={14} />
-            <span>{uploading ? 'Importation…' : "Importer un dataset d'images (.zip)"}</span>
+            <span>{uploading ? 'Importation…' : "Import an image dataset (.zip)"}</span>
           </button>
 
           <button
-            onClick={() => showNotif("Rapport d'audit d'images téléchargé")}
+            onClick={() => showNotif("Image audit report downloaded")}
             style={{
               background: '#18191d',
               border: `1px solid ${C.border}`,

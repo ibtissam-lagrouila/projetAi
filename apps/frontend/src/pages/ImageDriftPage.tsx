@@ -70,7 +70,7 @@ export const ImageDriftPage: React.FC = () => {
   const [showAdoptModal, setShowAdoptModal] = useState<boolean>(false);
   const [showDeviceModal, setShowDeviceModal] = useState<boolean>(false);
   const [reportNote, setReportNote] = useState<string>(
-    'Anomalie de luminosité constatée sur line 2 · cam 4 depuis le 3 Nov (travail de nuit). Merci de vérifier le projecteur d\'éclairage ou de nettoyer l\'optique.'
+    'Brightness anomaly detected on line 2 · cam 4 since Nov 3 (night shift). Please inspect lighting fixture or clean optics.'
   );
 
   // Load image datasets on mount
@@ -103,7 +103,7 @@ export const ImageDriftPage: React.FC = () => {
           setSelectedDatasetId(preferred.id);
         }
       } catch (err: any) {
-        setError('Erreur de chargement des jeux de données image: ' + (err.message || 'inconnu'));
+        setError('Error loading image datasets: ' + (err.message || 'unknown'));
       }
     }
     loadDatasets();
@@ -152,7 +152,7 @@ export const ImageDriftPage: React.FC = () => {
         setSelectedSignalId(res.signals[1]?.id || res.signals[0].id);
       }
     } catch (err: any) {
-      setError('Erreur lors du chargement des données de dérive image: ' + (err.message || 'inconnu'));
+      setError('Error loading image drift data: ' + (err.message || 'unknown'));
     } finally {
       setLoading(false);
     }
@@ -177,10 +177,10 @@ export const ImageDriftPage: React.FC = () => {
         send_slack: sendSlack,
         send_webhook: sendWebhook,
       });
-      setNotification('✓ Paramètres de dérive image sauvegardés avec succès.');
+      setNotification('✓ Image drift settings saved successfully.');
       setTimeout(() => setNotification(null), 3500);
     } catch (err: any) {
-      setError('Erreur lors de la sauvegarde: ' + (err.message || 'inconnu'));
+      setError('Error saving: ' + (err.message || 'unknown'));
     }
   };
 
@@ -188,11 +188,11 @@ export const ImageDriftPage: React.FC = () => {
     if (!selectedDatasetId) return;
     try {
       const res = await api.runImageDriftCheck(selectedDatasetId);
-      setNotification(`✓ Vérification CV terminée: score = ${res.drift_score} (${res.status_label}).`);
+      setNotification(`✓ CV check completed: score = ${res.drift_score} (${res.status_label}).`);
       setTimeout(() => setNotification(null), 4000);
       fetchData(selectedDatasetId);
     } catch (err: any) {
-      setError("Erreur lors de l'exécution du test: " + (err.message || 'inconnu'));
+      setError("Error executing test: " + (err.message || 'unknown'));
     }
   };
 
@@ -200,13 +200,13 @@ export const ImageDriftPage: React.FC = () => {
     if (!selectedDatasetId) return;
     try {
       await api.sendImageDriftTo07(selectedDatasetId, { count });
-      setNotification(`✓ ${count} images ciblées envoyées vers 07 Active learning.`);
+      setNotification(`✓ ${count} targeted images sent to 07 Active learning.`);
       setTimeout(() => {
         setNotification(null);
         navigate('/image-active-learning');
       }, 1400);
     } catch (err: any) {
-      setError("Erreur lors de l'envoi vers 07: " + (err.message || 'inconnu'));
+      setError("Error sending to 07: " + (err.message || 'unknown'));
     }
   };
 
@@ -215,11 +215,11 @@ export const ImageDriftPage: React.FC = () => {
     try {
       await api.adoptImageDriftReference(selectedDatasetId, { camera: 'cam 6' });
       setShowAdoptModal(false);
-      setNotification('✓ Cam 6 adoptée comme nouvelle référence.');
+      setNotification('✓ Cam 6 adopted as new reference.');
       setTimeout(() => setNotification(null), 3500);
       fetchData(selectedDatasetId);
     } catch (err: any) {
-      setError("Erreur lors de l'adoption: " + (err.message || 'inconnu'));
+      setError("Error during adoption: " + (err.message || 'unknown'));
     }
   };
 
@@ -231,10 +231,10 @@ export const ImageDriftPage: React.FC = () => {
         note: reportNote,
       });
       setShowReportModal(false);
-      setNotification('✓ Rapport d\'incident transmis à l\'équipe maintenance ligne.');
+      setNotification('✓ Incident report sent to line maintenance team.');
       setTimeout(() => setNotification(null), 3500);
     } catch (err: any) {
-      setError("Erreur lors du signalement: " + (err.message || 'inconnu'));
+      setError("Error reporting: " + (err.message || 'unknown'));
     }
   };
 
@@ -414,7 +414,7 @@ export const ImageDriftPage: React.FC = () => {
         }}
       >
         <span style={{ fontSize: '0.75rem', fontFamily: 'monospace', color: C.textMuted, textTransform: 'uppercase' }}>
-          Jeu de données :
+          Dataset :
         </span>
         <select
           value={selectedDatasetId}
@@ -444,7 +444,7 @@ export const ImageDriftPage: React.FC = () => {
         </select>
         {loading && (
           <span style={{ fontSize: '0.72rem', fontFamily: 'monospace', color: C.amber }}>
-            Chargement des données de dérive image...
+            Loading image drift data...
           </span>
         )}
       </div>
@@ -2017,7 +2017,7 @@ export const ImageDriftPage: React.FC = () => {
               <button
                 type="button"
                 onClick={() => {
-                  setNotification('✓ Rapport de dérive image exporté avec succès (format PDF / JSON).');
+                  setNotification('✓ Image drift report exported successfully (PDF / JSON format).');
                   setTimeout(() => setNotification(null), 3500);
                 }}
                 style={{
@@ -2579,7 +2579,7 @@ export const ImageDriftPage: React.FC = () => {
                 type="button"
                 onClick={() => {
                   setShowDeviceModal(false);
-                  setNotification('✓ Ping de diagnostic envoyé à la mini PC Line 1 Cam 3.');
+                  setNotification('✓ Diagnostic ping sent to Line 1 Cam 3 mini PC.');
                   setTimeout(() => setNotification(null), 3000);
                 }}
                 style={{

@@ -29,14 +29,14 @@ def preview_cleaning_pipeline(
     if not version:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Version source '{payload.source_version_hash}' introuvable.",
+            detail=f"Source version '{payload.source_version_hash}' not found.",
         )
 
     file_path = Path(version.storage_path)
     if not file_path.exists():
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Fichier Parquet source introuvable sur le disque.",
+            detail="Source Parquet file not found on disk.",
         )
 
     try:
@@ -55,7 +55,7 @@ def preview_cleaning_pipeline(
     except Exception as exc:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Erreur lors de la prévisualisation du nettoyage: {str(exc)}",
+            detail=f"Error previewing cleaning: {str(exc)}",
         )
 
 
@@ -72,14 +72,14 @@ def apply_cleaning_pipeline(
     if not version:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Version source '{payload.source_version_hash}' introuvable.",
+            detail=f"Source version '{payload.source_version_hash}' not found.",
         )
 
     file_path = Path(version.storage_path)
     if not file_path.exists():
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Fichier Parquet source introuvable sur le disque.",
+            detail="Source Parquet file not found on disk.",
         )
 
     raw_ops = [op.model_dump() for op in payload.operations]
@@ -100,7 +100,7 @@ def apply_cleaning_pipeline(
     except Exception as exc:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Erreur lors de l'application du nettoyage: {str(exc)}",
+            detail=f"Error applying cleaning: {str(exc)}",
         )
 
     new_version = res["new_version"]
@@ -148,9 +148,9 @@ def apply_cleaning_pipeline(
 
 @router.get("/categories", response_model=Dict[str, Any])
 def get_column_categories(
-    version_hash: str = Query(..., description="Hash de la version"),
-    column: str = Query(..., description="Nom de la colonne"),
-    normalized: bool = Query(False, description="Normaliser les valeurs préalablement"),
+    version_hash: str = Query(..., description="Version hash"),
+    column: str = Query(..., description="Column name"),
+    normalized: bool = Query(False, description="Normalize values beforehand"),
     db: Session = Depends(get_db),
 ):
     """Returns the unique categories and counts for a column of a version,
@@ -158,14 +158,14 @@ def get_column_categories(
     """
     version = db.query(DatasetVersion).filter(DatasetVersion.version_hash == version_hash).first()
     if not version:
-        raise HTTPException(status_code=404, detail="Version introuvable.")
+        raise HTTPException(status_code=404, detail="Version not found.")
 
     import pyarrow.parquet as pq
     import pandas as pd
 
     file_path = Path(version.storage_path)
     if not file_path.exists():
-        raise HTTPException(status_code=404, detail="Fichier Parquet introuvable.")
+        raise HTTPException(status_code=404, detail="Parquet file not found.")
 
     table = pq.read_table(file_path, columns=[column])
     df = table.to_pandas()

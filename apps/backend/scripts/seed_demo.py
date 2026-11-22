@@ -1,6 +1,6 @@
-"""Script de démonstration et d'initialisation pour Datalift.
-Crée des jeux de données synthétiques, génère les premières versions Parquet
-et applique des transformations successives pour démontrer le lignage immuable.
+"""Demonstration and initialization script for Datalift.
+Creates synthetic datasets, generates initial Parquet versions,
+and applies successive transformations to demonstrate immutable lineage.
 """
 
 import sys
@@ -33,7 +33,7 @@ SAMPLE_CHURN_CSV = """customer_id,age,tenure_months,monthly_charges,total_charge
 
 
 def seed():
-    print("Initialisation des tables en base de données...")
+    print("Initializing database tables...")
     init_db()
     db = SessionLocal()
 
@@ -41,20 +41,20 @@ def seed():
         ds_name = "customer_churn_prediction"
         existing = db.query(Dataset).filter(Dataset.name == ds_name).first()
         if existing:
-            print(f"Le dataset '{ds_name}' existe déjà.")
+            print(f"Dataset '{ds_name}' already exists.")
             return
 
-        print(f"Création du dataset: {ds_name}...")
+        print(f"Creating dataset: {ds_name}...")
         dataset = Dataset(
             name=ds_name,
-            description="Dataset tabulaire pour la classification du désabonnement client (Telco Churn).",
+            description="Tabular dataset for customer churn classification (Telco Churn).",
         )
         db.add(dataset)
         db.commit()
         db.refresh(dataset)
 
-        # 1. Version Racine (V1) : Ingestion CSV -> Parquet
-        print("V1: Ingestion du CSV brut et conversion Parquet...")
+        # 1. Root Version (V1) : CSV Ingestion -> Parquet
+        print("V1: Ingesting raw CSV and Parquet conversion...")
         csv_bytes = SAMPLE_CHURN_CSV.encode("utf-8")
         parquet_bytes, metadata, row_count = parquet_service.convert_csv_to_parquet_bytes(csv_bytes)
         data_hash_v1 = parquet_service.calculate_bytes_hash(parquet_bytes)
@@ -91,10 +91,10 @@ def seed():
         )
         db.add(t1)
         db.commit()
-        print(f"-> V1 créée: Hash = {v1_hash[:12]}... ({v1.row_count} lignes)")
+        print(f"-> V1 created: Hash = {v1_hash[:12]}... ({v1.row_count} rows)")
 
-        # 2. Version Fille (V2) : Transformation STANDARDIZE sur les colonnes numériques
-        print("V2: Application de la transformation STANDARDIZE (monthly_charges, total_charges)...")
+        # 2. Child Version (V2) : STANDARDIZE transformation on numeric columns
+        print("V2: Applying STANDARDIZE transformation (monthly_charges, total_charges)...")
         v2_params = {"columns": ["monthly_charges", "total_charges"]}
         v2_parquet, v2_meta, v2_rows = parquet_service.apply_transformation_to_parquet(
             source_parquet_path=target_path_v1,
@@ -134,10 +134,10 @@ def seed():
         )
         db.add(t2)
         db.commit()
-        print(f"-> V2 créée: Hash = {v2_hash[:12]}... (Parente: {v1_hash[:8]})")
+        print(f"-> V2 created: Hash = {v2_hash[:12]}... (Parent: {v1_hash[:8]})")
 
-        # 3. Version Petite-Fille (V3) : Filtrage sur les clients résiliés (churn == 1)
-        print("V3: Application de la transformation FILTER_QUERY (churn == 1)...")
+        # 3. Grandchild Version (V3) : Filtering on churned customers (churn == 1)
+        print("V3: Applying FILTER_QUERY transformation (churn == 1)...")
         v3_params = {"query": "churn == 1"}
         v3_parquet, v3_meta, v3_rows = parquet_service.apply_transformation_to_parquet(
             source_parquet_path=target_path_v2,
@@ -177,9 +177,9 @@ def seed():
         )
         db.add(t3)
         db.commit()
-        print(f"-> V3 créée: Hash = {v3_hash[:12]}... ({v3.row_count} lignes, Parente: {v2_hash[:8]})")
+        print(f"-> V3 created: Hash = {v3_hash[:12]}... ({v3.row_count} rows, Parent: {v2_hash[:8]})")
 
-        print("\nSeed terminé avec succès ! Arbre de lineage complet enregistré dans Datalift.")
+        print("\nSeed completed successfully! Full lineage tree stored in Datalift.")
 
     finally:
         db.close()
@@ -187,4 +187,3 @@ def seed():
 
 if __name__ == "__main__":
     seed()
-

@@ -56,7 +56,7 @@ class ActiveLearningService:
         """Resolves dataset and its current or latest version."""
         dataset = db.query(Dataset).filter(Dataset.id == dataset_id).first()
         if not dataset:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Jeu de données introuvable.")
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Dataset not found.")
 
         version = None
         if dataset.current_version_id:
@@ -74,7 +74,7 @@ class ActiveLearningService:
         if not version:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail="Aucune version trouvée pour ce jeu de données.",
+                detail="No version found for this dataset.",
             )
 
         return dataset, version
@@ -170,7 +170,7 @@ class ActiveLearningService:
         # Load Parquet data
         file_path = Path(version.storage_path)
         if not file_path.exists():
-            raise HTTPException(status_code=404, detail="Fichier Parquet introuvable.")
+            raise HTTPException(status_code=404, detail="Parquet file not found.")
         df = pq.read_table(file_path).to_pandas()
 
         target_col, pos_label, neg_label, _ = labeling_service.detect_target_and_classes(df, version)
@@ -203,7 +203,7 @@ class ActiveLearningService:
             # Scaled gracefully for demo / testing datasets
             pool_size = max(raw_len * 4, al_round.budget_rows, 180)
             budget_rows = min(al_round.budget_rows, pool_size)
-            pool_breakdown = f"{pool_size - not_yet_count:,} lignes CRM · {not_yet_count} 'pas encore'"
+            pool_breakdown = f"{pool_size - not_yet_count:,} CRM rows · {not_yet_count} 'not yet'"
 
         # Top KPI Header
         output_version = al_round.output_version_label or "v5"
@@ -757,7 +757,7 @@ class ActiveLearningService:
 
         return SendToLabelingResponse(
             success=True,
-            message=f"{len(picks_to_send)} lignes sélectionnées envoyées vers l'étape 05 Étiquetage.",
+            message=f"{len(picks_to_send)} rows selected and sent to step 05 Labeling.",
             new_version_label=output_ver,
             rows_enqueued=len(picks_to_send),
             dataset_id=str(dataset.id),

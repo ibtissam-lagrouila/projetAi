@@ -43,7 +43,7 @@ export const LabelingPage: React.FC = () => {
 
   // Decision State
   const [selectedDecision, setSelectedDecision] = useState<'keep' | 'change' | 'not_yet' | 'unsure'>('change');
-  const [selectedReason, setSelectedReason] = useState<string>('Saisie tardive de résiliation dans le CRM');
+  const [selectedReason, setSelectedReason] = useState<string>('Late cancellation entry in le CRM');
   const [isSubmittingDecision, setIsSubmittingDecision] = useState<boolean>(false);
 
   // Checks & Guardrails
@@ -73,7 +73,7 @@ export const LabelingPage: React.FC = () => {
           setSelectedDatasetId(defaultDs.id);
         }
       })
-      .catch((err) => console.error('Erreur chargement datasets:', err))
+      .catch((err) => console.error('Error loading datasets:', err))
       .finally(() => setLoadingInitial(false));
   }, []);
 
@@ -96,7 +96,7 @@ export const LabelingPage: React.FC = () => {
         setTargetColumn(st.target_column);
       }
     } catch (err) {
-      console.error('Erreur chargement statut labeling:', err);
+      console.error('Error loading labeling status:', err);
     }
   }, []);
 
@@ -127,7 +127,7 @@ export const LabelingPage: React.FC = () => {
           }
         }
       } catch (err) {
-        console.error('Erreur chargement candidat:', err);
+        console.error('Error loading candidate:', err);
       } finally {
         setLoadingCandidate(false);
       }
@@ -178,8 +178,8 @@ export const LabelingPage: React.FC = () => {
         loadCandidate(selectedDatasetId, activeQueueId, candidateIndex, targetColumn, threshold);
       }
     } catch (err: any) {
-      console.error('Erreur application décision:', err);
-      alert(err.response?.data?.detail || 'Erreur lors de l’enregistrement de la décision.');
+      console.error('Error applying decision:', err);
+      alert(err.response?.data?.detail || 'Error saving decision.');
     } finally {
       setIsSubmittingDecision(false);
     }
@@ -226,7 +226,7 @@ export const LabelingPage: React.FC = () => {
       await api.applyBulkFix(selectedDatasetId, {
         rowIndices: p.matching_row_indices,
         newLabel: targetFix,
-        reason: selectedReason || 'Correction groupée par motif de résiliation',
+        reason: selectedReason || 'Batch correction by cancellation reason',
         patternDescription: p.description,
       });
 
@@ -234,8 +234,8 @@ export const LabelingPage: React.FC = () => {
       loadStatusAndChecks(selectedDatasetId, targetColumn, threshold);
       loadCandidate(selectedDatasetId, activeQueueId, candidateIndex, targetColumn, threshold);
     } catch (err: any) {
-      console.error('Erreur bulk fix:', err);
-      alert(err.response?.data?.detail || 'Erreur lors de la correction en masse.');
+      console.error('Error bulk fix:', err);
+      alert(err.response?.data?.detail || 'Error during bulk correction.');
     }
   };
 
@@ -246,16 +246,16 @@ export const LabelingPage: React.FC = () => {
       setIsSavingVersion(true);
       const res = await api.saveLabelingVersion(selectedDatasetId, {
         rerunAugmentation,
-        description: `Labellisation humaine et par règles métier sur ${selectedDataset?.name}`,
+        description: `Human and rule-based labeling on ${selectedDataset?.name}`,
       });
       setIsSaveModalOpen(false);
 
       // Refresh status and checks
       await loadStatusAndChecks(selectedDatasetId, targetColumn, threshold);
-      alert(`Nouvelle version ${res.new_version_label} créée avec succès !`);
+      alert(`New version ${res.new_version_label} created successfully!`);
     } catch (err: any) {
-      console.error('Erreur enregistrement version:', err);
-      alert(err.response?.data?.detail || 'Erreur lors de l’enregistrement de la version.');
+      console.error('Error enregistrement version:', err);
+      alert(err.response?.data?.detail || 'Error saving version.');
     } finally {
       setIsSavingVersion(false);
     }
@@ -265,7 +265,7 @@ export const LabelingPage: React.FC = () => {
     return (
       <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '60vh', color: 'var(--text-muted)' }}>
         <RefreshCw className="animate-spin" size={24} style={{ marginRight: '0.75rem', color: 'var(--amber)' }} />
-        <span className="font-mono">Initialisation du module de labellisation...</span>
+        <span className="font-mono">Initializing labeling module...</span>
       </div>
     );
   }
@@ -279,11 +279,11 @@ export const LabelingPage: React.FC = () => {
         {/* Breadcrumb row */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.65rem' }}>
           <div className="font-mono" style={{ fontSize: '0.75rem', color: 'var(--text-muted)', letterSpacing: '0.08em' }}>
-            JEU DE DONNÉES • {status?.source_version_label || 'V3'} → {status?.target_version_label || 'V4'} BROUILLON • CLASSIFICATION BINAIRE • CIBLE = {(status?.target_column || 'CHURNED').toUpperCase()}
+            DATASET • {status?.source_version_label || 'V3'} → {status?.target_version_label || 'V4'} DRAFT • TARGETASSIFICATION BINAIRE • CIBLE = {(status?.target_column || 'CHURNED').toUpperCase()}
           </div>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-            <span className="font-mono" style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>JEU DE DONNÉES :</span>
+            <span className="font-mono" style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>DATASET :</span>
             <select
               value={selectedDatasetId}
               onChange={(e) => setSelectedDatasetId(e.target.value)}
@@ -329,10 +329,10 @@ export const LabelingPage: React.FC = () => {
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', justifyContent: 'center' }}>
               <span className="font-mono" style={{ fontSize: '0.68rem', color: 'var(--text-muted)', letterSpacing: '0.08em' }}>
-                CONFIANCE DES LABELS / 100
+                LABEL CONFIDENCE / 100
               </span>
               <span className="font-mono" style={{ fontSize: '0.65rem', color: 'var(--amber)' }}>
-                AVANT → APRÈS
+                BEFORE → AFTER
               </span>
             </div>
           </div>
@@ -350,52 +350,52 @@ export const LabelingPage: React.FC = () => {
           {/* 1. Suspected Errors */}
           <div className="card" style={{ padding: '1.25rem 1.5rem' }}>
             <div className="font-mono" style={{ fontSize: '0.72rem', color: 'var(--text-muted)', letterSpacing: '0.08em', marginBottom: '0.5rem' }}>
-              ERREURS SUSPECTÉES
+              SUSPECTED ERRORS
             </div>
             <div className="font-serif" style={{ fontSize: '2.2rem', fontWeight: 500, lineHeight: 1.1, marginBottom: '0.35rem', color: 'var(--amber)' }}>
-              {status?.suspected_errors_count.toLocaleString('fr-FR') ?? 0}
+              {status?.suspected_errors_count.toLocaleString('en-US') ?? 0}
             </div>
             <div className="font-mono" style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
-              le modèle est en désaccord à ≥ {Math.round(threshold * 100)} %
+              the model disagrees at ≥ {Math.round(threshold * 100)} %
             </div>
           </div>
 
           {/* 2. Rule Conflicts */}
           <div className="card" style={{ padding: '1.25rem 1.5rem' }}>
             <div className="font-mono" style={{ fontSize: '0.72rem', color: 'var(--text-muted)', letterSpacing: '0.08em', marginBottom: '0.5rem' }}>
-              CONFLITS DE RÈGLES
+              RULE CONFLICTS
             </div>
             <div className="font-serif" style={{ fontSize: '2.2rem', fontWeight: 500, lineHeight: 1.1, marginBottom: '0.35rem', color: '#ef4444' }}>
-              {status?.rule_conflicts_count.toLocaleString('fr-FR') ?? 0}
+              {status?.rule_conflicts_count.toLocaleString('en-US') ?? 0}
             </div>
             <div className="font-mono" style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
-              date d'annulation mais {status?.target_column || 'cible'} = {status?.neg_label || 'non'}
+              cancellation date but {status?.target_column || 'target'} = {status?.neg_label || 'no'}
             </div>
           </div>
 
           {/* 3. Done Today */}
           <div className="card" style={{ padding: '1.25rem 1.5rem' }}>
             <div className="font-mono" style={{ fontSize: '0.72rem', color: 'var(--text-muted)', letterSpacing: '0.08em', marginBottom: '0.5rem' }}>
-              TRAITÉES AUJOURD'HUI
+              PROCESSED TODAY
             </div>
             <div className="font-serif" style={{ fontSize: '2.2rem', fontWeight: 500, lineHeight: 1.1, marginBottom: '0.35rem', color: '#22c55e' }}>
-              {status?.done_today_count.toLocaleString('fr-FR') ?? 0}
+              {status?.done_today_count.toLocaleString('en-US') ?? 0}
             </div>
             <div className="font-mono" style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
-              1 analyste • 1 réviseur
+              1 analyst • 1 reviewer
             </div>
           </div>
 
           {/* 4. Output Version */}
           <div className="card" style={{ padding: '1.25rem 1.5rem' }}>
             <div className="font-mono" style={{ fontSize: '0.72rem', color: 'var(--text-muted)', letterSpacing: '0.08em', marginBottom: '0.5rem' }}>
-              SORTIE
+              OUTPUT
             </div>
             <div className="font-serif" style={{ fontSize: '2.2rem', fontWeight: 500, lineHeight: 1.1, marginBottom: '0.35rem', color: 'var(--text-main)' }}>
               {status?.output_version ?? 'v4'}
             </div>
             <div className="font-mono" style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
-              {status?.source_version_label ?? 'v3'} conservée telle quelle
+              {status?.source_version_label ?? 'v3'} kept as-is
             </div>
           </div>
         </div>
@@ -411,10 +411,10 @@ export const LabelingPage: React.FC = () => {
           }}
         >
           <div className="font-mono" style={{ fontSize: '0.72rem', color: '#38bdf8', letterSpacing: '0.08em', marginBottom: '0.35rem', textTransform: 'uppercase' }}>
-            Comment fonctionne la labellisation pour les données tabulaires
+            How labeling works for tabular data
           </div>
           <p style={{ margin: 0, fontSize: '0.85rem', color: '#bae6fd', lineHeight: 1.5 }}>
-            La colonne cible existe déjà (elle provient de votre CRM ou base métier). Personne ne la remplit à la main. Vous vérifiez et corrigez ici les lignes où le label est probablement faux ou contradictoire.
+            The target column already exists (from your CRM or database). No one fills it by hand. You audit and fix rows where the label is likely incorrect or contradictory.
           </p>
         </div>
       </div>
@@ -428,7 +428,7 @@ export const LabelingPage: React.FC = () => {
             1 • Files d'attente
           </h2>
           <span className="font-mono" style={{ fontSize: '0.72rem', color: 'var(--text-muted)', letterSpacing: '0.08em' }}>
-            LES LIGNES LES PLUS PROBABLEMENT FAUSSES EN PREMIER
+            ROWS MOST LIKELY INCORRECT FIRST
           </span>
         </div>
 
@@ -475,7 +475,7 @@ export const LabelingPage: React.FC = () => {
                     )}
                   </div>
                   <div className="font-serif" style={{ fontSize: '2.5rem', fontWeight: 500, lineHeight: 1, marginBottom: '0.75rem', color: 'var(--text-main)' }}>
-                    {q.count.toLocaleString('fr-FR')}
+                    {q.count.toLocaleString('en-US')}
                   </div>
                   <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', lineHeight: 1.4, margin: '0 0 1.25rem 0' }}>
                     {q.description}
@@ -484,7 +484,7 @@ export const LabelingPage: React.FC = () => {
 
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '1rem', borderTop: '1px solid var(--border-subtle)' }}>
                   <span className="font-mono" style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
-                    {q.done_count} traitée{q.done_count > 1 ? 's' : ''}
+                    {q.done_count} processed
                   </span>
                   <button
                     type="button"
@@ -518,7 +518,7 @@ export const LabelingPage: React.FC = () => {
           {/* Target Column */}
           <div>
             <label className="font-mono" style={{ display: 'block', fontSize: '0.68rem', color: 'var(--text-muted)', marginBottom: '0.35rem' }}>
-              COLONNE CIBLE
+              TARGET COLUMN
             </label>
             <select
               value={targetColumn || status?.target_column || ''}
@@ -545,7 +545,7 @@ export const LabelingPage: React.FC = () => {
           {/* Model Certainty Threshold */}
           <div>
             <label className="font-mono" style={{ display: 'block', fontSize: '0.68rem', color: 'var(--text-muted)', marginBottom: '0.35rem' }}>
-              SIGNALER SI LE MODÈLE EST SÛR À
+              FLAG IF MODEL IS CONFIDENT AT
             </label>
             <select
               value={threshold}
@@ -561,8 +561,8 @@ export const LabelingPage: React.FC = () => {
                 fontSize: '0.78rem',
               }}
             >
-              <option value={0.95}>≥ 0.95 (Très strict)</option>
-              <option value={0.90}>≥ 0.90 (Recommandé)</option>
+              <option value={0.95}>≥ 0.95 (Very strict)</option>
+              <option value={0.90}>≥ 0.90 (Recommended)</option>
               <option value={0.85}>≥ 0.85</option>
               <option value={0.80}>≥ 0.80</option>
               <option value={0.70}>≥ 0.70 (Large)</option>
@@ -572,7 +572,7 @@ export const LabelingPage: React.FC = () => {
           {/* Columns Shown Mode */}
           <div>
             <label className="font-mono" style={{ display: 'block', fontSize: '0.68rem', color: 'var(--text-muted)', marginBottom: '0.35rem' }}>
-              COLONNES SUR LA CARTE
+              COLUMNS ON CARD
             </label>
             <select
               value={columnsMode}
@@ -589,8 +589,8 @@ export const LabelingPage: React.FC = () => {
               }}
             >
               <option value="8 most useful (auto)">8 plus utiles (auto)</option>
-              <option value="all">Toutes les colonnes</option>
-              <option value="categorical">Catégorielles seules</option>
+              <option value="all">All columns</option>
+              <option value="categorical">Categorical only</option>
             </select>
           </div>
 
@@ -613,10 +613,10 @@ export const LabelingPage: React.FC = () => {
                 fontSize: '0.78rem',
               }}
             >
-              <option value="Every change">Chaque modification</option>
-              <option value="Test set only">Jeu de test seulement</option>
-              <option value="Unsure only">Incertaines seulement</option>
-              <option value="None">Aucune</option>
+              <option value="Every change">Every change</option>
+              <option value="Test set only">Test set only</option>
+              <option value="Unsure only">Uncertain only</option>
+              <option value="None">None</option>
             </select>
           </div>
         </div>
@@ -644,7 +644,7 @@ export const LabelingPage: React.FC = () => {
                 onClick={() => setCandidateIndex((prev) => Math.max(0, prev - 1))}
                 className="btn btn-secondary font-mono"
                 style={{ padding: '0.25rem 0.5rem', fontSize: '0.75rem' }}
-                title="Ligne précédente (Flèche gauche)"
+                title="Previous row (Left arrow)"
               >
                 <ChevronLeft size={14} />
               </button>
@@ -654,7 +654,7 @@ export const LabelingPage: React.FC = () => {
                 onClick={() => setCandidateIndex((prev) => prev + 1)}
                 className="btn btn-secondary font-mono"
                 style={{ padding: '0.25rem 0.5rem', fontSize: '0.75rem' }}
-                title="Ligne suivante (Flèche droite)"
+                title="Next row (Right arrow)"
               >
                 <ChevronRight size={14} />
               </button>
@@ -665,15 +665,15 @@ export const LabelingPage: React.FC = () => {
         {loadingCandidate ? (
           <div className="card" style={{ padding: '4rem', textAlign: 'center', color: 'var(--text-muted)' }}>
             <RefreshCw className="animate-spin" size={24} style={{ margin: '0 auto 0.75rem auto', color: 'var(--amber)' }} />
-            <span className="font-mono" style={{ fontSize: '0.8rem' }}>Chargement de la ligne à vérifier...</span>
+            <span className="font-mono" style={{ fontSize: '0.8rem' }}>Loading row to review...</span>
           </div>
         ) : !candidate ? (
           <div className="card" style={{ padding: '3rem', textAlign: 'center', color: 'var(--text-muted)' }}>
             <p className="font-serif" style={{ fontSize: '1.25rem', marginBottom: '0.5rem', color: 'var(--text-main)' }}>
-              Aucune ligne en attente dans cette file
+              No rows waiting in this queue
             </p>
             <p className="font-mono" style={{ fontSize: '0.8rem' }}>
-              Toutes les lignes de la file {activeQueueId} ont été traitées ou aucun conflit n'a été détecté.
+              All rows in queue {activeQueueId} have been processed or no conflicts were detected.
             </p>
           </div>
         ) : (
@@ -710,7 +710,7 @@ export const LabelingPage: React.FC = () => {
                     </strong>
                   </span>
                   <span>
-                    Modèle :{' '}
+                    Model :{' '}
                     <strong style={{ color: '#22c55e' }}>
                       {candidate.model_prediction} • {candidate.model_probability}
                     </strong>
@@ -761,14 +761,14 @@ export const LabelingPage: React.FC = () => {
 
               {/* Legend Caption */}
               <div className="font-mono" style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginBottom: '2rem' }}>
-                <span style={{ color: '#38bdf8' }}>Bleu</span> = colonnes qui font dire '{status?.pos_label}' au modèle.{' '}
+                <span style={{ color: '#38bdf8' }}>Bleu</span> = columns qui font dire '{status?.pos_label}' au model.{' '}
                 <span style={{ color: '#ef4444' }}>Rouge</span> = un fait qui contredit le label actuel.
               </div>
 
               {/* Decision Section */}
               <div style={{ marginBottom: '1.5rem' }}>
                 <div className="font-mono" style={{ fontSize: '0.72rem', color: 'var(--text-muted)', letterSpacing: '0.08em', marginBottom: '0.75rem' }}>
-                  VOTRE DÉCISION
+                  YOUR DECISION
                 </div>
 
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '0.75rem' }}>
@@ -787,9 +787,9 @@ export const LabelingPage: React.FC = () => {
                     }}
                   >
                     <div className="font-mono" style={{ fontSize: '0.82rem', fontWeight: 600, color: selectedDecision === 'keep' ? 'var(--amber)' : 'var(--text-main)', marginBottom: '0.25rem' }}>
-                      [1] Conserver "{candidate.current_label}"
+                      [1] Keep "{candidate.current_label}"
                     </div>
-                    <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>Le label est correct</div>
+                    <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>Label is correct</div>
                   </button>
 
                   {/* [2] Change */}
@@ -807,9 +807,9 @@ export const LabelingPage: React.FC = () => {
                     }}
                   >
                     <div className="font-mono" style={{ fontSize: '0.82rem', fontWeight: 600, color: selectedDecision === 'change' ? 'var(--amber)' : 'var(--text-main)', marginBottom: '0.25rem' }}>
-                      [2] Changer pour "{status?.pos_label === candidate.current_label ? status?.neg_label : status?.pos_label}"
+                      [2] Change to "{status?.pos_label === candidate.current_label ? status?.neg_label : status?.pos_label}"
                     </div>
-                    <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>Le client est parti</div>
+                    <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>Customer has churned</div>
                   </button>
 
                   {/* [N] Not Yet */}
@@ -827,9 +827,9 @@ export const LabelingPage: React.FC = () => {
                     }}
                   >
                     <div className="font-mono" style={{ fontSize: '0.82rem', fontWeight: 600, color: selectedDecision === 'not_yet' ? 'var(--amber)' : 'var(--text-main)', marginBottom: '0.25rem' }}>
-                      [N] Pas encore connu
+                      [N] Not yet known
                     </div>
-                    <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>Trop récent pour décider</div>
+                    <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>Too recent to decide</div>
                   </button>
 
                   {/* [U] Unsure */}
@@ -847,9 +847,9 @@ export const LabelingPage: React.FC = () => {
                     }}
                   >
                     <div className="font-mono" style={{ fontSize: '0.82rem', fontWeight: 600, color: selectedDecision === 'unsure' ? 'var(--amber)' : 'var(--text-main)', marginBottom: '0.25rem' }}>
-                      [U] Incertain
+                      [U] Uncertain
                     </div>
-                    <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>Envoyer au réviseur</div>
+                    <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>Send to reviewer</div>
                   </button>
                 </div>
               </div>
@@ -858,7 +858,7 @@ export const LabelingPage: React.FC = () => {
               <div style={{ marginBottom: '1.75rem' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.45rem' }}>
                   <label className="font-mono" style={{ fontSize: '0.72rem', color: 'var(--text-muted)', letterSpacing: '0.08em' }}>
-                    MOTIF (REQUIS POUR MODIFIER UN LABEL)
+                    REASON (REQUIRED TO CHANGE A LABEL)
                   </label>
                   <button
                     type="button"
@@ -876,7 +876,7 @@ export const LabelingPage: React.FC = () => {
                       padding: 0,
                     }}
                   >
-                    <span>Mauvaise valeur dans une autre colonne ? Envoyer au Nettoyage</span>
+                    <span>Incorrect value in another column? Send to Cleaning</span>
                     <ExternalLink size={12} />
                   </button>
                 </div>
@@ -895,12 +895,12 @@ export const LabelingPage: React.FC = () => {
                     fontSize: '0.82rem',
                   }}
                 >
-                  <option value="Saisie tardive de résiliation dans le CRM">Saisie tardive de résiliation dans le CRM</option>
-                  <option value="Erreur de frappe dans le CRM">Erreur de frappe dans le CRM</option>
-                  <option value="Litige de facturation résolu">Litige de facturation résolu</option>
-                  <option value="Confirmation client suite à contact">Confirmation client suite à contact</option>
-                  <option value="Contrat résilié manuellement">Contrat résilié manuellement</option>
-                  <option value="Compte suspendu pour impayé">Compte suspendu pour impayé</option>
+                  <option value="Late cancellation entry in le CRM">Late cancellation entry in le CRM</option>
+                  <option value="Typo in CRM">Typo in CRM</option>
+                  <option value="Billing dispute resolved">Billing dispute resolved</option>
+                  <option value="Customer confirmation following contact">Customer confirmation following contact</option>
+                  <option value="Contract terminated manually">Contract terminated manually</option>
+                  <option value="Account suspended for non-payment">Account suspended for non-payment</option>
                   <option value="Autre motif professionnel...">Autre motif professionnel...</option>
                 </select>
               </div>
@@ -911,8 +911,8 @@ export const LabelingPage: React.FC = () => {
                   <span><strong style={{ color: 'var(--amber)' }}>[1]</strong> garder</span>
                   <span><strong style={{ color: 'var(--amber)' }}>[2]</strong> changer</span>
                   <span><strong style={{ color: 'var(--amber)' }}>[N]</strong> pas encore</span>
-                  <span><strong style={{ color: 'var(--amber)' }}>[U]</strong> incertain</span>
-                  <span><strong style={{ color: 'var(--amber)' }}>[Entrée]</strong> enregistrer & suivant</span>
+                  <span><strong style={{ color: 'var(--amber)' }}>[U]</strong> uncertain</span>
+                  <span><strong style={{ color: 'var(--amber)' }}>[Enter]</strong> save & next</span>
                 </div>
 
                 <button
@@ -929,7 +929,7 @@ export const LabelingPage: React.FC = () => {
                     </>
                   ) : (
                     <>
-                      <span>Valider & Suivant</span>
+                      <span>Validate & Next</span>
                       <ArrowRight size={13} />
                     </>
                   )}
@@ -961,7 +961,7 @@ export const LabelingPage: React.FC = () => {
               <div className="card" style={{ padding: '1.25rem' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.85rem' }}>
                   <span className="font-mono" style={{ fontSize: '0.72rem', color: 'var(--text-muted)', letterSpacing: '0.08em' }}>
-                    CLIENTS LES PLUS SIMILAIRES
+                    MOST SIMILAR CUSTOMERS
                   </span>
                 </div>
 
@@ -988,7 +988,7 @@ export const LabelingPage: React.FC = () => {
                 </div>
 
                 <div className="font-mono" style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>
-                  5 clients les plus proches • {candidate.nearest_customers.filter((c) => c.label === 'OUI' || c.label === 'YES').length} partis
+                  5 nearest customers • {candidate.nearest_customers.filter((c) => c.label === 'YES' || c.label === 'YES').length} partis
                 </div>
               </div>
 
@@ -1003,7 +1003,7 @@ export const LabelingPage: React.FC = () => {
                   }}
                 >
                   <div className="font-mono" style={{ fontSize: '0.72rem', color: 'var(--amber)', letterSpacing: '0.08em', marginBottom: '0.5rem' }}>
-                    MÊME MOTIF • CORRECTION EN MASSE
+                    SAME REASON • BATCH CORRECTION
                   </div>
 
                   <p style={{ fontSize: '0.78rem', color: 'var(--text-main)', lineHeight: 1.4, margin: '0 0 1rem 0' }}>
@@ -1023,11 +1023,11 @@ export const LabelingPage: React.FC = () => {
                       marginBottom: '0.5rem',
                     }}
                   >
-                    <span>Aperçu des {candidate.bulk_pattern.matching_count} lignes →</span>
+                    <span>Preview {candidate.bulk_pattern.matching_count} rows →</span>
                   </button>
 
                   <div className="font-mono" style={{ fontSize: '0.68rem', color: 'var(--text-muted)', textAlign: 'center' }}>
-                    Appliqué uniquement après validation de l'aperçu
+                    Applied only after preview validation
                   </div>
                 </div>
               )}
@@ -1035,7 +1035,7 @@ export const LabelingPage: React.FC = () => {
               {/* Box 4: This Row Metadata */}
               <div className="card" style={{ padding: '1.25rem', fontSize: '0.78rem' }}>
                 <div className="font-mono" style={{ fontSize: '0.72rem', color: 'var(--text-muted)', letterSpacing: '0.08em', marginBottom: '0.75rem' }}>
-                  CETTE LIGNE
+                  THIS ROW
                 </div>
 
                 <div style={{ display: 'grid', gridTemplateColumns: '110px 1fr', gap: '0.45rem', marginBottom: '0.35rem' }}>
@@ -1061,10 +1061,10 @@ export const LabelingPage: React.FC = () => {
           <div className="card" style={{ padding: '1.5rem' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '1.25rem' }}>
               <h2 className="font-serif" style={{ fontSize: '1.65rem', fontWeight: 400 }}>
-                3 • Contrôles des labels
+                3 • Label checks
               </h2>
               <span className="font-mono" style={{ fontSize: '0.68rem', color: 'var(--text-muted)', letterSpacing: '0.08em' }}>
-                EXÉCUTÉS À CHAQUE ENREGISTREMENT
+                EXECUTED ON EACH SAVE
               </span>
             </div>
 
@@ -1139,9 +1139,9 @@ export const LabelingPage: React.FC = () => {
                 <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.78rem' }}>
                   <thead>
                     <tr style={{ borderBottom: '1px solid var(--border)', textAlign: 'left', color: 'var(--text-muted)' }}>
-                      <th className="font-mono" style={{ padding: '0.45rem 0.5rem 0.45rem 0', fontWeight: 500 }}>LIGNE</th>
+                      <th className="font-mono" style={{ padding: '0.45rem 0.5rem 0.45rem 0', fontWeight: 500 }}>ROW</th>
                       <th className="font-mono" style={{ padding: '0.45rem 0.5rem', fontWeight: 500 }}>AVANT</th>
-                      <th className="font-mono" style={{ padding: '0.45rem 0.5rem', fontWeight: 500 }}>APRÈS</th>
+                      <th className="font-mono" style={{ padding: '0.45rem 0.5rem', fontWeight: 500 }}>AFTER</th>
                       <th className="font-mono" style={{ padding: '0.45rem 0 0.45rem 0.5rem', fontWeight: 500 }}>MOTIF</th>
                     </tr>
                   </thead>
@@ -1167,12 +1167,12 @@ export const LabelingPage: React.FC = () => {
               </div>
             ) : (
               <div style={{ textAlign: 'center', padding: '2.5rem 1rem', color: 'var(--text-muted)', fontSize: '0.8rem' }}>
-                Aucune modification appliquée aujourd'hui pour l'instant.
+                No changes applied today yet.
               </div>
             )}
 
             <p style={{ margin: 0, fontSize: '0.72rem', color: 'var(--text-muted)', lineHeight: 1.4 }}>
-              Chaque modification conserve l'ancienne valeur, le motif, qui l'a effectuée et qui l'a révisée.
+              Each modification preserves old value, reason, author, and reviewer.
             </p>
           </div>
         </div>
@@ -1184,10 +1184,10 @@ export const LabelingPage: React.FC = () => {
       <section style={{ marginBottom: '3.5rem' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '1.25rem' }}>
           <h2 className="font-serif" style={{ fontSize: '1.85rem', fontWeight: 400 }}>
-            Garde-fous
+            Guardrails
           </h2>
           <span className="font-mono" style={{ fontSize: '0.68rem', color: 'var(--text-muted)', letterSpacing: '0.08em' }}>
-            VÉRIFIÉS AVANT TOUT ENREGISTREMENT
+            VERIFIED BEFORE ANY SAVE
           </span>
         </div>
 
@@ -1247,10 +1247,10 @@ export const LabelingPage: React.FC = () => {
       >
         <div>
           <div style={{ fontSize: '0.92rem', fontWeight: 500, color: 'var(--text-main)', marginBottom: '0.2rem' }}>
-            {checksData?.summary.total_checked ?? 240} lignes vérifiées • {checksData?.summary.labels_fixed ?? 96} labels corrigés • {checksData?.summary.marked_not_yet ?? 62} marqués "pas encore"
+            {checksData?.summary.total_checked ?? 240} rows reviewed • {checksData?.summary.labels_fixed ?? 96} labels corrected • {checksData?.summary.marked_not_yet ?? 62} marked "not yet"
           </div>
           <div className="font-mono" style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
-            Enregistré comme {status?.output_version || 'v4'} avec le journal des modifications attaché ; la recette d'augmentation peut être rejouée dessus
+            Saved as {status?.output_version || 'v4'} with modification audit log attached; augmentation recipe can be replayed on top
           </div>
         </div>
 
@@ -1264,7 +1264,7 @@ export const LabelingPage: React.FC = () => {
             className="btn btn-secondary font-mono"
             style={{ fontSize: '0.78rem', padding: '0.55rem 1.25rem' }}
           >
-            Rejouer l'augmentation sur {status?.output_version || 'v4'}
+            Replay augmentation on {status?.output_version || 'v4'}
           </button>
 
           <button
@@ -1276,7 +1276,7 @@ export const LabelingPage: React.FC = () => {
             className="btn btn-primary font-mono"
             style={{ fontSize: '0.78rem', padding: '0.55rem 1.25rem' }}
           >
-            Enregistrer comme {status?.output_version || 'v4'}
+            Save as {status?.output_version || 'v4'}
           </button>
         </div>
       </div>
@@ -1301,7 +1301,7 @@ export const LabelingPage: React.FC = () => {
           <div className="card" style={{ maxWidth: '600px', width: '100%', padding: '2rem' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
               <h3 className="font-serif" style={{ fontSize: '1.5rem', fontWeight: 500, margin: 0 }}>
-                Aperçu de la correction en masse
+                Bulk correction preview
               </h3>
               <button
                 onClick={() => setIsBulkModalOpen(false)}
@@ -1321,7 +1321,7 @@ export const LabelingPage: React.FC = () => {
               }}
             >
               <div className="font-mono" style={{ fontSize: '0.75rem', color: 'var(--amber)', marginBottom: '0.35rem' }}>
-                MOTIF IDENTIFIÉ
+                IDENTIFIED REASON
               </div>
               <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--text-main)', lineHeight: 1.4 }}>
                 {candidate.bulk_pattern.description}
@@ -1329,9 +1329,9 @@ export const LabelingPage: React.FC = () => {
             </div>
 
             <div style={{ marginBottom: '1.5rem', fontSize: '0.82rem', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
-              Cette action va remplacer le label actuel par <strong style={{ color: '#22c55e' }}>"{status?.pos_label || 'yes'}"</strong> pour les{' '}
-              <strong style={{ color: 'var(--text-main)' }}>{candidate.bulk_pattern.matching_count} lignes</strong> correspondantes. Le motif{' '}
-              <em>"{selectedReason}"</em> sera enregistré dans le journal d'audit pour chacune de ces lignes.
+              This action will replace the current label with <strong style={{ color: '#22c55e' }}>"{status?.pos_label || 'yes'}"</strong> for the{' '}
+              <strong style={{ color: 'var(--text-main)' }}>{candidate.bulk_pattern.matching_count} matching rows</strong>. The reason{' '}
+              <em>"{selectedReason}"</em> will be recorded in the audit log for each of these rows.
             </div>
 
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem' }}>
@@ -1341,7 +1341,7 @@ export const LabelingPage: React.FC = () => {
                 className="btn btn-secondary font-mono"
                 style={{ fontSize: '0.78rem' }}
               >
-                Annuler
+                Cancel
               </button>
               <button
                 type="button"
@@ -1349,7 +1349,7 @@ export const LabelingPage: React.FC = () => {
                 className="btn btn-primary font-mono"
                 style={{ fontSize: '0.78rem' }}
               >
-                Confirmer & Appliquer ({candidate.bulk_pattern.matching_count} lignes)
+                Confirm & Apply ({candidate.bulk_pattern.matching_count} rows)
               </button>
             </div>
           </div>
@@ -1376,7 +1376,7 @@ export const LabelingPage: React.FC = () => {
           <div className="card" style={{ maxWidth: '540px', width: '100%', padding: '2rem' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
               <h3 className="font-serif" style={{ fontSize: '1.5rem', fontWeight: 500, margin: 0 }}>
-                Enregistrer comme {status?.output_version || 'v4'}
+                Save as {status?.output_version || 'v4'}
               </h3>
               <button
                 onClick={() => setIsSaveModalOpen(false)}
@@ -1387,12 +1387,12 @@ export const LabelingPage: React.FC = () => {
             </div>
 
             <div style={{ marginBottom: '1.5rem', fontSize: '0.85rem', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
-              Une nouvelle version immuable <strong style={{ color: 'var(--amber)' }}>{status?.output_version || 'v4'}</strong> va être créée dans le lignage du jeu de données{' '}
+              A new immutable version <strong style={{ color: 'var(--amber)' }}>{status?.output_version || 'v4'}</strong> will be created in dataset lineage{' '}
               <strong style={{ color: 'var(--text-main)' }}>{selectedDataset?.name}</strong>.
               <ul style={{ margin: '0.75rem 0', paddingLeft: '1.25rem', color: 'var(--text-main)' }}>
-                <li>{checksData?.summary.labels_fixed ?? 0} labels corrigés</li>
-                <li>{checksData?.summary.marked_not_yet ?? 0} lignes marquées "pas encore"</li>
-                <li>Journal complet d'audit des motifs conservé</li>
+                <li>{checksData?.summary.labels_fixed ?? 0} labels corrected</li>
+                <li>{checksData?.summary.marked_not_yet ?? 0} rows marked "not yet"</li>
+                <li>Full reason audit log preserved</li>
               </ul>
             </div>
 
@@ -1404,7 +1404,7 @@ export const LabelingPage: React.FC = () => {
                 style={{ accentColor: 'var(--amber)' }}
               />
               <span style={{ fontSize: '0.82rem', color: 'var(--text-main)' }}>
-                Rejouer automatiquement la recette d'augmentation sur cette nouvelle version
+                Rejouer automatiquement la recipe d'augmentation sur cette nouvelle version
               </span>
             </label>
 
@@ -1415,7 +1415,7 @@ export const LabelingPage: React.FC = () => {
                 className="btn btn-secondary font-mono"
                 style={{ fontSize: '0.78rem' }}
               >
-                Annuler
+                Cancel
               </button>
               <button
                 type="button"
@@ -1427,10 +1427,10 @@ export const LabelingPage: React.FC = () => {
                 {isSavingVersion ? (
                   <>
                     <RefreshCw className="animate-spin" size={13} />
-                    <span>Création de {status?.output_version || 'v4'}...</span>
+                    <span>Creating {status?.output_version || 'v4'}...</span>
                   </>
                 ) : (
-                  <span>Confirmer la création de {status?.output_version || 'v4'}</span>
+                  <span>Confirm creation of {status?.output_version || 'v4'}</span>
                 )}
               </button>
             </div>
@@ -1458,7 +1458,7 @@ export const LabelingPage: React.FC = () => {
           <div className="card" style={{ maxWidth: '500px', width: '100%', padding: '2rem' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
               <h3 className="font-serif" style={{ fontSize: '1.5rem', fontWeight: 500, margin: 0 }}>
-                Définition de la cible
+                Target definition
               </h3>
               <button
                 onClick={() => setIsTargetDefModalOpen(false)}
@@ -1470,7 +1470,7 @@ export const LabelingPage: React.FC = () => {
 
             <div style={{ marginBottom: '1.25rem' }}>
               <div className="font-mono" style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginBottom: '0.35rem' }}>
-                COLONNE CIBLE ACTUELLE
+                TARGET COLUMN ACTUELLE
               </div>
               <div className="font-mono" style={{ fontSize: '1.1rem', color: 'var(--amber)', fontWeight: 600 }}>
                 {status?.target_column || 'churned'}
@@ -1479,13 +1479,13 @@ export const LabelingPage: React.FC = () => {
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', marginBottom: '1.5rem' }}>
               <div className="card" style={{ padding: '0.85rem' }}>
-                <div className="font-mono" style={{ fontSize: '0.68rem', color: 'var(--text-muted)' }}>CLASSE POSITIVE (1)</div>
+                <div className="font-mono" style={{ fontSize: '0.68rem', color: 'var(--text-muted)' }}>POSITIVE CLASS (1)</div>
                 <div className="font-mono" style={{ fontSize: '1rem', color: '#22c55e', fontWeight: 600 }}>
                   {status?.pos_label || 'yes'}
                 </div>
               </div>
               <div className="card" style={{ padding: '0.85rem' }}>
-                <div className="font-mono" style={{ fontSize: '0.68rem', color: 'var(--text-muted)' }}>CLASSE NÉGATIVE (0)</div>
+                <div className="font-mono" style={{ fontSize: '0.68rem', color: 'var(--text-muted)' }}>NEGATIVE CLASS (0)</div>
                 <div className="font-mono" style={{ fontSize: '1rem', color: '#ef4444', fontWeight: 600 }}>
                   {status?.neg_label || 'no'}
                 </div>
@@ -1499,7 +1499,7 @@ export const LabelingPage: React.FC = () => {
                 className="btn btn-primary font-mono"
                 style={{ fontSize: '0.78rem' }}
               >
-                Fermer
+                Close
               </button>
             </div>
           </div>

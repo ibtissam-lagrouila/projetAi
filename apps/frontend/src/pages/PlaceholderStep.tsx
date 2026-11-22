@@ -16,9 +16,9 @@ export const PlaceholderStep: React.FC<PlaceholderStepProps> = ({
       {/* Step tag */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1rem' }}>
         <span className="font-mono" style={{ fontSize: '0.75rem', color: 'var(--amber)', letterSpacing: '0.08em' }}>
-          ÉTAPE {stepNumber}
+          STEP {stepNumber}
         </span>
-        <span className="badge badge-amber font-mono">Bientôt</span>
+        <span className="badge badge-amber font-mono">Coming soon</span>
       </div>
 
       {/* Heading in Serif */}
@@ -43,7 +43,7 @@ export const PlaceholderStep: React.FC<PlaceholderStepProps> = ({
         }}
       >
         <div className="font-mono" style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-          Module en cours de développement pour le workflow de données IA.
+          Module under development for AI data workflow.
         </div>
       </div>
     </div>

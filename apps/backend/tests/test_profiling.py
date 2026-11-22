@@ -50,14 +50,14 @@ def test_version_profiling_and_caching(client):
     # Health score must be calculated as weighted average
     assert 0 <= summary["health_score"] <= 100
 
-    # 5. Check Phase B: Findings (Ce qui demande votre attention)
+    # 5. Check Phase B: Findings (What needs your attention)
     findings = profile["findings"]
     assert len(findings) > 0
     # Must be sorted by severity: HIGH, MEDIUM, LOW
     severities = [f["severity"] for f in findings]
     assert "HIGH" in severities or "MEDIUM" in severities
     for f in findings:
-        assert f["action_label"] in ["Corriger →", "Examiner →", "Fusionner →", "Supprimer →", "Voir les options →"]
+        assert f["action_label"] in ["Fix →", "Inspect →", "Merge →", "Remove →", "View options →"]
 
     # 6. Check outlier grouped in last histogram bar in red
     income_col = next(c for c in profile["columns"] if c["name"] == "income")

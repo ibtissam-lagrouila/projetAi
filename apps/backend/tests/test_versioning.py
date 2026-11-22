@@ -192,7 +192,7 @@ def test_lineage_graph_and_header_metrics(sample_lineage_dataset, client):
     assert header["version_count"] == 3
     assert header["total_stored_bytes"] > 0
     assert header["used_by_models_count"] == 0
-    assert header["used_by_label"] == "Aucun modèle lié"
+    assert header["used_by_label"] == "No linked model"
     assert header["current_version_label"] == "v3"
     assert header["baseline_version_label"] == "v3"
 
@@ -211,7 +211,7 @@ def test_set_current_and_baseline_version(sample_lineage_dataset, client):
     v1 = sample_lineage_dataset["v1"]
     resp_rest = client.post(f"/api/v1/versions/{v1.version_hash}/restore")
     assert resp_rest.status_code == 200
-    assert "restaurée comme version courante" in resp_rest.json()["message"]
+    assert "restored as current version" in resp_rest.json()["message"]
 
     # Set v2 as baseline
     resp_base = client.put(f"/api/v1/datasets/{ds.id}/baseline-version", json={"version_hash": v2.version_hash})
@@ -240,7 +240,7 @@ def test_add_and_remove_tags(sample_lineage_dataset, client):
 
 
 def test_branch_from_version_creates_draft_with_expiration(sample_lineage_dataset, client, db_session):
-    """Vérifie 'Brancher d'ici' créant un brouillon lié avec échéance d'expiration à 30 jours."""
+    """Vérifie 'Brancher d'ici' créant un draft lié avec échéance d'expiration à 30 jours."""
     v3 = sample_lineage_dataset["v3"]
     resp = client.post(
         f"/api/v1/versions/{v3.version_hash}/branch",
@@ -463,7 +463,7 @@ def test_guardrails_evaluation_endpoint(sample_lineage_dataset, client):
     - Versions utilisées protégées (passed)
     - Données personnelles en clair (not_evaluated avec motif explicite)
     - Chaque ligne traçable (passed)
-    - Brouillons sans étiquette (passed pour v3, warning pour brouillon)
+    - Brouillons sans étiquette (passed pour v3, warning pour draft)
     """
     v3 = sample_lineage_dataset["v3"]
 

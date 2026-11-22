@@ -81,7 +81,7 @@ export const ImageLabelingPage: React.FC = () => {
           setSelectedDatasetId(preferred.id);
         }
       } catch (err: any) {
-        setError('Erreur de chargement des jeux de données: ' + (err.message || 'inconnu'));
+        setError('Error loading datasets: ' + (err.message || 'unknown'));
       }
     }
     loadDatasets();
@@ -107,7 +107,7 @@ export const ImageLabelingPage: React.FC = () => {
           setSelectedBoxId(res.workspace.boxes[0].id);
         }
       } catch (err: any) {
-        setError("Erreur lors de la récupération des données d'étiquetage: " + (err.message || ''));
+        setError("Error retrieving labeling data: " + (err.message || ''));
       } finally {
         setLoading(false);
       }
@@ -173,7 +173,7 @@ export const ImageLabelingPage: React.FC = () => {
         return b;
       })
     );
-    setNotification(`Boîte étiquetée en "${newLabel}"`);
+    setNotification(`Bounding box labeled as "${newLabel}"`);
     setTimeout(() => setNotification(null), 2500);
   };
 
@@ -182,7 +182,7 @@ export const ImageLabelingPage: React.FC = () => {
     if (selectedBoxId === boxId) {
       setSelectedBoxId('');
     }
-    setNotification('Boîte supprimée');
+    setNotification('Bounding box deleted');
     setTimeout(() => setNotification(null), 2000);
   };
 
@@ -203,13 +203,13 @@ export const ImageLabelingPage: React.FC = () => {
     };
     setBoxes((prev) => [...prev.filter((b) => b.type !== 'model'), newBox]);
     setSelectedBoxId(newBox.id);
-    setNotification(`Suggestion "${suggestion.label} (${suggestion.confidence})" acceptée`);
+    setNotification(`Suggestion "${suggestion.label} (${suggestion.confidence})" accepted`);
     setTimeout(() => setNotification(null), 3000);
   };
 
   const handleRejectSuggestion = () => {
     setBoxes((prev) => prev.filter((b) => b.type !== 'model'));
-    setNotification('Suggestions du modèle rejetées pour cette image');
+    setNotification('Model suggestions rejected for this image');
     setTimeout(() => setNotification(null), 2500);
   };
 
@@ -220,13 +220,13 @@ export const ImageLabelingPage: React.FC = () => {
         image_id: data?.workspace?.image_name || 'IMG_07734.JPG',
         boxes,
       });
-      setNotification(`Annotations enregistrées pour ${data?.workspace?.image_name}. Image suivante...`);
+      setNotification(`Annotations saved for ${data?.workspace?.image_name}. Next image...`);
       setTimeout(() => {
         setNotification(null);
         setSelectedImageIndex((prev) => (prev + 1) % (data?.workspace?.filmstrip.length || 6));
       }, 1000);
     } catch (err: any) {
-      setNotification('Erreur enregistrement: ' + err.message);
+      setNotification('Error enregistrement: ' + err.message);
     }
   };
 
@@ -235,19 +235,19 @@ export const ImageLabelingPage: React.FC = () => {
     try {
       const outputV = data?.kpis?.output || 'v4';
       await api.saveImageLabelV4(selectedDatasetId, { version_name: outputV });
-      setNotification(`Version ${outputV} créée avec succès avec journal d'audit complet ! Redirection vers le training...`);
+      setNotification(`Version ${outputV} created successfully with full audit log! Redirecting to training...`);
       setTimeout(() => {
         setNotification(null);
         navigate('/training');
       }, 1800);
     } catch (err: any) {
-      setNotification('Erreur création de version: ' + err.message);
+      setNotification('Error creating version: ' + err.message);
     }
   };
 
   const handleFlagSubmit = () => {
     setShowFlagModal(false);
-    setNotification(`Image ${data?.workspace?.image_name} signalée (${flagReason}). Retirée de la file.`);
+    setNotification(`Image ${data?.workspace?.image_name} flagged (${flagReason}). Removed from queue.`);
     setTimeout(() => {
       setNotification(null);
       setSelectedImageIndex((prev) => (prev + 1) % 6);
@@ -259,7 +259,7 @@ export const ImageLabelingPage: React.FC = () => {
       <div style={{ backgroundColor: C.bg, minHeight: '100vh', padding: '2.5rem', color: C.text }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', fontFamily: 'monospace' }}>
           <div style={{ width: 12, height: 12, borderRadius: '50%', backgroundColor: C.amber, animation: 'ping 1s infinite' }} />
-          Chargement de l'étiquetage image...
+          Loading image labeling...
         </div>
       </div>
     );
@@ -360,7 +360,7 @@ export const ImageLabelingPage: React.FC = () => {
         }}
       >
         <span style={{ fontSize: '0.72rem', letterSpacing: '0.08em', color: C.textMuted, fontFamily: 'monospace' }}>
-          JEU DE DONNÉES :
+          DATASET :
         </span>
         <select
           value={selectedDatasetId}
@@ -765,7 +765,7 @@ export const ImageLabelingPage: React.FC = () => {
             <button
               type="button"
               onClick={() => {
-                setNotification('Boîtes de la frame précédente copiées');
+                setNotification('Bounding boxes from previous frame copied');
                 setTimeout(() => setNotification(null), 2500);
               }}
               style={{
@@ -786,7 +786,7 @@ export const ImageLabelingPage: React.FC = () => {
               type="button"
               onClick={() => {
                 setBoxes([]);
-                setNotification('Image marquée "No defect · ok"');
+                setNotification('Image marked "No defect · ok"');
                 setTimeout(() => setNotification(null), 2500);
               }}
               style={{
@@ -842,7 +842,7 @@ export const ImageLabelingPage: React.FC = () => {
             <button
               type="button"
               onClick={() => {
-                setNotification('Action annulée');
+                setNotification('Action cancelled');
                 setTimeout(() => setNotification(null), 2000);
               }}
               style={{
@@ -1351,7 +1351,7 @@ export const ImageLabelingPage: React.FC = () => {
               <button
                 type="button"
                 onClick={() => {
-                  setNotification('Demande envoyée au relecteur');
+                  setNotification('Request sent to reviewer');
                   setTimeout(() => setNotification(null), 2500);
                 }}
                 style={{
@@ -1424,7 +1424,7 @@ export const ImageLabelingPage: React.FC = () => {
                   <button
                     type="button"
                     onClick={() => {
-                      setNotification(`Filtre activé sur "${chk.title}"`);
+                      setNotification(`Filter enabled on "${chk.title}"`);
                       setTimeout(() => setNotification(null), 2500);
                     }}
                     style={{
@@ -1587,7 +1587,7 @@ export const ImageLabelingPage: React.FC = () => {
           <button
             type="button"
             onClick={() => {
-              setNotification('Re-run de l\'augmentation lancé');
+              setNotification('Augmentation re-run launched');
               setTimeout(() => setNotification(null), 3000);
             }}
             style={{

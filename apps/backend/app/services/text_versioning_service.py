@@ -22,7 +22,7 @@ class TextVersioningService:
         """Provides full versioning, lineage, comparison diffs, views, used_by models, and guardrails."""
         dataset = db.query(Dataset).filter(Dataset.id == dataset_id).first()
         if not dataset:
-            raise HTTPException(status_code=404, detail="Dataset non trouvé")
+            raise HTTPException(status_code=404, detail="Dataset not found")
 
         versions = (
             db.query(DatasetVersion)
@@ -180,7 +180,7 @@ class TextVersioningService:
                             "type": "EDITED",
                             "reason": "repair broken characters",
                             "before_highlight": "Ã©",
-                            "after_highlight": "é",
+                            "after_highlight": "e",
                             "prefix": "Ma commande n'est pas arriv",
                             "suffix": "e",
                         },
@@ -196,7 +196,7 @@ class TextVersioningService:
                             "lang": "FR",
                             "type": "REMOVED",
                             "reason": "empty once signature stripped",
-                            "full_text": "Envoyé depuis mon iPhone",
+                            "full_text": "Sent from my iPhone",
                         },
                         {
                             "id": "#51200",
@@ -260,7 +260,7 @@ class TextVersioningService:
                             "lang": "FR",
                             "type": "EDITED",
                             "reason": "robustness perturbation",
-                            "full_text": "Appellez moi au numero pour ma commmande",
+                            "full_text": "Call me at this number for my order",
                             "after_highlight": "[TYPOS]",
                         },
                     ],
@@ -304,7 +304,7 @@ class TextVersioningService:
                         "type": "EDITED",
                         "reason": "repair broken characters",
                         "before_highlight": "Ã©",
-                        "after_highlight": "é",
+                        "after_highlight": "e",
                         "prefix": "Ma commande n'est pas arriv",
                         "suffix": "e",
                     },
@@ -320,7 +320,7 @@ class TextVersioningService:
                         "lang": "FR",
                         "type": "REMOVED",
                         "reason": "empty once signature stripped",
-                        "full_text": "Envoyé depuis mon iPhone",
+                        "full_text": "Sent from my iPhone",
                     },
                     {
                         "id": "#51200",
@@ -430,7 +430,7 @@ class TextVersioningService:
                     "before_highlight": "06 12 ···· 12",
                     "after_highlight": "[PHONE]",
                     "prefix": "Contactez-moi au ",
-                    "suffix": " pour confirmer.",
+                    "suffix": " to confirm.",
                 },
                 {
                     "id": "#102",
@@ -438,7 +438,7 @@ class TextVersioningService:
                     "type": "EDITED",
                     "reason": "repair broken characters",
                     "before_highlight": "Ã©",
-                    "after_highlight": "é",
+                    "after_highlight": "e",
                     "prefix": "Le document a ",
                     "suffix": "t",
                 },
@@ -454,7 +454,7 @@ class TextVersioningService:
                     "lang": "FR",
                     "type": "REMOVED",
                     "reason": "empty once signature stripped",
-                    "full_text": "Envoyé de mon appareil mobile",
+                    "full_text": "Sent from my mobile device",
                 },
             ],
         }
@@ -486,7 +486,7 @@ class TextVersioningService:
                     "lang": "FR",
                     "type": "EDITED",
                     "reason": "paraphrase of #101",
-                    "full_text": "Merci de me joindre au [PHONE] pour vérification.",
+                    "full_text": "Please reach me at [PHONE] for verification.",
                     "after_highlight": "[PARAPHRASE]",
                 },
                 {
@@ -502,7 +502,7 @@ class TextVersioningService:
                     "lang": "DARIJA",
                     "type": "EDITED",
                     "reason": "code-switch variation",
-                    "full_text": "3afak 3ayet lia f num bach nconfirmé.",
+                    "full_text": "3afak 3ayet lia f num bach nconfirm.",
                     "after_highlight": "[DARIJA VARIANT]",
                 },
             ],
@@ -654,14 +654,14 @@ class TextVersioningService:
         """Tags a version as production baseline."""
         dataset = db.query(Dataset).filter(Dataset.id == dataset_id).first()
         if not dataset:
-            raise HTTPException(status_code=404, detail="Dataset non trouvé")
+            raise HTTPException(status_code=404, detail="Dataset not found")
         return {"status": "success", "tagged_version": version_hash, "tag": "PRODUCTION"}
 
     def restore_version(self, dataset_id: str, version_hash: str, db: Session) -> Dict[str, Any]:
         """Restores an older version as the active baseline."""
         dataset = db.query(Dataset).filter(Dataset.id == dataset_id).first()
         if not dataset:
-            raise HTTPException(status_code=404, detail="Dataset non trouvé")
+            raise HTTPException(status_code=404, detail="Dataset not found")
         return {"status": "success", "current_version": version_hash, "message": "Version restored as baseline."}
 
 

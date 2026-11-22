@@ -42,7 +42,7 @@ export const TextTrainingPage: React.FC = () => {
     xlmr: true,
     darija: false,
     llm: true,
-    transformer: true,
+    transform: true,
   });
   const [errorFilter, setErrorFilter] = useState<string>('all');
   const [showCompareModal, setShowCompareModal] = useState<boolean>(false);
@@ -217,7 +217,7 @@ export const TextTrainingPage: React.FC = () => {
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
           <span style={{ fontSize: '0.72rem', color: C.textMuted, fontFamily: 'monospace', letterSpacing: '0.1em' }}>
-            JEU DE DONNÉES :
+            DATASET :
           </span>
           <select
             value={selectedDatasetId}

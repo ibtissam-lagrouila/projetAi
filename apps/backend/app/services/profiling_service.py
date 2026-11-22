@@ -58,7 +58,7 @@ class ProfilingService:
     @staticmethod
     def detect_column_type(col_name: str, series: pd.Series, total_rows: int, target_col: Optional[str] = None) -> str:
         """Detects the functional semantic type of a column:
-        'id', 'nombre', 'catégorie', 'date', 'cible'
+        'id', 'count', 'category', 'date', 'target'
         """
         col_lower = col_name.lower().strip()
         non_null_series = series.dropna()
@@ -66,9 +66,9 @@ class ProfilingService:
 
         # 1. Target match (explicit or candidate)
         if target_col and col_name == target_col:
-            return "cible"
+            return "target"
         if not target_col and col_lower in ["target", "label", "churn", "churned", "is_churn", "y", "default", "outcome"]:
-            return "cible"
+            return "target"
 
         # 2. Identifier (ID)
         if col_lower in ["id", "uuid", "pk", "_id"] or col_lower.endswith(("_id", ".id", "_pk")):
@@ -88,14 +88,14 @@ class ProfilingService:
 
         # 4. Boolean (treated as category)
         if pd.api.types.is_bool_dtype(series):
-            return "catégorie"
+            return "category"
 
         # 5. Numerical (float or integer)
         if pd.api.types.is_numeric_dtype(series):
             return "nombre"
 
         # 6. Categorical
-        return "catégorie"
+        return "category"
 
     @staticmethod
     def compute_histogram_with_outliers(
@@ -214,32 +214,32 @@ class ProfilingService:
         target_col: Optional[str],
     ) -> Dict[str, Any]:
         """Calculates the 5 sub-scores (0-100) and the overall weighted health score (0-100):
-        1. Complétude (25%)
-        2. Unicité (20%)
-        3. Validité (20%)
-        4. Cohérence (20%)
-        5. Équilibre des classes (15%)
+        1. Completeness (25%)
+        2. Uniqueness (20%)
+        3. Validity (20%)
+        4. Consistency (20%)
+        5. Class balance (15%)
         """
-        # Exclure les métadonnées d'augmentation du calcul du score de santé
+        # Exclude augmentation metadata columns from health score calculation
         metadata_cols = {"split", "is_synthetic", "origin", "parent_ids"}
         feature_profiles = [c for c in columns_profile if c["name"] not in metadata_cols]
 
         total_cells = total_rows * len(feature_profiles)
         total_nulls = sum(c["null_count"] for c in feature_profiles)
 
-        # 1. Complétude (25%)
+        # 1. Completeness (25%)
         if total_cells > 0:
             completeness = max(0.0, min(100.0, (1.0 - (total_nulls / total_cells)) * 100.0))
         else:
             completeness = 100.0
 
-        # 2. Unicité (20%)
+        # 2. Uniqueness (20%)
         if total_rows > 0:
             uniqueness = max(0.0, min(100.0, (1.0 - (duplicate_rows_count / total_rows)) * 100.0))
         else:
             uniqueness = 100.0
 
-        # 3. Validité (20%): Proportion of non-outlier rows in numeric columns
+        # 3. Validity (20%): Proportion of non-outlier rows in numeric columns
         numeric_cols = [c for c in feature_profiles if c["detected_type"] == "nombre" and c["stats"]]
         if len(numeric_cols) > 0:
             total_numeric_values = sum(total_rows - c["null_count"] for c in numeric_cols)
@@ -251,8 +251,8 @@ class ProfilingService:
         else:
             validity = 100.0
 
-        # 4. Cohérence (20%): Proportion of syntactically consistent rows in categorical columns
-        cat_cols = [c for c in feature_profiles if c["detected_type"] == "catégorie"]
+        # 4. Consistency (20%): Proportion of syntactically consistent rows in categorical columns
+        cat_cols = [c for c in feature_profiles if c["detected_type"] == "category"]
         if len(cat_cols) > 0 and total_rows > 0:
             total_inconsistent = sum(c.get("inconsistent_rows_count", 0) for c in cat_cols)
             total_cat_values = total_rows * len(cat_cols)
@@ -260,7 +260,7 @@ class ProfilingService:
         else:
             consistency = 100.0
 
-        # 5. Équilibre des classes (15%)
+        # 5. Class balance (15%)
         class_balance = None
         if target_col and target_col in df.columns:
             class_balance = self.calculate_class_balance(df[target_col])
@@ -308,7 +308,7 @@ class ProfilingService:
         target_col: Optional[str],
         class_balance: Optional[float],
     ) -> List[Dict[str, Any]]:
-        """Generates sorted findings 'Ce qui demande votre attention'
+        """Generates sorted findings 'What needs your attention'
         classified by severity: HIGH, MEDIUM, LOW.
         """
         findings = []
@@ -321,9 +321,10 @@ class ProfilingService:
                 minority_pct = round((vc.iloc[-1] / len(df[target_col].dropna())) * 100, 1)
                 findings.append({
                     "severity": "HIGH",
-                    "title": f"Déséquilibre sur la cible ({target_col})",
-                    "description": f"{target_col} = '{minority_class}' dans seulement {minority_pct}% des lignes",
-                    "action_label": "Voir les options →",
+                    "code": "TARGET_IMBALANCE",
+                    "title": f"Target imbalance ({target_col})",
+                    "description": f"{target_col} = '{minority_class}' in only {minority_pct}% of rows",
+                    "action_label": "View options →",
                     "action_type": "options",
                     "column": target_col,
                 })
@@ -339,9 +340,10 @@ class ProfilingService:
 
             findings.append({
                 "severity": severity,
-                "title": f"Valeurs manquantes dans {len(missing_cols)} colonne{'s' if len(missing_cols) > 1 else ''}",
-                "description": f"{worst_col['name']} présente le plus de lacunes ({worst_col['null_percentage']}%)",
-                "action_label": "Corriger →",
+                "code": "MISSING_VALUES",
+                "title": f"Missing values in {len(missing_cols)} column{'s' if len(missing_cols) > 1 else ''}",
+                "description": f"{worst_col['name']} has the most missing values ({worst_col['null_percentage']}%)",
+                "action_label": "Fix →",
                 "action_type": "fix",
                 "column": worst_col["name"],
             })
@@ -351,9 +353,10 @@ class ProfilingService:
         for c in outlier_cols:
             findings.append({
                 "severity": "MEDIUM",
-                "title": f"Valeurs aberrantes dans {c['name']}",
-                "description": f"{c['outlier_count']:,} valeurs au-delà de l'intervalle IQR habituel".replace(",", " "),
-                "action_label": "Examiner →",
+                "code": "OUTLIERS",
+                "title": f"Outliers in {c['name']}",
+                "description": f"{c['outlier_count']:,} values outside usual IQR bounds",
+                "action_label": "Inspect →",
                 "action_type": "review",
                 "column": c["name"],
             })
@@ -364,9 +367,10 @@ class ProfilingService:
                 examples_str = ", ".join(f'"{ex}"' for ex in c["inconsistent_examples"][:3])
                 findings.append({
                     "severity": "MEDIUM",
-                    "title": f"Catégories incohérentes dans {c['name']}",
-                    "description": f"Variantes détectées : {examples_str}",
-                    "action_label": "Fusionner →",
+                    "code": "INCONSISTENT_CATEGORIES",
+                    "title": f"Inconsistent categories in {c['name']}",
+                    "description": f"Variants detected: {examples_str}",
+                    "action_label": "Merge →",
                     "action_type": "merge",
                     "column": c["name"],
                 })
@@ -374,12 +378,13 @@ class ProfilingService:
         # 5. Duplicate Rows (LOW)
         if duplicate_rows_count > 0:
             id_cols = [c["name"] for c in columns_profile if c["detected_type"] == "id"]
-            id_info = f"Mêmes identifiants ({', '.join(id_cols)}) et valeurs identiques" if id_cols else "Mêmes valeurs sur l'ensemble des colonnes"
+            id_info = f"Same identifiers ({', '.join(id_cols)}) and identical values" if id_cols else "Same values across all columns"
             findings.append({
                 "severity": "LOW",
-                "title": f"{duplicate_rows_count} ligne{'s' if duplicate_rows_count > 1 else ''} dupliquée{'s' if duplicate_rows_count > 1 else ''}",
+                "code": "DUPLICATE_ROWS",
+                "title": f"{duplicate_rows_count} duplicate row{'s' if duplicate_rows_count > 1 else ''}",
                 "description": id_info,
-                "action_label": "Supprimer →",
+                "action_label": "Remove →",
                 "action_type": "remove",
                 "column": None,
             })
@@ -430,7 +435,7 @@ class ProfilingService:
 
             if col_type == "nombre":
                 numeric_count += 1
-            elif col_type in ["catégorie", "cible", "date"]:
+            elif col_type in ["category", "target", "date"]:
                 category_count += 1
 
             null_count = int(series.isnull().sum())
@@ -484,15 +489,15 @@ class ProfilingService:
                 histogram = self.compute_categorical_distribution(series)
 
             # Inconsistent categories detection (casse, accents, espaces)
-            if col_type in ["catégorie", "cible"] or not pd.api.types.is_numeric_dtype(series):
+            if col_type in ["category", "target"] or not pd.api.types.is_numeric_dtype(series):
                 has_inconsistent, inconsistent_examples, inconsistent_rows_count = self.detect_inconsistent_categories(series)
                 if has_inconsistent:
                     is_flagged = True
-                    flag_reasons.append("Catégories incohérentes (casse/accents)")
+                    flag_reasons.append("Inconsistent categories (casing/accents)")
 
             if null_percentage > 5.0:
                 is_flagged = True
-                flag_reasons.append(f"{null_percentage}% de valeurs manquantes")
+                flag_reasons.append(f"{null_percentage}% missing values")
 
             if outlier_count > 0:
                 is_flagged = True
@@ -500,7 +505,7 @@ class ProfilingService:
 
             if col_type == "id" and duplicate_rows_count > 0:
                 is_flagged = True
-                flag_reasons.append(f"{duplicate_rows_count} doublons")
+                flag_reasons.append(f"{duplicate_rows_count} duplicates")
 
             if is_flagged:
                 flagged_count += 1
@@ -555,7 +560,7 @@ class ProfilingService:
                 "health_score": scores_data["health_score"],
                 "sub_scores": scores_data["sub_scores"],
                 "score_weights": scores_data["weights"],
-                "schema_version": 2,
+                "schema_version": 3,
             },
             "findings": findings,
             "columns": columns_profile,
@@ -570,7 +575,7 @@ class ProfilingService:
     ) -> Dict[str, Any]:
         """Calculates comprehensive Phase A + Phase B profiling metrics on a Parquet file."""
         if not parquet_path.exists():
-            raise FileNotFoundError(f"Fichier Parquet introuvable: {parquet_path}")
+            raise FileNotFoundError(f"Parquet file not found: {parquet_path}")
 
         table = pq.read_table(parquet_path)
         df = table.to_pandas()
@@ -608,7 +613,7 @@ class ProfilingService:
                         and isinstance(cached_data.get("findings"), list)
                         and "health_score" in cached_data.get("summary", {})
                         and "sub_scores" in cached_data.get("summary", {})
-                        and cached_data.get("summary", {}).get("schema_version") == 2
+                        and cached_data.get("summary", {}).get("schema_version") == 3
                     )
                     
                     if has_phase_b:

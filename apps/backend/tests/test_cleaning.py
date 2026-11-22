@@ -120,7 +120,7 @@ def test_handle_missing_values_mode_constant_and_drop():
 
 def test_handle_missing_values_forbids_mean_median_on_strings():
     df = pd.DataFrame({"city": ["Rabat", None, "Casablanca"]})
-    with pytest.raises(ValueError, match="strictement réservée aux colonnes numériques"):
+    with pytest.raises(ValueError, match="strictly reserved for numeric columns"):
         cleaning_service.execute_cleaning_pipeline(
             df,
             [{"type": "HANDLE_MISSING", "column": "city", "parameters": {"strategy": "mean"}}],
@@ -226,9 +226,9 @@ def test_empty_strings_handled_as_missing_in_profiling(tmp_path):
     assert cols["age"]["null_count"] == 1
 
     # Findings must report missing values in 3 columns
-    missing_finding = next((f for f in profile["findings"] if "Valeurs manquantes" in f["title"]), None)
+    missing_finding = next((f for f in profile["findings"] if "Missing values" in f["title"]), None)
     assert missing_finding is not None
-    assert "3 colonnes" in missing_finding["title"]
+    assert "3 columns" in missing_finding["title"]
 
 
 def test_noop_detection(sample_df):

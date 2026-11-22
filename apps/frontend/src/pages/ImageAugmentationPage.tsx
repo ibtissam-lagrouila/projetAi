@@ -99,7 +99,7 @@ export const ImageAugmentationPage: React.FC = () => {
         setSelectedDatasetId(preferred.id);
       }
     } catch (err: any) {
-      setError('Erreur lors du chargement des datasets: ' + (err.message || 'inconnue'));
+      setError('Error loading datasets: ' + (err.message || 'unknown'));
     }
   }, [selectedDatasetId]);
 
@@ -130,7 +130,7 @@ export const ImageAugmentationPage: React.FC = () => {
       setTechParams(params);
       setComparison(null);
     } catch (err: any) {
-      setError('Erreur lors de la récupération de la recette d\'augmentation: ' + (err.message || 'inconnue'));
+      setError('Error loading augmentation recipe: ' + (err.message || 'unknown'));
     } finally {
       setLoading(false);
     }
@@ -166,7 +166,7 @@ export const ImageAugmentationPage: React.FC = () => {
       a.download = `image_augmentation_recipe_${recipe.dataset_name.replace(/[^a-zA-Z0-9_-]/g, '_')}.json`;
       a.click();
       URL.revokeObjectURL(url);
-      showNotif('Recette d\'augmentation d\'image exportée avec succès !');
+      showNotif('Recipe d\'augmentation d\'image exported successfully !');
     };
 
     window.addEventListener('datalift:export-image-augmentation-recipe', handleExport);
@@ -323,9 +323,9 @@ export const ImageAugmentationPage: React.FC = () => {
         techniques: Object.keys(techToggles).filter(k => techToggles[k]),
       });
       setComparison(res);
-      showNotif(`Comparaison terminée ! Amélioration ${res.metric} de ${res.delta || '+0.18'}.`, true);
+      showNotif(`Comparison complete! Improvement ${res.metric} de ${res.delta || '+0.18'}.`, true);
     } catch (err: any) {
-      showNotif('Erreur lors de la comparaison: ' + (err.message || 'inconnue'), false);
+      showNotif('Error comparing: ' + (err.message || 'unknown'), false);
     } finally {
       setComparing(false);
     }
@@ -351,18 +351,18 @@ export const ImageAugmentationPage: React.FC = () => {
         },
         techniques: Object.keys(techToggles).filter(k => techToggles[k]),
       });
-      showNotif(`Version v3 enregistrée avec succès (${totalGenerated.toLocaleString()} images synthétiques) !`, true);
+      showNotif(`Version v3 saved successfully (${totalGenerated.toLocaleString()} synthetic images) !`, true);
       // Navigate to versioning
       setTimeout(() => navigate('/versioning'), 1200);
     } catch (err: any) {
-      showNotif('Erreur lors de l\'enregistrement v3: ' + (err.message || 'inconnue'), false);
+      showNotif('Error lors de l\'enregistrement v3: ' + (err.message || 'unknown'), false);
     } finally {
       setSaving(false);
     }
   };
 
   const handleSendToTraining = () => {
-    showNotif('Recette d\'augmentation envoyée au pipeline d\'entraînement.', true);
+    showNotif('Augmentation recipe sent to training pipeline.', true);
     setTimeout(() => navigate('/training'), 800);
   };
 
@@ -395,7 +395,7 @@ export const ImageAugmentationPage: React.FC = () => {
       <div style={{ backgroundColor: C.bg, minHeight: '100vh', padding: '3rem', color: C.text }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', color: C.amber }}>
           <RefreshCw className="animate-spin" size={20} />
-          <span style={{ fontFamily: 'monospace', fontSize: '0.9rem' }}>Chargement de la recette d'augmentation d'images...</span>
+          <span style={{ fontFamily: 'monospace', fontSize: '0.9rem' }}>Loading image augmentation recipe...</span>
         </div>
       </div>
     );
@@ -413,7 +413,7 @@ export const ImageAugmentationPage: React.FC = () => {
           className="btn btn-secondary font-mono"
           style={{ fontSize: '0.8rem' }}
         >
-          Réessayer
+          Retry
         </button>
       </div>
     );
@@ -464,7 +464,7 @@ export const ImageAugmentationPage: React.FC = () => {
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
           <span style={{ fontSize: '0.7rem', color: C.textMuted, fontFamily: 'monospace', letterSpacing: '0.1em' }}>
-            JEU DE DONNÉES :
+            DATASET :
           </span>
           <select
             value={selectedDatasetId}
@@ -1216,7 +1216,7 @@ export const ImageAugmentationPage: React.FC = () => {
         <div style={{ marginTop: '0.75rem' }}>
           <button
             type="button"
-            onClick={() => showNotif('Ajout de script Python personnalisé prochainement disponible.')}
+            onClick={() => showNotif('Custom Python script addition coming soon.')}
             style={{
               background: 'none',
               border: 'none',

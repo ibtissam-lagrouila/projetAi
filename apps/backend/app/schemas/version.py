@@ -171,7 +171,7 @@ class LineageNode(BaseModel):
     short_hash: str
     version_number: int
     version_label: str
-    type_label: str = "brute"
+    type_label: str = "raw"
     parent_version_id: Optional[UUID] = None
     operation_type: str
     operation_summary: str

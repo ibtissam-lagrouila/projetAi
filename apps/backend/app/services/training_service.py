@@ -186,11 +186,11 @@ class TrainingService:
         cli_command = f"datalift train {dataset.name}@{version_label} --config {ds_prefix}-search.yaml"
 
         return TrainingConfigResponse(
-            dataset_version=f"{dataset.name}@{version_label} · courante",
+            dataset_version=f"{dataset.name}@{version_label} · current",
             train_view="Real + smote · train partition only",
             splits_summary=splits_summary,
             left_out_count=left_out_count,
-            available_models=["Logistic · baseline", "XGBoost", "LightGBM", "CatBoost", "Random forest", "Petit MLP"],
+            available_models=["Logistic · baseline", "XGBoost", "LightGBM", "CatBoost", "Random forest", "Small MLP"],
             target_column=target_col,
             positive_class=pos_label,
             available_targets=available_targets,
@@ -833,7 +833,7 @@ class TrainingService:
             raw_hash = hashlib.sha256(test_df.to_json(orient="records").encode("utf-8")).hexdigest()
             test_hash = f"{raw_hash[:4]}...{raw_hash[-4:]}"
         else:
-            test_hash = "non applicable"
+            test_hash = "not applicable"
 
         # Real label corrections count from 05
         labels_fixed = db.query(LabelChange).filter(

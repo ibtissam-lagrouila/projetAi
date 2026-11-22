@@ -286,7 +286,7 @@ class LabelingService:
                 id="suspected_errors",
                 title="SUSPECTED ERRORS",
                 count=suspected_count,
-                description=f"The label says '{neg_label}', the model is {int(threshold*100)}%+ que c'est '{pos_label}' · ou l'inverse",
+                description=f"The label says '{neg_label}', the model is {int(threshold*100)}%+ sure it's '{pos_label}' · or vice versa",
                 done_count=done_suspected,
                 button_label="Continue" if done_suspected > 0 else "Start",
                 is_active=True,

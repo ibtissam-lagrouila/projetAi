@@ -18,10 +18,10 @@ import {
   CheckCircle2,
   AlertTriangle,
   X,
-  Download,
-  Copy,
   ArrowRight,
 } from 'lucide-react';
+import { CleaningRecipeModal } from '../components/CleaningRecipeModal';
+import { downloadTabularRecipePdf } from '../utils/recipeExport';
 
 export const CleaningPage: React.FC = () => {
   const location = useLocation();
@@ -74,7 +74,6 @@ export const CleaningPage: React.FC = () => {
 
   // Modals
   const [showExportModal, setShowExportModal] = useState<boolean>(false);
-  const [copiedRecipe, setCopiedRecipe] = useState<boolean>(false);
   const [showManualModal, setShowManualModal] = useState<boolean>(false);
   const [manualStepType, setManualStepType] = useState<string>('DROP_COLUMN');
   const [manualStepCol, setManualStepCol] = useState<string>('');
@@ -86,7 +85,26 @@ export const CleaningPage: React.FC = () => {
 
   // Listen to TopBar export event
   useEffect(() => {
-    const handleExport = () => setShowExportModal(true);
+    const handleExport = () => {
+    setShowExportModal(true);
+    downloadTabularRecipePdf({
+      datasetName: originalFileName,
+      sourceVersion: currentVersionLabel,
+      targetVersion: 'v3',
+      healthBefore: 91,
+      healthAfter: 91,
+      totalRows: profile?.summary?.total_rows || 250,
+      totalColumns: 8,
+      modifiedCells: 10,
+      operations: buildActiveOperations().map((op: any, idx: number) => ({
+        step: String(idx + 1).padStart(2, '0'),
+        title: op.name || op.type || `STEP ${idx + 1}`,
+        strategy: JSON.stringify(op.params || {}),
+        scope: op.target || op.column || 'All rows',
+        impact: 'Executed',
+      })),
+    });
+  };
     window.addEventListener('datalift:export-recipe', handleExport);
     return () => window.removeEventListener('datalift:export-recipe', handleExport);
   }, []);
@@ -1452,78 +1470,42 @@ export const CleaningPage: React.FC = () => {
       )}
 
       {/* Modal: Export Recipe */}
-      {showExportModal && (
-        <div className="modal-backdrop">
-          <div className="modal-content" style={{ maxWidth: '640px' }}>
-            <div className="modal-header">
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
-                <Download size={18} color="var(--amber)" />
-                <h3 className="modal-title font-serif" style={{ fontSize: '1.35rem' }}>
-                  Export cleaning recipe
-                </h3>
-              </div>
-              <button
-                type="button"
-                className="close-button"
-                onClick={() => {
-                  setShowExportModal(false);
-                  setCopiedRecipe(false);
-                }}
-              >
-                <X size={18} />
-              </button>
-            </div>
-
-            <div style={{ padding: '1.5rem' }}>
-              <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '1rem' }}>
-                This deterministic recipe can be saved and replayed on new ingestion data.
-              </p>
-
-              <pre
-                className="font-mono"
-                style={{
-                  background: '#0e0e11',
-                  border: '1px solid #27272a',
-                  borderRadius: 6,
-                  padding: '1rem',
-                  fontSize: '0.75rem',
-                  color: '#e4e4e7',
-                  overflowX: 'auto',
-                  maxHeight: '340px',
-                }}
-              >
-                {recipeExportJson}
-              </pre>
-
-              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '1.25rem' }}>
-                <button
-                  type="button"
-                  className="btn btn-secondary font-mono"
-                  style={{ fontSize: '0.78rem' }}
-                  onClick={() => {
-                    navigator.clipboard.writeText(recipeExportJson);
-                    setCopiedRecipe(true);
-                    setTimeout(() => setCopiedRecipe(false), 2000);
-                  }}
-                >
-                  <Copy size={13} />
-                  <span>{copiedRecipe ? 'Copied!' : 'Copy JSON'}</span>
-                </button>
-
-                <a
-                  href={`data:text/json;charset=utf-8,${encodeURIComponent(recipeExportJson)}`}
-                  download={`cleaning_recipe_${originalFileName}.json`}
-                  className="btn btn-primary font-mono"
-                  style={{ fontSize: '0.78rem', textDecoration: 'none' }}
-                >
-                  <Download size={13} />
-                  <span>Download .json</span>
-                </a>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+      <CleaningRecipeModal
+        isOpen={showExportModal}
+        onClose={() => setShowExportModal(false)}
+        modality="tabular"
+        datasetName={originalFileName}
+        sourceVersion={currentVersionLabel}
+        targetVersion="v3"
+        healthBefore={91}
+        healthAfter={91}
+        recipeJson={recipeExportJson}
+        onDownloadPdf={() => {
+          downloadTabularRecipePdf({
+            datasetName: originalFileName,
+            sourceVersion: currentVersionLabel,
+            targetVersion: 'v3',
+            healthBefore: 91,
+            healthAfter: 91,
+            totalRows: profile?.summary?.total_rows || 250,
+            totalColumns: 8,
+            modifiedCells: 10,
+            operations: buildActiveOperations().map((op: any, idx: number) => ({
+              step: String(idx + 1).padStart(2, '0'),
+              title: op.name || op.type || `STEP ${idx + 1}`,
+              strategy: JSON.stringify(op.params || {}),
+              scope: op.target || op.column || 'All rows',
+              impact: 'Executed',
+            })),
+          });
+        }}
+        summarySteps={[
+          { number: '01', title: 'REMOVE DUPLICATE ROWS', detail: 'Identify and drop identical row records', param: `${step01Keep} record` },
+          { number: '02', title: 'IMPUTE MISSING VALUES', detail: 'Impute missing continuous and categorical cells', param: step02Strategy },
+          { number: '03', title: 'HARMONIZE CATEGORIES', detail: `Fuzzy cluster variants in ${inconsistentCatColumn?.name || 'categories'}`, param: 'Threshold 85%' },
+          { number: '04', title: 'OUTLIER CLIPPING (IQR)', detail: 'Clamp extreme outliers to 1.5 * IQR bounds', param: step04Method },
+        ]}
+      />
 
       {/* Modal: Add Manual Step */}
       {showManualModal && (

@@ -4,6 +4,8 @@ import { api } from '../services/api';
 import { filterDatasetsByModality } from '../utils/formatters';
 import { Dataset, ImageCleaningRecipeResponse } from '../types';
 import { RefreshCw, AlertCircle } from 'lucide-react';
+import { CleaningRecipeModal } from '../components/CleaningRecipeModal';
+import { downloadImageRecipePdf } from '../utils/recipeExport';
 
 // ─── Theme Colors ───────────────────────────────────────────────────────────
 const C = {
@@ -57,6 +59,7 @@ export const ImageCleaningPage: React.FC = () => {
 
   const [dryRunning, setDryRunning] = useState<boolean>(false);
   const [applying, setApplying] = useState<boolean>(false);
+  const [showExportModal, setShowExportModal] = useState<boolean>(false);
   const [notif, setNotif] = useState<{ msg: string; ok: boolean } | null>(null);
 
   const showNotif = (msg: string, ok: boolean = true) => {
@@ -209,16 +212,20 @@ export const ImageCleaningPage: React.FC = () => {
     }
   };
 
+  // Export Recipe PDF & Modal
   const handleExportRecipe = () => {
     if (!recipe) return;
-    const blob = new Blob([JSON.stringify(recipe, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `recipe_${recipe.display_title.replace(/[\/\\?%*:|"<>]/g, '_') || 'image'}.json`;
-    a.click();
-    URL.revokeObjectURL(url);
-    showNotif('Image cleaning recipe exported as JSON.');
+    setShowExportModal(true);
+    const curDataset = datasets.find(d => d.id === selectedDatasetId);
+    downloadImageRecipePdf({
+      datasetName: curDataset?.name || recipe.display_title || 'image_dataset',
+      sourceVersion: 'v1 (raw)',
+      targetVersion: recipe.kpis?.output || 'v2',
+      recipe,
+      enabledSteps: stepToggles,
+      stepParams,
+    });
+    showNotif('Image cleaning recipe (PDF) generated and downloaded.');
   };
 
   if (loading && !recipe) {
@@ -943,6 +950,38 @@ export const ImageCleaningPage: React.FC = () => {
           </button>
         </div>
       </div>
+
+      {/* Cleaning Recipe Export Modal */}
+      {recipe && (
+        <CleaningRecipeModal
+          isOpen={showExportModal}
+          onClose={() => setShowExportModal(false)}
+          modality="image"
+          datasetName={datasets.find(d => d.id === selectedDatasetId)?.name || recipe.display_title || 'image_dataset'}
+          sourceVersion="v1 (raw)"
+          targetVersion={recipe.kpis?.output || 'v2'}
+          healthBefore={recipe.health?.before ?? 86}
+          healthAfter={recipe.health?.after ?? 88}
+          recipeJson={JSON.stringify(recipe, null, 2)}
+          onDownloadPdf={() => {
+            const curDataset = datasets.find(d => d.id === selectedDatasetId);
+            downloadImageRecipePdf({
+              datasetName: curDataset?.name || recipe.display_title || 'image_dataset',
+              sourceVersion: 'v1 (raw)',
+              targetVersion: recipe.kpis?.output || 'v2',
+              recipe,
+              enabledSteps: stepToggles,
+              stepParams,
+            });
+          }}
+          summarySteps={recipe.steps?.map(s => ({
+            number: s.rank || '01',
+            title: s.title,
+            detail: s.subtitle,
+            param: stepParams[s.id] || s.param_value,
+          })) || []}
+        />
+      )}
     </div>
   );
 };

@@ -54,8 +54,6 @@ export const TextExportApiPage: React.FC = () => {
   // Section 2: Model package format
   const [selectedModelFormat, setSelectedModelFormat] = useState<string>('docker');
 
-  // Section 3: Deploy selection
-  const [selectedDeployOption, setSelectedDeployOption] = useState<string>('datalift_hosted');
 
   // Webhooks toggles
   const [webhookStates, setWebhookStates] = useState<Record<string, boolean>>({
@@ -1130,7 +1128,7 @@ export const TextExportApiPage: React.FC = () => {
       </section>
 
       {/* ========================================================================= */}
-      {/* SECTION 3: DEPLOY */}
+      {/* SECTION 3: API */}
       {/* ========================================================================= */}
       <section style={{ marginBottom: '3.5rem' }}>
         <div
@@ -1152,178 +1150,7 @@ export const TextExportApiPage: React.FC = () => {
               margin: 0,
             }}
           >
-            3 · Deploy
-          </h2>
-          <span
-            style={{
-              fontSize: '0.65rem',
-              fontFamily: 'monospace',
-              letterSpacing: '0.12em',
-              color: C.textMuted,
-              textTransform: 'uppercase',
-            }}
-          >
-            {data?.deploy?.subtitle || 'STAGING, SHADOW, CANARY, THEN PRODUCTION'}
-          </span>
-        </div>
-
-        {/* Stepper Pipeline */}
-        <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(6, 1fr)',
-            gap: '0.75rem',
-            marginBottom: '1.5rem',
-          }}
-        >
-          {(data?.deploy?.steps || [
-            { num: 1, title: '1 · BUILD', name: 'Package built', status: 'done', detail: '✓ done · 6 min' },
-            { num: 2, title: '2 · TEST', name: '1,000 locked tickets', status: 'done', detail: '✓ same labels as 06' },
-            { num: 3, title: '3 · STAGING', name: 'Endpoint ready', status: 'active', detail: 'now · try it below' },
-            { num: 4, title: '4 · SHADOW', name: 'Next to ticket-cls-v3', status: 'waiting', detail: 'waiting · 7 days' },
-            { num: 5, title: '5 · CANARY', name: '10% → 50% of tickets', status: 'waiting', detail: 'waiting · per language' },
-            { num: 6, title: '6 · PRODUCTION', name: 'Darija reviewer approves', status: 'waiting', detail: 'waiting' },
-          ]).map((step) => {
-            const isActive = step.status === 'active';
-            const isDone = step.status === 'done';
-            return (
-              <div
-                key={step.num}
-                style={{
-                  backgroundColor: C.card,
-                  border: isActive ? `1.5px solid ${C.amber}` : `1px solid ${C.border}`,
-                  borderRadius: '6px',
-                  padding: '0.85rem 0.95rem',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  justifyContent: 'space-between',
-                  boxShadow: isActive ? '0 0 16px rgba(245, 158, 11, 0.12)' : 'none',
-                }}
-              >
-                <div>
-                  <div
-                    style={{
-                      fontSize: '0.62rem',
-                      fontFamily: 'monospace',
-                      color: isActive ? C.amberLight : C.textMuted,
-                      letterSpacing: '0.08em',
-                      fontWeight: 'bold',
-                      marginBottom: '0.35rem',
-                      textTransform: 'uppercase',
-                    }}
-                  >
-                    {step.title}
-                  </div>
-                  <div style={{ fontSize: '0.8rem', fontWeight: 600, color: C.text, marginBottom: '0.4rem' }}>
-                    {step.name}
-                  </div>
-                </div>
-
-                <div
-                  style={{
-                    fontSize: '0.65rem',
-                    fontFamily: 'monospace',
-                    color: isDone ? C.green : isActive ? C.amber : C.textMuted,
-                  }}
-                >
-                  {step.detail}
-                </div>
-              </div>
-            );
-          })}
-        </div>
-
-        {/* Deploy Options Row (3 Cards) */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1rem' }}>
-          {(data?.deploy?.options || [
-            { id: 'datalift_hosted', title: 'Hosted by Datalift', desc: 'An HTTPS endpoint the helpdesk calls for each new ticket.' },
-            { id: 'your_server', title: 'Your server', desc: 'Run the Docker image near the helpdesk. CPU is enough with ONNX.' },
-            { id: 'webhook', title: 'Webhook', desc: 'Datalift receives tickets from the helpdesk and posts the label back.' },
-          ]).map((opt) => {
-            const isSelected = selectedDeployOption === opt.id;
-            return (
-              <div
-                key={opt.id}
-                onClick={() => setSelectedDeployOption(opt.id)}
-                style={{
-                  backgroundColor: C.card,
-                  border: isSelected ? `1.5px solid ${C.amber}` : `1px solid ${C.border}`,
-                  borderRadius: '6px',
-                  padding: '1.25rem',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  justifyContent: 'space-between',
-                  boxShadow: isSelected ? '0 0 16px rgba(245, 158, 11, 0.12)' : 'none',
-                }}
-              >
-                <div>
-                  <div
-                    style={{
-                      fontSize: '0.6rem',
-                      fontFamily: 'monospace',
-                      color: isSelected ? C.amberLight : C.textMuted,
-                      letterSpacing: '0.12em',
-                      fontWeight: 'bold',
-                      textTransform: 'uppercase',
-                      marginBottom: '0.45rem',
-                    }}
-                  >
-                    {isSelected ? 'SELECTED' : 'OPTION'}
-                  </div>
-                  <h3
-                    style={{
-                      fontFamily: 'Newsreader, Georgia, serif',
-                      fontStyle: 'italic',
-                      fontSize: '1.2rem',
-                      color: '#f4f4f6',
-                      margin: '0 0 0.45rem 0',
-                    }}
-                  >
-                    {opt.title}
-                  </h3>
-                  <p
-                    style={{
-                      fontSize: '0.74rem',
-                      fontFamily: 'monospace',
-                      color: '#9ca3af',
-                      lineHeight: 1.45,
-                      margin: 0,
-                    }}
-                  >
-                    {opt.desc}
-                  </p>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </section>
-
-      {/* ========================================================================= */}
-      {/* SECTION 4: API */}
-      {/* ========================================================================= */}
-      <section style={{ marginBottom: '3.5rem' }}>
-        <div
-          style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'baseline',
-            marginBottom: '1.25rem',
-            paddingBottom: '0.5rem',
-            borderBottom: `1px solid ${C.border}`,
-          }}
-        >
-          <h2
-            style={{
-              fontFamily: 'Newsreader, Georgia, serif',
-              fontStyle: 'italic',
-              fontSize: '1.65rem',
-              color: '#f4f4f6',
-              margin: 0,
-            }}
-          >
-            4 · API
+            3 · API
           </h2>
           <span
             style={{
@@ -1814,7 +1641,7 @@ export const TextExportApiPage: React.FC = () => {
               margin: 0,
             }}
           >
-            5 · Versions and traffic
+            4 · Versions and traffic
           </h2>
           <span
             style={{
@@ -2101,10 +1928,10 @@ export const TextExportApiPage: React.FC = () => {
       >
         <div>
           <div style={{ fontSize: '0.82rem', fontFamily: 'monospace', color: C.text, fontWeight: 'bold' }}>
-            {data?.bottom_bar?.title || 'ticket-cls-v4 · Docker image · staging endpoint ready'}
+            {data?.bottom_bar?.title || 'ticket-cls-v4 · Docker image · package ready'}
           </div>
           <div style={{ fontSize: '0.68rem', fontFamily: 'monospace', color: C.textMuted, marginTop: '0.15rem' }}>
-            {data?.bottom_bar?.sub || 'Next: 7 days of shadow next to ticket-cls-v3, then the darija reviewer approves'}
+            Model package and API endpoint generated from 06 Training
           </div>
         </div>
 
@@ -2124,24 +1951,6 @@ export const TextExportApiPage: React.FC = () => {
             }}
           >
             {data?.bottom_bar?.action_left || '← Back to drift'}
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setShowDeployModal(true)}
-            style={{
-              backgroundColor: C.amber,
-              border: 'none',
-              color: '#000',
-              padding: '0.5rem 1.25rem',
-              borderRadius: '4px',
-              fontSize: '0.78rem',
-              fontFamily: 'monospace',
-              fontWeight: 600,
-              cursor: 'pointer',
-            }}
-          >
-            {data?.bottom_bar?.action_right || 'Deploy to staging'}
           </button>
         </div>
       </div>

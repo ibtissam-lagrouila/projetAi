@@ -206,6 +206,7 @@ export const TrainingPage: React.FC = () => {
       showToast(`Run ${res.run_name} started and completed successfully!`);
       await loadDatasetData(selectedDatasetId);
       setSelectedRunId(res.run_id);
+      await loadRunDetail(res.run_id, activeSplit, activeThreshold);
     } catch (err) {
       console.error(err);
       showToast("Failed to start training", 'error');
@@ -1178,7 +1179,7 @@ export const TrainingPage: React.FC = () => {
                     }}
                   >
                     {isStartingRun ? <RefreshCw size={13} className="spin" /> : <Play size={13} fill="#000" />}
-                    <span>Start run</span>
+                    <span>{isStartingRun ? 'Training...' : 'Start run'}</span>
                   </button>
                   <button
                     type="button"
@@ -1198,6 +1199,26 @@ export const TrainingPage: React.FC = () => {
                     Save...
                   </button>
                 </div>
+
+                {isStartingRun && (
+                  <div
+                    style={{
+                      padding: '0.5rem 0.75rem',
+                      borderRadius: '4px',
+                      background: 'rgba(245, 158, 11, 0.1)',
+                      border: '1px solid rgba(245, 158, 11, 0.3)',
+                      color: 'var(--amber)',
+                      fontSize: '0.72rem',
+                      fontFamily: 'monospace',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.5rem',
+                    }}
+                  >
+                    <RefreshCw size={12} className="spin" />
+                    <span>Entraînement en cours (optimisation bayésienne & validation croisée)...</span>
+                  </div>
+                )}
 
                 <button
                   type="button"

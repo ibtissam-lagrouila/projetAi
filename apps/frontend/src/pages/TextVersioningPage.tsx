@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { api } from '../services/api';
 import { filterDatasetsByModality, getActiveDatasetForModality, saveActiveDataset } from '../utils/formatters';
 import { Dataset, TextVersioningDataResponse } from '../types';
+import { downloadTextDatasetCardPdf } from '../utils/datasetCardPdf';
 import { RefreshCw, AlertCircle, Check, Copy, Download } from 'lucide-react';
 
 // ─── Theme Colors ─────────────────────────────────────────────────────────────
@@ -108,34 +109,20 @@ export const TextVersioningPage: React.FC = () => {
     }
   }, [selectedDatasetId, fetchData]);
 
-  // ── Export dataset card event listener ─────────────────────────────────────
-  useEffect(() => {
-    const handleExport = () => {
-      if (!data) return;
-      const cardContent = {
-        dataset: data.dataset_name,
-        versions: data.kpis.versions,
-        current_version: data.current_version,
-        stored: data.kpis.stored,
-        languages: data.kpis.languages,
-        summary: data.action_banner.card_summary,
-        lineage: data.lineage,
-        guardrails: data.guardrails,
-        exported_at: new Date().toISOString(),
-      };
-      const blob = new Blob([JSON.stringify(cardContent, null, 2)], { type: 'application/json' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `dataset_card_${data.dataset_name.replace(/[^a-zA-Z0-9_-]/g, '_')}.json`;
-      a.click();
-      URL.revokeObjectURL(url);
-      showNotif('Dataset card exported successfully !');
-    };
+  // ── Export dataset card (PDF) handler ──────────────────────────────────────
+  const handleExport = useCallback(() => {
+    if (!data) return;
+    downloadTextDatasetCardPdf({
+      datasetName: data.dataset_name || 'text_dataset',
+      data,
+    });
+    showNotif(`✓ Dataset Card PDF generated and downloaded for ${data.dataset_name} !`);
+  }, [data]);
 
+  useEffect(() => {
     window.addEventListener('datalift:export-text-dataset-card', handleExport);
     return () => window.removeEventListener('datalift:export-text-dataset-card', handleExport);
-  }, [data]);
+  }, [handleExport]);
 
   // Active details object
   const activeDetails = useMemo(() => {
@@ -299,7 +286,7 @@ export const TextVersioningPage: React.FC = () => {
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
           <button
             type="button"
-            onClick={() => window.dispatchEvent(new CustomEvent('datalift:export-text-dataset-card'))}
+            onClick={handleExport}
             style={{
               backgroundColor: 'transparent',
               color: C.text,

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Check, AlertTriangle, X } from 'lucide-react';
+import { Check, AlertTriangle, X, Play, RefreshCw } from 'lucide-react';
 import { api } from '../services/api';
 import { filterDatasetsByModality, getActiveDatasetForModality, saveActiveDataset } from '../utils/formatters';
 import { Dataset, TextTrainingDataResponse } from '../types';
@@ -38,6 +38,7 @@ export const TextTrainingPage: React.FC = () => {
   const [selectedRunId, setSelectedRunId] = useState<string>('ticket-cls-v4');
 
   // Interactive controls
+  const [isStartingRun, setIsStartingRun] = useState<boolean>(false);
   const [humanConfidenceThreshold, setHumanConfidenceThreshold] = useState<number>(0.70);
   const [checkedModels, setCheckedModels] = useState<Record<string, boolean>>({
     tfidf: true,
@@ -118,17 +119,25 @@ export const TextTrainingPage: React.FC = () => {
 
   const handleStartRun = async () => {
     if (!selectedDatasetId || !data) return;
+    setIsStartingRun(true);
     try {
       const res = await api.startTextTrainingRun(selectedDatasetId, {
         dataset_version: data.new_run_config.dataset_version,
         models: Object.keys(checkedModels).filter(k => checkedModels[k]),
         fine_tuning: data.new_run_config.fine_tuning,
       });
+      const newRunId = res.run_id;
+      if (newRunId) {
+        setSelectedRunId(newRunId);
+      }
       setNotification(res.message || 'New training run launched successfully!');
       setTimeout(() => setNotification(null), 4000);
+      await fetchData(selectedDatasetId, runFilter, newRunId);
     } catch (err: any) {
       setNotification('Error starting run: ' + (err.message || 'unknown'));
       setTimeout(() => setNotification(null), 4000);
+    } finally {
+      setIsStartingRun(false);
     }
   };
 
@@ -760,6 +769,7 @@ export const TextTrainingPage: React.FC = () => {
                 <button
                   type="button"
                   onClick={handleStartRun}
+                  disabled={isStartingRun}
                   style={{
                     flex: 1,
                     backgroundColor: C.amber,
@@ -770,10 +780,16 @@ export const TextTrainingPage: React.FC = () => {
                     fontSize: '0.78rem',
                     fontWeight: 600,
                     fontFamily: 'monospace',
-                    cursor: 'pointer',
+                    cursor: isStartingRun ? 'wait' : 'pointer',
+                    opacity: isStartingRun ? 0.7 : 1,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '0.4rem',
                   }}
                 >
-                  Start run
+                  {isStartingRun ? <RefreshCw size={13} className="spin" /> : <Play size={13} fill="#000" />}
+                  <span>{isStartingRun ? 'Training...' : 'Start run'}</span>
                 </button>
                 <button
                   type="button"
@@ -796,6 +812,27 @@ export const TextTrainingPage: React.FC = () => {
                   Save as template
                 </button>
               </div>
+
+              {isStartingRun && (
+                <div
+                  style={{
+                    padding: '0.5rem 0.75rem',
+                    marginBottom: '0.5rem',
+                    borderRadius: '4px',
+                    background: 'rgba(245, 158, 11, 0.1)',
+                    border: '1px solid rgba(245, 158, 11, 0.3)',
+                    color: C.amber,
+                    fontSize: '0.72rem',
+                    fontFamily: 'monospace',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.5rem',
+                  }}
+                >
+                  <RefreshCw size={12} className="spin" />
+                  <span>Fine-tuning & évaluation Macro F1 en cours...</span>
+                </div>
+              )}
 
               <button
                 type="button"

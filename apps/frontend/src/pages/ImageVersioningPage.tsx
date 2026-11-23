@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { api } from '../services/api';
 import { filterDatasetsByModality, getActiveDatasetForModality, saveActiveDataset } from '../utils/formatters';
 import { Dataset, ImageVersioningDataResponse, ImageVersioningDiffItem } from '../types';
+import { downloadImageDatasetCardPdf } from '../utils/datasetCardPdf';
 import { RefreshCw, AlertCircle, Check, Copy, Download, X } from 'lucide-react';
 
 // ─── Theme Colors ─────────────────────────────────────────────────────────────
@@ -112,35 +113,20 @@ export const ImageVersioningPage: React.FC = () => {
     }
   }, [selectedDatasetId, fetchData]);
 
-  // ── Export dataset card event listener ─────────────────────────────────────
-  useEffect(() => {
-    const handleExport = () => {
-      if (!data) return;
-      const cardContent = {
-        dataset: data.dataset_name,
-        modality: 'image',
-        versions: data.kpis.versions,
-        current_version: data.current_version,
-        stored: data.kpis.stored,
-        boxes: data.kpis.boxes,
-        summary: data.action_banner.card_summary,
-        lineage: data.lineage,
-        guardrails: data.guardrails,
-        exported_at: new Date().toISOString(),
-      };
-      const blob = new Blob([JSON.stringify(cardContent, null, 2)], { type: 'application/json' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `dataset_card_${data.dataset_name.replace(/[^a-zA-Z0-9_-]/g, '_')}.json`;
-      a.click();
-      URL.revokeObjectURL(url);
-      showNotif('Dataset card image exported successfully !');
-    };
+  // ── Export dataset card (PDF) handler ──────────────────────────────────────
+  const handleExport = useCallback(() => {
+    if (!data) return;
+    downloadImageDatasetCardPdf({
+      datasetName: data.dataset_name || 'image_dataset',
+      data,
+    });
+    showNotif(`✓ Dataset Card PDF generated and downloaded for ${data.dataset_name} !`);
+  }, [data]);
 
+  useEffect(() => {
     window.addEventListener('datalift:export-image-dataset-card', handleExport);
     return () => window.removeEventListener('datalift:export-image-dataset-card', handleExport);
-  }, [data]);
+  }, [handleExport]);
 
   // Active details object
   const activeDetails = useMemo(() => {
@@ -315,7 +301,7 @@ export const ImageVersioningPage: React.FC = () => {
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
           <button
             type="button"
-            onClick={() => window.dispatchEvent(new CustomEvent('datalift:export-image-dataset-card'))}
+            onClick={handleExport}
             style={{
               backgroundColor: 'transparent',
               color: C.text,

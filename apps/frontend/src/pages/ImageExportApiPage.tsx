@@ -55,8 +55,6 @@ export const ImageExportApiPage: React.FC = () => {
   // Section 2: Selected Model Package Format
   const [selectedModelFormat, setSelectedModelFormat] = useState<string>('openvino_int8');
 
-  // Section 3: Selected Deployment Option
-  const [selectedDeployOption, setSelectedDeployOption] = useState<string>('line_mini_pcs');
 
   // Section 4: Webhooks toggles
   const [webhookToggles, setWebhookToggles] = useState<Record<string, boolean>>({
@@ -1103,7 +1101,7 @@ export const ImageExportApiPage: React.FC = () => {
       </section>
 
       {/* ========================================================================= */}
-      {/* SECTION 3: DEPLOY */}
+      {/* SECTION 3: API */}
       {/* ========================================================================= */}
       <section style={{ marginBottom: '3.5rem' }}>
         <div
@@ -1125,157 +1123,7 @@ export const ImageExportApiPage: React.FC = () => {
               margin: 0,
             }}
           >
-            3 · Deploy
-          </h2>
-          <span
-            style={{
-              fontSize: '0.65rem',
-              fontFamily: 'monospace',
-              letterSpacing: '0.12em',
-              color: C.textMuted,
-              textTransform: 'uppercase',
-            }}
-          >
-            {state?.deploy?.subtitle || 'ONE DEVICE FIRST, THEN THE FLEET'}
-          </span>
-        </div>
-
-        {/* 5-Step Pipeline */}
-        <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(5, 1fr)',
-            gap: '0.75rem',
-            marginBottom: '1.5rem',
-          }}
-        >
-          {(state?.deploy?.pipeline || [
-            { step: '1 · BUILD', title: 'INT8 converted', status: '✓ done · 9 min', active: false, done: true },
-            { step: '2 · DEVICE TEST', title: 'Speed on a mini PC', status: '✓ under 120 ms', active: false, done: true },
-            { step: '3 · SHADOW', title: 'Line 2 · 1 device', status: 'now · boxes logged only', active: true, done: false },
-            { step: '4 · LINE 2', title: 'All mini PCs of line 2', status: 'waiting', active: false, done: false },
-            { step: '5 · FLEET', title: 'All lines', status: 'waiting · after review', active: false, done: false },
-          ]).map((p, idx) => (
-            <div
-              key={idx}
-              style={{
-                backgroundColor: C.card,
-                border: p.active ? `1px solid ${C.amber}` : `1px solid ${C.border}`,
-                borderRadius: '6px',
-                padding: '1.1rem 1rem',
-                minHeight: '85px',
-                display: 'flex',
-                flexDirection: 'column',
-                justifyContent: 'space-between',
-              }}
-            >
-              <div>
-                <div style={{ fontSize: '0.62rem', fontFamily: 'monospace', color: p.active ? C.amberLight : C.textMuted, letterSpacing: '0.1em' }}>
-                  {p.step}
-                </div>
-                <div style={{ fontSize: '0.82rem', fontWeight: 600, color: p.active ? '#fff' : C.text, marginTop: '0.3rem', fontFamily: 'monospace' }}>
-                  {p.title}
-                </div>
-              </div>
-              <div
-                style={{
-                  fontSize: '0.7rem',
-                  fontFamily: 'monospace',
-                  color: p.done ? C.green : p.active ? C.amber : C.textFaint,
-                  marginTop: '0.5rem',
-                }}
-              >
-                {p.status}
-              </div>
-            </div>
-          ))}
-        </div>
-
-        {/* 3 Deployment Option Cards */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1rem' }}>
-          {[
-            {
-              id: 'line_mini_pcs',
-              tag: 'SELECTED',
-              title: 'Line mini PCs',
-              desc: 'Pushed to the devices one by one. Each keeps the previous model to roll back offline.',
-            },
-            {
-              id: 'hosted_api',
-              tag: 'OPTION',
-              title: 'Hosted API',
-              desc: "Upload a photo, get the boxes. For the QC team's hand photos.",
-            },
-            {
-              id: 'gpu_server',
-              tag: 'OPTION',
-              title: 'Your GPU server',
-              desc: 'Run the Docker image with ONNX FP32 for bulk re-checks.',
-            },
-          ].map((card) => {
-            const isSelected = selectedDeployOption === card.id;
-            return (
-              <div
-                key={card.id}
-                onClick={() => setSelectedDeployOption(card.id)}
-                style={{
-                  backgroundColor: C.card,
-                  border: isSelected ? `1px solid ${C.amber}` : `1px solid ${C.border}`,
-                  borderRadius: '6px',
-                  padding: '1.25rem',
-                  cursor: 'pointer',
-                  transition: 'all 0.15s',
-                }}
-              >
-                <div
-                  style={{
-                    fontSize: '0.6rem',
-                    fontFamily: 'monospace',
-                    letterSpacing: '0.1em',
-                    color: isSelected ? C.amberLight : C.textMuted,
-                    textTransform: 'uppercase',
-                    marginBottom: '0.4rem',
-                    fontWeight: 'bold',
-                  }}
-                >
-                  {card.tag}
-                </div>
-                <div style={{ fontSize: '0.95rem', fontWeight: 600, color: isSelected ? '#fff' : C.text, fontFamily: 'monospace', marginBottom: '0.5rem' }}>
-                  {card.title}
-                </div>
-                <div style={{ fontSize: '0.72rem', color: C.textMuted, fontFamily: 'monospace', lineHeight: 1.5 }}>
-                  {card.desc}
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </section>
-
-      {/* ========================================================================= */}
-      {/* SECTION 4: API */}
-      {/* ========================================================================= */}
-      <section style={{ marginBottom: '3.5rem' }}>
-        <div
-          style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'baseline',
-            marginBottom: '1.25rem',
-            paddingBottom: '0.5rem',
-            borderBottom: `1px solid ${C.border}`,
-          }}
-        >
-          <h2
-            style={{
-              fontFamily: 'Newsreader, Georgia, serif',
-              fontStyle: 'italic',
-              fontSize: '1.65rem',
-              color: '#f4f4f6',
-              margin: 0,
-            }}
-          >
-            4 · API
+            3 · API
           </h2>
           <span
             style={{
@@ -1634,7 +1482,7 @@ export const ImageExportApiPage: React.FC = () => {
               margin: 0,
             }}
           >
-            5 · Versions and traffic
+            4 · Versions and traffic
           </h2>
           <span
             style={{
@@ -1891,10 +1739,10 @@ export const ImageExportApiPage: React.FC = () => {
       >
         <div>
           <div style={{ fontSize: '0.82rem', fontFamily: 'monospace', color: C.text, fontWeight: 'bold' }}>
-            {state?.bottom_bar?.title || 'yolo-defects-v4 · OpenVINO INT8 · ready for shadow on line 2'}
+            {state?.bottom_bar?.title || 'yolo-defects-v4 · OpenVINO INT8 · package ready'}
           </div>
           <div style={{ fontSize: '0.68rem', fontFamily: 'monospace', color: C.textMuted, marginTop: '0.15rem' }}>
-            {state?.bottom_bar?.sub || 'Next: shadow on one mini PC of line 2, then the whole line after review'}
+            Model package and API endpoint generated from 06 Training
           </div>
         </div>
 
@@ -1914,24 +1762,6 @@ export const ImageExportApiPage: React.FC = () => {
             }}
           >
             ← Back to drift
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setShowShadowModal(true)}
-            style={{
-              backgroundColor: C.amber,
-              border: 'none',
-              color: '#000',
-              padding: '0.5rem 1.25rem',
-              borderRadius: '4px',
-              fontSize: '0.78rem',
-              fontFamily: 'monospace',
-              fontWeight: 600,
-              cursor: 'pointer',
-            }}
-          >
-            Start shadow on line 2
           </button>
         </div>
       </div>
@@ -2399,7 +2229,7 @@ export const ImageExportApiPage: React.FC = () => {
                 lineHeight: 1.4,
               }}
             >
-{`openapi: 3.1.0
+              {`openapi: 3.1.0
 info:
   title: Datalift Vision Inference API
   version: 0.1.0

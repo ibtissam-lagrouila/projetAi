@@ -194,7 +194,7 @@ export function ExportApiPage() {
           }
         }
       })
-      .catch(() => {});
+      .catch(() => { });
 
     const onGlobalChange = (e: any) => {
       if (e.detail && typeof e.detail === 'string') {
@@ -749,135 +749,10 @@ export function ExportApiPage() {
         </div>
       </div>
 
-      {/* ── SECTION 3 · DEPLOY (Image 4) ────────────────────────────────── */}
+      {/* ── SECTION 3 · API ─────────────────────────────────────────── */}
       <div style={styles.section}>
         <div style={styles.sectionHeader}>
-          <h2 style={styles.sectionTitle}>3 · Deploy</h2>
-          <span style={styles.sectionSub}>STAGING, SHADOW, CANARY, THEN PRODUCTION</span>
-        </div>
-
-        {/* 6-step pipeline */}
-        <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 24, overflowX: 'auto' }}>
-          {state.deploy_steps.map((step, idx) => (
-            <React.Fragment key={step.step_number}>
-              <div
-                style={{
-                  flex: 1,
-                  minWidth: 140,
-                  padding: '12px 14px',
-                  background: step.status === 'active' ? '#161713' : C.card,
-                  border: `1px solid ${step.status === 'active' ? C.amber : C.border}`,
-                  borderRadius: 6,
-                }}
-              >
-                <div
-                  style={{
-                    fontFamily: 'monospace',
-                    fontSize: 10,
-                    letterSpacing: 1.5,
-                    color: step.status === 'done' ? C.green : step.status === 'active' ? C.amber : C.muted,
-                    marginBottom: 4,
-                  }}
-                >
-                  {step.step_number} · {step.title}
-                </div>
-                <div style={{ fontSize: 12, fontWeight: 600, color: step.status === 'active' ? C.text : '#9ca3af' }}>
-                  {step.status === 'done'
-                    ? step.detail
-                    : step.status === 'active'
-                    ? 'Endpoint ready'
-                    : step.step_number === 4
-                    ? `Next to ${h.production_model}`
-                    : step.step_number === 5
-                    ? '10% → 50% of calls'
-                    : '100% · after review'}
-                </div>
-                <div
-                  style={{
-                    fontSize: 10,
-                    color: step.status === 'active' ? C.amber : C.muted,
-                    marginTop: 3,
-                    fontFamily: 'monospace',
-                  }}
-                >
-                  {step.status === 'done'
-                    ? step.step_number === 1
-                      ? '✓ done · 3 min'
-                      : '✓ same scores as 06'
-                    : step.status === 'active'
-                    ? 'now · try it below'
-                    : step.step_number === 4
-                    ? 'waiting · 14 days'
-                    : step.step_number === 5
-                    ? 'waiting · stops on any regression'
-                    : 'waiting'}
-                </div>
-              </div>
-              {idx < state.deploy_steps.length - 1 && <span style={{ color: C.muted, fontSize: 14 }}>→</span>}
-            </React.Fragment>
-          ))}
-        </div>
-
-        {/* 3 Deploy Options */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16 }}>
-          {[
-            {
-              id: 'hosted',
-              label: 'SELECTED',
-              title: 'Hosted by Datalift',
-              desc: 'An HTTPS endpoint with keys and logs. Nothing to install.',
-              selected: state.selected_deploy_option === 'hosted',
-            },
-            {
-              id: 'own_server',
-              label: 'OPTION',
-              title: 'Your server',
-              desc: 'Pull the Docker image and run it next to the CRM. Logs can be sent back for drift.',
-              selected: state.selected_deploy_option === 'own_server',
-            },
-            {
-              id: 'batch_folder',
-              label: 'OPTION',
-              title: 'Batch to a folder',
-              desc: 'A CSV of scores dropped every month in S3 or a shared folder.',
-              selected: state.selected_deploy_option === 'batch_folder',
-            },
-          ].map((opt) => (
-            <div
-              key={opt.id}
-              onClick={() => updateSetting({ deploy_target: opt.id })}
-              style={{
-                ...styles.card,
-                padding: 18,
-                cursor: 'pointer',
-                border: `1px solid ${opt.selected ? C.amber : C.border}`,
-                background: opt.selected ? '#15161a' : C.card,
-              }}
-            >
-              <div
-                style={{
-                  fontFamily: 'monospace',
-                  fontSize: 9,
-                  letterSpacing: 1.5,
-                  color: opt.selected ? C.amber : C.muted,
-                  marginBottom: 6,
-                }}
-              >
-                {opt.label}
-              </div>
-              <div style={{ fontFamily: 'Georgia, serif', fontSize: 16, color: C.text, marginBottom: 6 }}>
-                {opt.title}
-              </div>
-              <div style={{ fontSize: 11, color: C.muted, lineHeight: 1.5 }}>{opt.desc}</div>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* ── SECTION 4 · API (Image 4 & 5) ───────────────────────────────── */}
-      <div style={styles.section}>
-        <div style={styles.sectionHeader}>
-          <h2 style={styles.sectionTitle}>4 · API</h2>
+          <h2 style={styles.sectionTitle}>3 · API</h2>
           <span style={styles.sectionSub}>SAME MASKS, SAME THRESHOLD AS IN 06</span>
         </div>
 
@@ -947,8 +822,8 @@ export function ExportApiPage() {
               {apiCodeTab === 'curl'
                 ? state.curl_snippet
                 : apiCodeTab === 'Python'
-                ? state.python_req_snippet || state.python_snippet
-                : state.js_snippet}
+                  ? state.python_req_snippet || state.python_snippet
+                  : state.js_snippet}
             </div>
 
             {/* Response JSON header & panel */}
@@ -1067,10 +942,10 @@ export function ExportApiPage() {
         </div>
       </div>
 
-      {/* ── SECTION 5 · VERSIONS AND TRAFFIC (Image 5 & 6) ──────────────── */}
+      {/* ── SECTION 4 · VERSIONS AND TRAFFIC ─────────────────────────── */}
       <div style={styles.section}>
         <div style={styles.sectionHeader}>
-          <h2 style={styles.sectionTitle}>5 · Versions and traffic</h2>
+          <h2 style={styles.sectionTitle}>4 · Versions and traffic</h2>
           <span style={styles.sectionSub}>EVERY PREDICTION IS LOGGED WITH ITS MODEL VERSION</span>
         </div>
 
@@ -1213,22 +1088,15 @@ export function ExportApiPage() {
       >
         <div>
           <div style={{ fontFamily: 'monospace', fontSize: 13, color: C.text, fontWeight: 600 }}>
-            {h.candidate_model} · Docker image · staging endpoint ready
+            {h.candidate_model} · Docker image · package ready
           </div>
           <div style={{ fontFamily: 'monospace', fontSize: 11, color: C.muted, marginTop: 2 }}>
-            Next: 14 days of shadow next to {h.production_model}, then a reviewer approves the switch
+            Model package and API endpoint generated from 06 Training
           </div>
         </div>
         <div style={{ display: 'flex', gap: 12 }}>
           <button style={styles.btnDark} onClick={() => (window.location.href = '/drift')}>
             ← Back to drift
-          </button>
-          <button
-            style={{ ...styles.btnAmber, opacity: isDeploying ? 0.7 : 1 }}
-            onClick={handleDeploy}
-            disabled={isDeploying}
-          >
-            {isDeploying ? 'Deploying…' : 'Deploy to staging'}
           </button>
         </div>
       </div>

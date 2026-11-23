@@ -13,6 +13,7 @@ class TextTrainingService:
     """Service dedicated to Text Training (06 Training) for Text Modality.
     Provides complete, dynamic data for the training interface.
     """
+    _custom_runs: Dict[str, List[Dict[str, Any]]] = {}
 
     def get_training_data(
         self,
@@ -107,8 +108,23 @@ class TextTrainingService:
             },
         ]
 
-        active_run_id = selected_run_id or "ticket-cls-v4-b"
-        active_run_obj = next((r for r in runs if r["id"] == active_run_id), runs[0])
+        custom = self._custom_runs.get(str(dataset.id), [])
+        if custom:
+            for r in runs:
+                if r.get("tag") == "CANDIDATE":
+                    r["tag"] = "BASELINE"
+                    r["tag_style"] = "baseline"
+            runs = [dict(c) for c in custom] + runs
+
+        if run_filter == "running":
+            filtered_runs = [r for r in runs if r.get("is_running")]
+        elif run_filter == "done":
+            filtered_runs = [r for r in runs if not r.get("is_running")]
+        else:
+            filtered_runs = runs
+
+        active_run_id = selected_run_id or (runs[0]["id"] if runs else "ticket-cls-v4-b")
+        active_run_obj = next((r for r in runs if r["id"] == active_run_id), runs[0] if runs else None)
 
         return {
             "dataset_id": str(dataset.id),
@@ -165,8 +181,12 @@ class TextTrainingService:
                 "command": "datalift train tickets@v4 --config xlmr-ft.yaml",
             },
             "runs_section": {
-                "counts": {"all": 5, "running": 1, "done": 4},
-                "runs": runs,
+                "counts": {
+                    "all": len(runs),
+                    "running": sum(1 for r in runs if r.get("is_running")),
+                    "done": sum(1 for r in runs if not r.get("is_running")),
+                },
+                "runs": filtered_runs,
                 "active_run": {
                     "id": active_run_obj["id"],
                     "status_badge": "RUNNING" if active_run_obj["is_running"] else "COMPLETED",
@@ -404,8 +424,23 @@ class TextTrainingService:
             },
         ]
 
-        active_run_id = selected_run_id or f"{candidate_model_name}-b"
-        active_run_obj = next((r for r in runs if r["id"] == active_run_id), runs[0])
+        custom = self._custom_runs.get(str(dataset.id), [])
+        if custom:
+            for r in runs:
+                if r.get("tag") == "CANDIDATE":
+                    r["tag"] = "BASELINE"
+                    r["tag_style"] = "baseline"
+            runs = [dict(c) for c in custom] + runs
+
+        if run_filter == "running":
+            filtered_runs = [r for r in runs if r.get("is_running")]
+        elif run_filter == "done":
+            filtered_runs = [r for r in runs if not r.get("is_running")]
+        else:
+            filtered_runs = runs
+
+        active_run_id = selected_run_id or (runs[0]["id"] if runs else f"{candidate_model_name}-b")
+        active_run_obj = next((r for r in runs if r["id"] == active_run_id), runs[0] if runs else None)
 
         per_label = []
         for i, c in enumerate(classes):
@@ -506,8 +541,12 @@ class TextTrainingService:
                 "command": f"datalift train {dataset.name.split('.')[0]}@{output_v} --config ft.yaml",
             },
             "runs_section": {
-                "counts": {"all": len(runs), "running": 1, "done": len(runs) - 1},
-                "runs": runs,
+                "counts": {
+                    "all": len(runs),
+                    "running": sum(1 for r in runs if r.get("is_running")),
+                    "done": sum(1 for r in runs if not r.get("is_running")),
+                },
+                "runs": filtered_runs,
                 "active_run": {
                     "id": active_run_obj["id"],
                     "status_badge": "RUNNING" if active_run_obj["is_running"] else "COMPLETED",
@@ -587,10 +626,66 @@ class TextTrainingService:
         }
 
     def start_run(self, dataset_id: str, payload: Dict[str, Any], db: Session) -> Dict[str, Any]:
+        dataset = db.query(Dataset).filter(Dataset.id == dataset_id).first()
+        if not dataset:
+            raise HTTPException(status_code=404, detail="Dataset introuvable")
+
+        versions = (
+            db.query(DatasetVersion)
+            .filter(DatasetVersion.dataset_id == dataset_id)
+            .order_by(DatasetVersion.created_at.desc())
+            .all()
+        )
+        v_count = len(versions) if versions else 1
+        output_v = f"v{v_count}"
+        base_name = dataset.name.split('.')[0].replace('_', '-').lower()[:12]
+
+        if str(dataset.id) not in self._custom_runs:
+            self._custom_runs[str(dataset.id)] = []
+
+        existing = self._custom_runs[str(dataset.id)]
+        run_num = len(existing) + 1
+        new_run_id = f"{base_name}-ft-{run_num:02d}"
+
+        models_list = payload.get("models", [])
+        if not isinstance(models_list, list):
+            models_list = [str(models_list)]
+
+        if any("darija" in str(m).lower() for m in models_list):
+            model_name = "DarijaBERT-base · max 256"
+        elif any("tfidf" in str(m).lower() for m in models_list):
+            model_name = "TF-IDF + Logistic · baseline"
+        elif any("llm" in str(m).lower() for m in models_list):
+            model_name = "Few-shot LLM (fine-tuned)"
+        else:
+            model_name = "XLM-R · max 512"
+
+        # Demote previous candidates in existing
+        for r in existing:
+            if r.get("tag") == "CANDIDATE":
+                r["tag"] = "BASELINE"
+                r["tag_style"] = "baseline"
+
+        new_f1 = f"{min(0.96, 0.90 + (run_num % 5) * 0.015):.2f}"
+        new_run = {
+            "id": new_run_id,
+            "data": output_v,
+            "model": model_name,
+            "status": "done · stopped at epoch 3",
+            "is_running": False,
+            "macro_f1": new_f1,
+            "time": "42 min",
+            "tag": "CANDIDATE",
+            "tag_style": "candidate",
+        }
+
+        existing.insert(0, new_run)
+
         return {
             "status": "ok",
-            "message": f"Run launched successfully for {payload.get('model_type', 'XLM-R')}",
-            "run_id": f"run_{int(time.time())}",
+            "message": f"Run {new_run_id} ({model_name}) complété avec succès ! Macro F1 : {new_f1}",
+            "run_id": new_run_id,
+            "run_name": new_run_id,
         }
 
     def promote_candidate(self, dataset_id: str, payload: Dict[str, Any], db: Session) -> Dict[str, Any]:

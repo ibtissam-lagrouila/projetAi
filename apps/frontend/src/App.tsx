@@ -514,78 +514,16 @@ const TopBar: React.FC<{ modality: 'tabular' | 'text' | 'image'; onModalityChang
             </>
           )
         ) : location.pathname === '/export-api' || location.pathname === '/text-export-api' || location.pathname === '/image-export-api' ? (
-          modality === 'image' ? (
-            <>
-              <button
-                type="button"
-                className="btn btn-secondary font-mono"
-                style={{ fontSize: '0.75rem', padding: '0.45rem 0.95rem' }}
-                onClick={() => window.dispatchEvent(new CustomEvent('datalift:open-version-history'))}
-              >
-                Version history
-              </button>
-              <button
-                type="button"
-                className="btn btn-primary font-mono"
-                style={{
-                  fontSize: '0.78rem',
-                  padding: '0.45rem 1rem',
-                  backgroundColor: '#f59e0b',
-                  color: '#000',
-                  fontWeight: 600,
-                  border: 'none',
-                }}
-                onClick={() => window.dispatchEvent(new CustomEvent('datalift:start-shadow'))}
-              >
-                <span>Start shadow on line 2</span>
-              </button>
-            </>
-          ) : modality === 'text' ? (
-            <>
-              <button
-                type="button"
-                className="btn btn-secondary font-mono"
-                style={{ fontSize: '0.75rem', padding: '0.45rem 0.95rem' }}
-                onClick={() => window.dispatchEvent(new CustomEvent('datalift:open-version-history'))}
-              >
-                Version history
-              </button>
-              <button
-                type="button"
-                className="btn btn-primary font-mono"
-                style={{
-                  fontSize: '0.78rem',
-                  padding: '0.45rem 1rem',
-                  backgroundColor: '#f59e0b',
-                  color: '#000',
-                  fontWeight: 600,
-                  border: 'none',
-                }}
-                onClick={() => window.dispatchEvent(new CustomEvent('datalift:deploy-to-staging'))}
-              >
-                <span>Deploy to staging</span>
-              </button>
-            </>
-          ) : (
-            <>
-              <button
-                type="button"
-                className="btn btn-secondary font-mono"
-                style={{ fontSize: '0.75rem', padding: '0.45rem 0.95rem' }}
-                onClick={() => window.dispatchEvent(new CustomEvent('datalift:open-version-history'))}
-              >
-                Version history
-              </button>
-              <button
-                type="button"
-                className="btn btn-primary font-mono"
-                style={{ fontSize: '0.78rem', padding: '0.45rem 1rem' }}
-                onClick={() => window.dispatchEvent(new CustomEvent('datalift:deploy-to-staging'))}
-              >
-                <span>Deploy to staging →</span>
-              </button>
-            </>
-          )
+          <>
+            <button
+              type="button"
+              className="btn btn-secondary font-mono"
+              style={{ fontSize: '0.75rem', padding: '0.45rem 0.95rem' }}
+              onClick={() => window.dispatchEvent(new CustomEvent('datalift:open-version-history'))}
+            >
+              Version history
+            </button>
+          </>
         ) : (
 
           <>

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Check, AlertTriangle, X, Play, Copy, CheckCircle2 } from 'lucide-react';
+import { Check, AlertTriangle, X, Play, Copy, CheckCircle2, RefreshCw } from 'lucide-react';
 import { api } from '../services/api';
 import { filterDatasetsByModality, getActiveDatasetForModality, saveActiveDataset } from '../utils/formatters';
 import { Dataset, ImageTrainingDataResponse } from '../types';
@@ -42,6 +42,7 @@ export const ImageTrainingPage: React.FC = () => {
   const [errorFilter, setErrorFilter] = useState<string>('all');
 
   // Interactive Form State (Section 1)
+  const [isStartingRun, setIsStartingRun] = useState<boolean>(false);
   const [selectedDatasetVersion, setSelectedDatasetVersion] = useState<string>('defects@v4 · current');
   const [selectedTrainView, setSelectedTrainView] = useState<string>('Real + copy-paste · train split only');
   const [augmentations, setAugmentations] = useState<Record<string, boolean>>({
@@ -176,6 +177,7 @@ export const ImageTrainingPage: React.FC = () => {
 
   const handleStartRun = async () => {
     if (!selectedDatasetId) return;
+    setIsStartingRun(true);
     try {
       const res = await api.startImageTrainingRun(selectedDatasetId, {
         architecture,
@@ -187,11 +189,17 @@ export const ImageTrainingPage: React.FC = () => {
         runsOn,
         augmentations,
       });
-      setNotification(`✓ ${res.message || 'Training launched successfully!'}`);
+      const newRunId = res.run_id;
+      if (newRunId) {
+        setSelectedRunId(newRunId);
+      }
+      setNotification(`✓ ${res.message || 'Training completed successfully!'}`);
       setTimeout(() => setNotification(null), 4000);
-      fetchData(selectedDatasetId, runFilter, selectedRunId);
+      await fetchData(selectedDatasetId, runFilter, newRunId || selectedRunId);
     } catch (err: any) {
       setError('Error au lancement: ' + (err.message || 'unknown'));
+    } finally {
+      setIsStartingRun(false);
     }
   };
 
@@ -719,6 +727,7 @@ export const ImageTrainingPage: React.FC = () => {
                 <button
                   type="button"
                   onClick={handleStartRun}
+                  disabled={isStartingRun}
                   style={{
                     backgroundColor: C.amber,
                     color: '#000',
@@ -728,16 +737,37 @@ export const ImageTrainingPage: React.FC = () => {
                     border: 'none',
                     fontSize: '0.8rem',
                     fontFamily: 'monospace',
-                    cursor: 'pointer',
+                    cursor: isStartingRun ? 'wait' : 'pointer',
+                    opacity: isStartingRun ? 0.7 : 1,
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
                     gap: '0.4rem',
                   }}
                 >
-                  <Play size={13} fill="#000" />
-                  <span>Start run</span>
+                  {isStartingRun ? <RefreshCw size={13} className="spin" /> : <Play size={13} fill="#000" />}
+                  <span>{isStartingRun ? 'Training YOLO...' : 'Start run'}</span>
                 </button>
+
+                {isStartingRun && (
+                  <div
+                    style={{
+                      padding: '0.5rem 0.75rem',
+                      borderRadius: '4px',
+                      background: 'rgba(245, 158, 11, 0.1)',
+                      border: '1px solid rgba(245, 158, 11, 0.3)',
+                      color: C.amber,
+                      fontSize: '0.72rem',
+                      fontFamily: 'monospace',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.5rem',
+                    }}
+                  >
+                    <RefreshCw size={12} className="spin" />
+                    <span>Entraînement YOLO & calcul mAP@50 en cours...</span>
+                  </div>
+                )}
 
                 <div style={{ display: 'flex', gap: '0.65rem' }}>
                   <button

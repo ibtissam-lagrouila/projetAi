@@ -35,6 +35,7 @@ class ImageTrainingService:
     Provides YOLO/object detection experiment management, live runs, evaluation,
     confusion matrix, slices, error diagnosis, and edge benchmarking.
     """
+    _custom_runs: Dict[str, List[Dict[str, Any]]] = {}
 
     def get_training_data(
         self,
@@ -123,13 +124,21 @@ class ImageTrainingService:
             },
         ]
 
+        custom = self._custom_runs.get(str(dataset.id), [])
+        if custom:
+            for r in runs:
+                if r.get("tag") == "CANDIDATE":
+                    r["tag"] = ""
+            runs = [dict(c) for c in custom] + runs
+
         filtered_runs = runs
         if run_filter == "running":
             filtered_runs = [r for r in runs if r.get("is_running")]
         elif run_filter == "done":
             filtered_runs = [r for r in runs if not r.get("is_running")]
 
-        sel_run = selected_run_id or "yolo-defects-v4"
+        sel_run = selected_run_id or (runs[0]["id"] if runs else "yolo-defects-v4")
+        active_run_obj = next((r for r in runs if r["id"] == sel_run), runs[0] if runs else {})
 
         return {
             "dataset_id": str(dataset.id),
@@ -184,12 +193,16 @@ class ImageTrainingService:
                 "command": "datalift train defects@v4 --config yolo11s.yaml",
             },
             "runs_section": {
-                "counts": {"all": 5, "running": 1, "done": 4},
+                "counts": {
+                    "all": len(runs),
+                    "running": sum(1 for r in runs if r.get("is_running")),
+                    "done": sum(1 for r in runs if not r.get("is_running")),
+                },
                 "runs": filtered_runs,
                 "active_run": {
-                    "id": "yolo-defects-v4-m",
-                    "status_tag": "RUNNING",
-                    "header_sub": "Epoch 64 / 120 · GPU 97% · ETA 1 h 30",
+                    "id": sel_run,
+                    "status_tag": "DONE" if not active_run_obj.get("is_running") else "RUNNING",
+                    "header_sub": f"Trained on {active_run_obj.get('data', 'v4')} · {active_run_obj.get('status')}",
                     "val_preview": [
                         {"epoch": 60, "box": "rect", "color": "#f59e0b"},
                         {"epoch": 60, "box": "rect", "color": "#f59e0b"},
@@ -365,6 +378,22 @@ class ImageTrainingService:
             },
         ]
 
+        custom = self._custom_runs.get(str(dataset.id), [])
+        if custom:
+            for r in runs:
+                if r.get("tag") == "CANDIDATE":
+                    r["tag"] = ""
+            runs = [dict(c) for c in custom] + runs
+
+        filtered_runs = runs
+        if run_filter == "running":
+            filtered_runs = [r for r in runs if r.get("is_running")]
+        elif run_filter == "done":
+            filtered_runs = [r for r in runs if not r.get("is_running")]
+
+        sel_run = selected_run_id or (runs[0]["id"] if runs else f"{base_name}-yolo-v{v_count}")
+        active_run_obj = next((r for r in runs if r["id"] == sel_run), runs[0] if runs else {})
+
         return {
             "dataset_id": str(dataset.id),
             "dataset_name": dataset.name,
@@ -413,12 +442,16 @@ class ImageTrainingService:
                 "command": f"datalift train {base_name}@{output_v} --config yolo11s.yaml",
             },
             "runs_section": {
-                "counts": {"all": len(runs), "running": 0, "done": len(runs)},
-                "runs": runs,
+                "counts": {
+                    "all": len(runs),
+                    "running": sum(1 for r in runs if r.get("is_running")),
+                    "done": sum(1 for r in runs if not r.get("is_running")),
+                },
+                "runs": filtered_runs,
                 "active_run": {
-                    "id": f"{base_name}-yolo-v{v_count}",
-                    "status_tag": "DONE",
-                    "header_sub": "100 / 100 epochs completed",
+                    "id": sel_run,
+                    "status_tag": "DONE" if not active_run_obj.get("is_running") else "RUNNING",
+                    "header_sub": f"Trained on {active_run_obj.get('data', f'v{v_count}')} · {active_run_obj.get('status')}",
                     "val_preview": [
                         {"epoch": 100, "box": "rect", "color": "#f59e0b"},
                         {"epoch": 100, "box": "rect", "color": "#f59e0b"},
@@ -426,7 +459,7 @@ class ImageTrainingService:
                 },
             },
             "evaluate": {
-                "selected_run": f"{base_name}-yolo-v{v_count}",
+                "selected_run": sel_run,
                 "selected_split": f"val · {val_rows} images",
                 "summary_kpis": {
                     "map50": "0.875",
@@ -507,10 +540,54 @@ class ImageTrainingService:
         }
 
     def start_run(self, dataset_id: str, payload: Dict[str, Any], db: Session) -> Dict[str, Any]:
+        dataset = db.query(Dataset).filter(Dataset.id == dataset_id).first()
+        if not dataset:
+            raise HTTPException(status_code=404, detail="Dataset introuvable")
+
+        versions = (
+            db.query(DatasetVersion)
+            .filter(DatasetVersion.dataset_id == dataset_id)
+            .order_by(DatasetVersion.created_at.desc())
+            .all()
+        )
+        v_count = len(versions) if versions else 1
+        output_v = f"v{v_count}"
+        base_name = dataset.name.split('.')[0].replace('_', '-').lower()[:12]
+
+        if str(dataset.id) not in self._custom_runs:
+            self._custom_runs[str(dataset.id)] = []
+
+        existing = self._custom_runs[str(dataset.id)]
+        run_num = len(existing) + 1
+        new_run_id = f"{base_name}-yolo-v{v_count}-{run_num:02d}"
+
+        arch = payload.get("architecture", "YOLO11-s · COCO pretrained").split("·")[0].strip()
+        epochs = payload.get("epochs", 120)
+
+        # Demote previous candidates
+        for r in existing:
+            if r.get("tag") == "CANDIDATE":
+                r["tag"] = ""
+
+        score = f"{min(0.965, 0.890 + (run_num % 5) * 0.008):.3f}"
+        new_run = {
+            "id": new_run_id,
+            "data": output_v,
+            "model": arch,
+            "status": f"done · {epochs} epochs",
+            "map50_val": score,
+            "time": "1 h 15",
+            "tag": "CANDIDATE",
+            "is_running": False,
+        }
+
+        existing.insert(0, new_run)
+
         return {
             "status": "ok",
-            "message": "YOLO training launched on GPU cluster",
-            "run_id": f"yolo-run-{int(db.query(Dataset).filter(Dataset.id == dataset_id).count()) + 101}",
+            "message": f"Run {new_run_id} ({arch}) complété avec succès ! mAP@50 : {score}",
+            "run_id": new_run_id,
+            "run_name": new_run_id,
         }
 
     def start_shadow_mode(self, dataset_id: str, payload: Dict[str, Any], db: Session) -> Dict[str, Any]:

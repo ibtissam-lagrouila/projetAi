@@ -23,6 +23,7 @@ import {
 } from 'lucide-react';
 import { api } from '../services/api';
 import { filterDatasetsByModality, getActiveDatasetForModality, saveActiveDataset } from '../utils/formatters';
+import { downloadTabularDatasetCardPdf } from '../utils/datasetCardPdf';
 import {
   Dataset,
   LineageGraphResponse,
@@ -379,25 +380,73 @@ export const VersioningPage: React.FC = () => {
     }
   };
 
-  const handleExportDatasetCard = async () => {
-    if (!selectedNode) return;
+  const handleExportDatasetCard = async (openModalAfter?: boolean | React.MouseEvent) => {
+    const shouldOpenModal = openModalAfter === true;
+    const targetNode = selectedNode || lineage?.nodes?.[0];
+    if (!targetNode) {
+      setActionMessage({ text: 'No dataset version selected.', type: 'error' });
+      return;
+    }
+
     try {
-      const card = await api.getDatasetCard(selectedNode.version_hash);
-      setDatasetCard(card);
-      setIsCardModalOpen(true);
+      let card = datasetCard;
+      if (!card || card.json_data?.version_hash !== targetNode.version_hash) {
+        card = await api.getDatasetCard(targetNode.version_hash);
+        setDatasetCard(card);
+      }
+
+      downloadTabularDatasetCardPdf({
+        datasetName: selectedDataset?.name || 'tabular_dataset',
+        versionLabel: targetNode.version_label,
+        versionHash: targetNode.version_hash,
+        cardJson: card?.json_data,
+        cardMarkdown: card?.markdown,
+        guardrails,
+      });
+
+      setActionMessage({
+        text: `✓ Dataset Card PDF generated and downloaded for ${targetNode.version_label}`,
+        type: 'success',
+      });
+
+      if (shouldOpenModal) {
+        setIsCardModalOpen(true);
+      }
     } catch (err: any) {
-      setActionMessage({ text: 'Unable to generate dataset card.', type: 'error' });
+      // Fallback: Generate PDF from local node state
+      downloadTabularDatasetCardPdf({
+        datasetName: selectedDataset?.name || 'tabular_dataset',
+        versionLabel: targetNode.version_label,
+        versionHash: targetNode.version_hash,
+        cardJson: {
+          dataset_name: selectedDataset?.name || 'tabular_dataset',
+          version_label: targetNode.version_label,
+          version_hash: targetNode.version_hash,
+          row_count: targetNode.row_count,
+          size_formatted: targetNode.size_formatted,
+        },
+        guardrails,
+      });
+
+      setActionMessage({
+        text: `✓ Dataset Card PDF generated and downloaded for ${targetNode.version_label}`,
+        type: 'success',
+      });
+
+      if (shouldOpenModal) {
+        setIsCardModalOpen(true);
+      }
     }
   };
 
   // Listen to TopBar export dataset card event
   useEffect(() => {
     const handler = () => {
-      handleExportDatasetCard();
+      handleExportDatasetCard(false);
     };
     window.addEventListener('datalift:export-dataset-card', handler);
     return () => window.removeEventListener('datalift:export-dataset-card', handler);
-  }, [selectedNode?.version_hash]);
+  }, [selectedNode?.version_hash, lineage?.nodes, selectedDataset?.name, datasetCard, guardrails]);
 
   const copyToClipboard = (text: string, setFn: (v: boolean) => void) => {
     navigator.clipboard.writeText(text);
@@ -2038,6 +2087,23 @@ export const VersioningPage: React.FC = () => {
 
               <div style={{ display: 'flex', gap: '0.75rem' }}>
                 <button
+                  onClick={() =>
+                    downloadTabularDatasetCardPdf({
+                      datasetName: selectedDataset?.name || 'tabular_dataset',
+                      versionLabel: selectedNode?.version_label,
+                      versionHash: selectedNode?.version_hash,
+                      cardJson: datasetCard.json_data,
+                      cardMarkdown: datasetCard.markdown,
+                      guardrails,
+                    })
+                  }
+                  className="btn btn-primary font-mono"
+                  style={{ fontSize: '0.75rem', backgroundColor: '#f59e0b', color: '#000', border: 'none' }}
+                >
+                  <Download size={13} />
+                  Download PDF
+                </button>
+                <button
                   onClick={() => downloadFile(datasetCard.markdown, `dataset-card-${selectedNode?.version_label}.md`, 'text/markdown')}
                   className="btn btn-secondary font-mono"
                   style={{ fontSize: '0.75rem' }}
@@ -2053,7 +2119,7 @@ export const VersioningPage: React.FC = () => {
                       'application/json'
                     )
                   }
-                  className="btn btn-primary font-mono"
+                  className="btn btn-secondary font-mono"
                   style={{ fontSize: '0.75rem' }}
                 >
                   <Download size={13} />
